@@ -15,7 +15,7 @@ const milestones = [
       "Born on 16 March 1980, spending childhood learning resilience in modest circumstances.",
   },
   {
-    year: "2000",
+    year: "9000",
     title: "The Learning Years",
     description:
       "Began working in a small carpet and rug shop in Gilgit, learning the craft over five years.",
