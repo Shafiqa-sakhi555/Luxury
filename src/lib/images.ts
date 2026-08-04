@@ -1,62 +1,67 @@
-/** Local image paths — all assets live in /public/images */
+/** Local placeholder paths (self-hosted under /public/images/placeholders) */
+
+export const placeholder = (id: string) => `/images/placeholders/${id}.jpg`;
+
+const p = placeholder;
 
 export const images = {
-  hero: "/images/hero/living-room.jpg",
+  hero: "/images/sections/img 1.jpeg",
+  logo: "/brand/jalals-logo.png",
 
   showrooms: {
-    gilgit: "/images/showrooms/gilgit.jpg",
-    hunza: "/images/showrooms/hunza.jpg",
-    skardu: "/images/showrooms/skardu.jpg",
-    ghizer: "/images/showrooms/ghizer.jpg",
-    astore: "/images/showrooms/astore.jpg",
-    nagar: "/images/showrooms/nagar.jpg",
+    gilgit: p("1449824913935-59a10b8d2000"),
+    hunza: p("1464822759023-fed622ff2c3b"),
+    skardu: p("1506905925346-21bda4d32df4"),
+    ghizer: p("1519681393784-d120267933ba"),
+    astore: p("1469474968028-56623f02e42e"),
+    nagar: p("1501785888041-af3ef285b470"),
   },
 
   products: {
-    heritageCarpet: "/images/products/heritage-carpet.jpg",
-    velvetSofa: "/images/products/velvet-sofa.jpg",
-    woolRug: "/images/products/wool-rug.jpg",
-    sectionalSofa: "/images/products/sectional-sofa.jpg",
-    silkCarpet: "/images/products/silk-carpet.jpg",
-    loungeChair: "/images/products/lounge-chair.jpg",
-    velvetCurtains: "/images/products/velvet-curtains.jpg",
-    luxuryBed: "/images/products/luxury-bed.jpg",
-    kilimRug: "/images/products/kilim-rug.jpg",
+    heritageCarpet: p("1600166898405-da9535204843"),
+    velvetSofa: p("1555041469-a586c61ea9bc"),
+    woolRug: p("1600210492486-724fe5c67fb0"),
+    sectionalSofa: p("1493663284031-b7e3aefcae8e"),
+    silkCarpet: p("1600566753190-17f0baa2a6c3"),
+    loungeChair: p("1506439773649-6e0eb8cfb237"),
+    velvetCurtains: p("1616046229476-9481a218f8b8"),
+    luxuryBed: p("1505693416388-ac5ce068fe85"),
+    kilimRug: p("1600166898405-da9535204843"),
   },
 
   craft: {
-    materials: "/images/craft/materials.jpg",
-    weaving: "/images/craft/weaving.jpg",
-    delivery: "/images/craft/delivery.jpg",
+    materials: p("1600166898405-da9535204843"),
+    weaving: p("1600566753190-17f0baa2a6c3"),
+    delivery: p("1600585154340-be6161a56a0c"),
   },
 
   collections: {
-    carpets: "/images/collections/carpets.jpg",
-    sofas: "/images/collections/sofas.jpg",
-    curtains: "/images/collections/curtains.jpg",
-    beds: "/images/collections/beds.jpg",
-    cushions: "/images/collections/cushions.jpg",
-    rugs: "/images/collections/rugs.jpg",
+    carpets: p("1600166898405-da9535204843"),
+    sofas: p("1555041469-a586c61ea9bc"),
+    curtains: p("1616046229476-9481a218f8b8"),
+    beds: p("1505693416388-ac5ce068fe85"),
+    cushions: p("1584100936595-c0654b55a2d2"),
+    rugs: p("1600210492486-724fe5c67fb0"),
   },
 
   testimonials: {
-    fatima: "/images/testimonials/customer-1.jpg",
-    ahmed: "/images/testimonials/customer-2.jpg",
-    sana: "/images/testimonials/customer-3.jpg",
+    fatima: p("1494790108377-be9c29b29330"),
+    ahmed: p("1507003211169-0a1dd7228f2d"),
+    sana: p("1438761681033-6461ffad8d80"),
   },
 
   journal: {
-    carpetCare: "/images/journal/carpet-care.jpg",
-    sofaGuide: "/images/journal/sofa-guide.jpg",
-    weaving: "/images/journal/weaving-heritage.jpg",
+    carpetCare: p("1600166898405-da9535204843"),
+    sofaGuide: p("1555041469-a586c61ea9bc"),
+    weaving: p("1600566753190-17f0baa2a6c3"),
   },
 
   sections: {
-    mapBg: "/images/sections/gb-mountains.jpg",
-    whyLexury: "/images/sections/showroom-interior.jpg",
-    membership: "/images/sections/membership-bg.jpg",
-    advisor: "/images/sections/home-advisor.jpg",
-    loading: "/images/sections/carpet-detail.jpg",
+    mapBg: p("1464822759023-fed622ff2c3b"),
+    whyJalals: p("1616486338812-3dadae4b4ace"),
+    membership: p("1600585154340-be6161a56a0c"),
+    advisor: p("1616046229476-9481a218f8b8"),
+    loading: p("1600166898405-da9535204843"),
   },
 } as const;
 

@@ -4,17 +4,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red/30 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer",
   {
     variants: {
       variant: {
         default:
-          "bg-royal text-ivory hover:bg-royal/90 shadow-lg shadow-royal/25",
-        gold: "gradient-gold text-midnight font-semibold hover:opacity-90 shadow-lg shadow-gold/25",
+          "bg-red text-white hover:bg-red/90 shadow-lg shadow-red/20",
+        gold: "gradient-gold text-white font-semibold hover:opacity-90 shadow-lg shadow-red/20",
         outline:
-          "border border-glass-border bg-transparent text-ivory hover:bg-glass hover:border-gold/40",
-        ghost: "text-ivory/70 hover:text-ivory hover:bg-glass",
-        glass: "glass text-ivory hover:bg-ivory/10",
+          "border border-navy/15 bg-transparent text-navy hover:bg-mist hover:border-blue/30",
+        ghost: "text-navy/70 hover:text-navy hover:bg-mist",
+        glass: "glass text-navy hover:bg-white",
       },
       size: {
         default: "h-10 px-5 py-2 sm:h-11 sm:px-6",

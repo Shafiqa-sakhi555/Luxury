@@ -15,14 +15,16 @@ export function TestimonialsSection() {
     setCurrent((c) => (c - 1 + testimonials.length) % testimonials.length);
 
   return (
-    <section className="relative overflow-hidden py-20 sm:py-32 md:py-48">
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-royal/[0.05] to-transparent" />
+    <section className="relative overflow-hidden section-brand-alt py-20 sm:py-32">
+      <div className="brand-accent-bar absolute inset-x-0 top-0" />
+      <div className="blob-red right-0 top-1/4 h-64 w-64" />
+      <div className="blob-blue -left-16 bottom-0 h-72 w-72" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Reviews"
           title="What Our Customers Say"
-          description="Real feedback from families and businesses across Gilgit Baltistan."
+          description="Real feedback from families and businesses across Gilgit-Baltistan."
           align="center"
         />
 
@@ -34,17 +36,17 @@ export function TestimonialsSection() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -30, scale: 0.97 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="glass-strong rounded-2xl p-6 sm:rounded-3xl sm:p-10 md:p-12"
+              className="card-brand overflow-hidden border-l-4 border-l-red p-6 sm:rounded-3xl sm:p-10 md:p-12"
             >
-              <Quote className="h-7 w-7 text-gold/50 sm:h-8 sm:w-8" />
+              <Quote className="h-7 w-7 text-red/50 sm:h-8 sm:w-8" />
 
-              <p className="mt-4 font-display text-lg font-light leading-relaxed text-ivory sm:mt-6 sm:text-xl md:text-2xl lg:text-3xl">
+              <p className="mt-4 font-display text-lg font-light leading-relaxed text-navy sm:mt-6 sm:text-xl md:text-2xl lg:text-3xl">
                 &ldquo;{testimonials[current].quote}&rdquo;
               </p>
 
               <div className="mt-6 flex flex-col gap-4 sm:mt-8 sm:flex-row sm:items-center">
                 <div className="flex items-center gap-3">
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full sm:h-14 sm:w-14">
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 ring-blue/30 sm:h-14 sm:w-14">
                     <Image
                       src={testimonials[current].image}
                       alt={testimonials[current].name}
@@ -53,13 +55,13 @@ export function TestimonialsSection() {
                     />
                   </div>
                   <div>
-                    <p className="font-medium text-ivory">{testimonials[current].name}</p>
-                    <p className="text-sm text-ivory/50">{testimonials[current].role}</p>
+                    <p className="font-medium text-navy">{testimonials[current].name}</p>
+                    <p className="text-sm text-muted">{testimonials[current].role}</p>
                   </div>
                 </div>
                 <div className="flex gap-0.5 sm:ml-auto">
                   {Array.from({ length: testimonials[current].rating }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-gold text-gold" />
+                    <Star key={i} className="h-4 w-4 fill-red text-red" />
                   ))}
                 </div>
               </div>
@@ -69,7 +71,7 @@ export function TestimonialsSection() {
           <div className="mt-6 flex items-center justify-center gap-3 sm:mt-8 sm:gap-4">
             <button
               onClick={prev}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-glass-border text-ivory/60 transition-all hover:border-gold/40 hover:text-ivory sm:h-12 sm:w-12"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-blue/20 bg-white text-navy/70 shadow-sm transition-all hover:border-red/40 hover:bg-red/5 hover:text-red sm:h-12 sm:w-12"
               aria-label="Previous review"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -81,7 +83,7 @@ export function TestimonialsSection() {
                   key={i}
                   onClick={() => setCurrent(i)}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === current ? "w-8 bg-gold" : "w-1.5 bg-ivory/20"
+                    i === current ? "w-8 bg-gradient-to-r from-red to-blue" : "w-1.5 bg-navy/20"
                   }`}
                   aria-label={`Go to review ${i + 1}`}
                 />
@@ -90,7 +92,7 @@ export function TestimonialsSection() {
 
             <button
               onClick={next}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-glass-border text-ivory/60 transition-all hover:border-gold/40 hover:text-ivory sm:h-12 sm:w-12"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-blue/20 bg-white text-navy/70 shadow-sm transition-all hover:border-red/40 hover:bg-red/5 hover:text-red sm:h-12 sm:w-12"
               aria-label="Next review"
             >
               <ChevronRight className="h-5 w-5" />

@@ -1,17 +1,41 @@
 @import "tailwindcss";
+@import "@fontsource/cormorant-garamond/300.css";
+@import "@fontsource/cormorant-garamond/400.css";
+@import "@fontsource/cormorant-garamond/500.css";
+@import "@fontsource/cormorant-garamond/600.css";
+@import "@fontsource/cormorant-garamond/700.css";
+@import "@fontsource/dm-sans/400.css";
+@import "@fontsource/dm-sans/500.css";
+@import "@fontsource/dm-sans/600.css";
+@import "@fontsource/dm-sans/700.css";
 
 @theme inline {
-  --color-midnight: #0c1929;
-  --color-royal: #be123c;
-  --color-violet: #0891b2;
-  --color-gold: #f59e0b;
-  --color-ivory: #fdf8f0;
+  --color-navy: #241c6b;
+  --color-red: #ee1c25;
+  --color-violet: #3b6fe0;
+  --color-blue: #3b6fe0;
+  --color-cyan: #29c4e8;
+  --color-white: #ffffff;
+  --color-mist: #f7f9fc;
+  --color-slate: #c9cdd6;
+  --color-ink: #1a1647;
+  --color-muted: #6b7280;
+
+  /* Legacy aliases mapped to brand tokens for gradual migration */
+  --color-midnight: #241c6b;
+  --color-royal: #ee1c25;
+  --color-gold: #ee1c25;
+  --color-ivory: #241c6b;
   --color-emerald: #059669;
   --color-maroon: #7f1d1d;
-  --color-glass: rgba(253, 248, 240, 0.07);
-  --color-glass-border: rgba(253, 248, 240, 0.14);
-  --font-display: var(--font-cormorant);
-  --font-body: var(--font-dm-sans);
+  --color-glass: rgba(255, 255, 255, 0.72);
+  --color-glass-border: rgba(36, 28, 107, 0.1);
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #dde6fc;
+  --color-brand-200: #c5d4f8;
+
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
 }
 
 @layer base {
@@ -41,7 +65,7 @@
   }
 
   body {
-    @apply bg-midnight text-ivory antialiased;
+    @apply bg-brand-50 text-navy antialiased;
     font-family: var(--font-body), system-ui, sans-serif;
   }
 
@@ -50,60 +74,130 @@
   }
 
   ::selection {
-    @apply bg-violet/40 text-ivory;
+    @apply bg-violet/20 text-navy;
   }
 }
 
 @layer utilities {
   .glass {
-    @apply border border-glass-border bg-glass backdrop-blur-xl;
+    @apply border border-glass-border bg-glass backdrop-blur-xl shadow-sm;
   }
 
   .glass-strong {
-    background: rgba(253, 248, 240, 0.1);
-    @apply border border-glass-border backdrop-blur-2xl;
+    background: rgba(255, 255, 255, 0.88);
+    @apply border border-glass-border backdrop-blur-2xl shadow-md;
+  }
+
+  .gradient-brand {
+    background: linear-gradient(135deg, #241c6b 0%, #3b6fe0 55%, #29c4e8 100%);
+  }
+
+  .gradient-brand-soft {
+    background: linear-gradient(
+      135deg,
+      rgba(36, 28, 107, 0.12) 0%,
+      rgba(238, 28, 37, 0.05) 35%,
+      rgba(59, 111, 224, 0.1) 65%,
+      rgba(41, 196, 232, 0.12) 100%
+    );
+  }
+
+  .section-brand {
+    background: linear-gradient(
+      180deg,
+      var(--color-brand-50) 0%,
+      #ffffff 55%,
+      var(--color-brand-100) 100%
+    );
+  }
+
+  .section-brand-alt {
+    background: linear-gradient(
+      135deg,
+      rgba(36, 28, 107, 0.06) 0%,
+      rgba(59, 111, 224, 0.08) 50%,
+      rgba(41, 196, 232, 0.06) 100%
+    );
+  }
+
+  .section-navy-band {
+    background: linear-gradient(135deg, #241c6b 0%, #1e3a8a 55%, #1a1647 100%);
+  }
+
+  .brand-accent-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #ee1c25 0%, #3b6fe0 50%, #29c4e8 100%);
+  }
+
+  .brand-divider {
+    height: 3px;
+    width: 4rem;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #ee1c25, #3b6fe0, #29c4e8);
+  }
+
+  .timeline-line {
+    background: linear-gradient(
+      180deg,
+      #ee1c25 0%,
+      #3b6fe0 45%,
+      #29c4e8 100%
+    );
+  }
+
+  .card-brand {
+    @apply rounded-2xl border border-navy/10 bg-white shadow-md shadow-navy/5;
+  }
+
+  .card-brand-tint {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(238, 242, 255, 0.9) 100%
+    );
+    @apply rounded-2xl border border-blue/15 shadow-md shadow-blue/10;
+  }
+
+  .eyebrow-pill {
+    @apply inline-flex items-center rounded-full border border-red/20 bg-red/5 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-red sm:text-xs;
+  }
+
+  .blob-red {
+    @apply absolute rounded-full bg-red/10 blur-3xl;
+  }
+
+  .blob-blue {
+    @apply absolute rounded-full bg-blue/15 blur-3xl;
+  }
+
+  .blob-cyan {
+    @apply absolute rounded-full bg-cyan/15 blur-3xl;
   }
 
   .gradient-luxury {
-    background: linear-gradient(
-      135deg,
-      #0c1929 0%,
-      #1a0a14 35%,
-      #7f1d1d 70%,
-      #be123c 100%
-    );
+    background: linear-gradient(135deg, #241c6b 0%, #3b6fe0 50%, #29c4e8 100%);
   }
 
   .gradient-gold {
-    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 45%, #d97706 100%);
+    background: linear-gradient(135deg, #ee1c25 0%, #f43f5e 100%);
   }
 
   .gradient-mountain {
-    background: linear-gradient(
-      135deg,
-      #0c1929 0%,
-      #0891b2 50%,
-      #059669 100%
-    );
+    background: linear-gradient(135deg, #241c6b 0%, #3b6fe0 50%, #29c4e8 100%);
   }
 
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(
-      135deg,
-      #fdf8f0 0%,
-      #f59e0b 40%,
-      #0891b2 80%
-    );
+    background-image: linear-gradient(135deg, #ee1c25 0%, #241c6b 45%, #3b6fe0 100%);
   }
 
-  .gradient-text-gold {
+  .gradient-text-brand {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    background-image: linear-gradient(135deg, #241c6b 0%, #3b6fe0 50%, #29c4e8 100%);
   }
 
   .pattern-carpet {
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23be123c' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23241C6B' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 
   .text-balance {
@@ -146,9 +240,9 @@
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(253, 248, 240, 0.04) 25%,
-    rgba(253, 248, 240, 0.1) 50%,
-    rgba(253, 248, 240, 0.04) 75%
+    rgba(36, 28, 107, 0.04) 25%,
+    rgba(36, 28, 107, 0.08) 50%,
+    rgba(36, 28, 107, 0.04) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;

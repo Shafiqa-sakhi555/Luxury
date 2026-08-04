@@ -1,39 +1,24 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
-import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
-import { LoadingScreen } from "@/components/layout/LoadingScreen";
-import { Navbar } from "@/components/layout/Navbar";
-
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-cormorant",
-  display: "swap",
-});
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-dm-sans",
-  display: "swap",
-});
+import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
-  title: "Lexury — Carpets, Sofas & Home Furnishings | Gilgit Baltistan",
+  title: "Jalals Home Solution — Premium Furnishings & Surfaces | Pakistan",
   description:
-    "Premium carpets, sofa sets, curtains, and home furnishings in Gilgit Baltistan, Pakistan. Handmade quality, mountain-inspired designs, delivery across GB.",
+    "Premium home furnishings by Jalals Group. 13 categories — carpets, rugs, furniture, flooring and decor with customization across Pakistan.",
   keywords: [
-    "carpets Gilgit Baltistan",
-    "sofa sets Pakistan",
-    "home furniture GB",
-    "handmade carpets Hunza",
-    "Lexury furniture",
+    "carpets Pakistan",
+    "home furniture Pakistan",
+    "rugs Gilgit Baltistan",
+    "Jalals Home Solution",
+    "Jalals Group",
+    "prayer mats",
+    "flooring Pakistan",
   ],
   openGraph: {
-    title: "Lexury — Premium Home Furnishings in Gilgit Baltistan",
+    title: "Jalals Home Solution — Premium Furnishings & Surfaces",
     description:
-      "Carpets, sofas, curtains & more — crafted for homes in Gilgit Baltistan.",
+      "Carpets, rugs, furniture, flooring and decor — 13 categories with custom sizing.",
     type: "website",
   },
 };
@@ -44,13 +29,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${dmSans.variable}`}>
+    <html lang="en">
       <body className="overflow-x-hidden pattern-carpet">
-        <SmoothScrollProvider>
-          <LoadingScreen />
-          <Navbar />
-          <main>{children}</main>
-        </SmoothScrollProvider>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

@@ -17,7 +17,7 @@ const suggestions = [
 
 const demoResponses: Record<string, string> = {
   default:
-    "Assalam o Alaikum! I'm your Lexury home advisor. Ask me about carpets, sofas, curtains, sizes, prices, or delivery anywhere in Gilgit Baltistan.",
+    "Assalam o Alaikum! I'm your Jalals Home Solution advisor. Ask me about premium carpets, sofas, curtains, surfaces, sizes, prices, or delivery across Pakistan.",
   carpet:
     "For living rooms in GB, I recommend our Hunza Heritage Carpet (8×10 ft, Rs. 85,000) — warm wool, perfect for cold winters. We also have silk Kashan from Rs. 60,000.",
   sofa:
@@ -73,7 +73,7 @@ export function AIConciergeSection() {
             <SectionHeading
               eyebrow="Home Advisor"
               title="Need Help Choosing?"
-              description="Ask our smart assistant about products, sizes, prices, and delivery across Gilgit Baltistan — available 24/7."
+              description="Ask our smart assistant about products, sizes, prices, and delivery across Pakistan — available 24/7."
               className="mb-0 sm:mb-0"
             />
 
@@ -129,8 +129,8 @@ export function AIConciergeSection() {
                   <Bot className="h-4 w-4 text-violet sm:h-5 sm:w-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-ivory">Lexury Home Advisor</p>
-                  <p className="text-[11px] text-ivory/50 sm:text-xs">Online · Gilgit Baltistan</p>
+                  <p className="text-sm font-medium text-ivory">Jalals Home Advisor</p>
+                  <p className="text-[11px] text-ivory/50 sm:text-xs">Online · Pakistan</p>
                 </div>
                 <Sparkles className="ml-auto h-4 w-4 animate-pulse text-gold" />
               </div>

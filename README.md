@@ -1,6 +1,6 @@
-# Lexury — Gilgit Baltistan
+# Jalals Home Solution — Pakistan
 
-Premium carpets, sofa sets, curtains, and home furnishings for Gilgit Baltistan, Pakistan.
+Premium luxury home furnishings and surfaces by Jalals Group Pakistan.
 
 ## Run locally
 

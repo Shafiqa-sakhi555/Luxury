@@ -26,7 +26,7 @@ export function MembershipSection() {
         <SectionHeading
           eyebrow="Membership Plans"
           title="Save More on Every Purchase"
-          description="Join Lexury membership for discounts, free delivery in GB, and priority custom orders."
+          description="Join Jalals Home Solution membership for exclusive discounts, priority customization, and premium delivery services."
           align="center"
         />
 

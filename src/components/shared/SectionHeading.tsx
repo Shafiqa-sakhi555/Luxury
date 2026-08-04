@@ -11,6 +11,7 @@ interface SectionHeadingProps {
   align?: "left" | "center";
   className?: string;
   children?: ReactNode;
+  light?: boolean;
 }
 
 export function SectionHeading({
@@ -19,6 +20,7 @@ export function SectionHeading({
   description,
   align = "left",
   className,
+  light = false,
 }: SectionHeadingProps) {
   return (
     <motion.div
@@ -33,15 +35,32 @@ export function SectionHeading({
       )}
     >
       {eyebrow && (
-        <span className="mb-3 inline-block text-[10px] font-medium uppercase tracking-[0.25em] text-gold sm:mb-4 sm:text-xs sm:tracking-[0.3em]">
+        <span className={cn("eyebrow-pill mb-4 sm:mb-5", light && "border-white/30 bg-white/10 text-white")}>
           {eyebrow}
         </span>
       )}
-      <h2 className="font-display text-3xl font-light leading-[1.12] tracking-tight text-ivory sm:text-4xl md:text-5xl lg:text-6xl">
+      <h2
+        className={cn(
+          "font-display text-3xl font-light leading-[1.12] tracking-tight sm:text-4xl md:text-5xl lg:text-6xl",
+          light ? "text-white" : "text-navy"
+        )}
+      >
         {title}
       </h2>
+      <div
+        className={cn(
+          "brand-divider mt-4 sm:mt-5",
+          align === "center" && "mx-auto",
+          light && "opacity-90"
+        )}
+      />
       {description && (
-        <p className="mt-4 text-sm leading-relaxed text-ivory/60 sm:mt-6 sm:text-base md:text-lg">
+        <p
+          className={cn(
+            "mt-4 text-sm leading-relaxed sm:mt-6 sm:text-base md:text-lg",
+            light ? "text-white/80" : "text-muted"
+          )}
+        >
           {description}
         </p>
       )}

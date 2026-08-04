@@ -286,7 +286,7 @@ export const testimonials: Testimonial[] = [
     id: "3",
     name: "Sana Ali",
     role: "Hunza Valley",
-    quote: "Lexury's custom carpet service is incredible. They made exactly what we wanted — traditional patterns with modern colors. Highly recommended across GB!",
+    quote: "Jalals Home Solution's custom services are incredible. They made exactly what we wanted — traditional patterns with modern colors. Highly recommended!",
     image: images.testimonials.sana,
     rating: 5,
   },

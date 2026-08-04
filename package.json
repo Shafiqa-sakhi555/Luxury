@@ -1,14 +1,18 @@
 {
-  "name": "lexury",
+  "name": "jalals-home-solution",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\""
   },
   "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/dm-sans": "^5.3.0",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-dropdown-menu": "^2.1.6",
     "@radix-ui/react-slot": "^1.1.2",
@@ -21,7 +25,7 @@
     "gsap": "^3.12.7",
     "lenis": "^1.2.3",
     "lucide-react": "^0.475.0",
-    "next": "^15.2.0",
+    "next": "15.4.10",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.2",
@@ -35,7 +39,7 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.174.0",
     "eslint": "^9",
-    "eslint-config-next": "^15.2.0",
+    "eslint-config-next": "15.4.10",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
