@@ -6,21 +6,30 @@ import { Instagram, Facebook, Phone, MapPin, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BrandLogo } from "@/components/brand/BrandLogo";
-import { categories } from "@/lib/categories";
 import { company } from "@/lib/content";
 
-const footerLinks = {
+const footerColumns = {
+  Shop: [
+    { label: "All Collections", href: "/shop" },
+    { label: "Luxury Carpets", href: "/shop?category=carpets" },
+    { label: "Modern Rugs", href: "/shop?category=rugs" },
+    { label: "Furniture", href: "/shop?category=furniture" },
+    { label: "Flooring", href: "/shop?category=flooring" },
+    { label: "Home Decor", href: "/shop?category=decor" },
+  ],
+  Services: [
+    { label: "Store Locator", href: "/contact#branches" },
+    { label: "Delivery Information", href: "/contact" },
+    { label: "Installation Services", href: "/contact" },
+    { label: "Warranty", href: "/about" },
+    { label: "FAQ", href: "/contact" },
+  ],
   Company: [
     { label: "About Us", href: "/about" },
-    { label: "Our Showrooms", href: "/#showrooms" },
+    { label: "Our Showrooms", href: "/contact#branches" },
     { label: "Contact", href: "/contact" },
-    { label: "Custom Orders", href: "/shop" },
-  ],
-  Support: [
-    { label: "Delivery Info", href: "/contact" },
-    { label: "Care Guides", href: "/about" },
-    { label: "Terms & Conditions", href: "/about" },
     { label: "Privacy Policy", href: "/about" },
+    { label: "Terms & Conditions", href: "/about" },
   ],
 };
 
@@ -30,8 +39,6 @@ const socials = [
 ];
 
 export function Footer() {
-  const shopCategories = categories.slice(0, 6);
-
   return (
     <footer className="relative border-t border-navy/10 bg-navy pt-16 pb-6 text-white sm:pt-24 sm:pb-8">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red/50 to-transparent" />
@@ -56,8 +63,8 @@ export function Footer() {
                 </div>
               </div>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/60">
-                Premium carpets, furniture, flooring and home decor — crafted with
-                mountain heritage and delivered across Pakistan.
+                Premium carpets, rugs, furniture, flooring and home décor — trusted since 2005
+                across Gilgit-Baltistan and Pakistan.
               </p>
 
               <div className="mt-5 flex items-start gap-2 text-sm text-white/60">
@@ -78,9 +85,10 @@ export function Footer() {
                 <div className="flex gap-2">
                   <Input
                     placeholder="Your email"
+                    aria-label="Email for newsletter"
                     className="flex-1 border-white/20 bg-white/10 text-sm text-white placeholder:text-white/40"
                   />
-                  <Button variant="default" size="icon">
+                  <Button variant="default" size="icon" aria-label="Subscribe">
                     <ArrowUpRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -89,30 +97,7 @@ export function Footer() {
           </div>
 
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:col-span-8 lg:gap-8">
-            <div>
-              <h4 className="mb-3 text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 sm:mb-4 sm:text-xs">
-                Shop
-              </h4>
-              <ul className="space-y-2 sm:space-y-3">
-                {shopCategories.map((cat) => (
-                  <li key={cat.slug}>
-                    <Link
-                      href={`/shop?category=${cat.slug}`}
-                      className="text-xs text-white/60 transition-colors hover:text-cyan sm:text-sm"
-                    >
-                      {cat.name}
-                    </Link>
-                  </li>
-                ))}
-                <li>
-                  <Link href="/shop" className="text-xs text-cyan hover:underline sm:text-sm">
-                    View All
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {Object.entries(footerLinks).map(([category, links]) => (
+            {Object.entries(footerColumns).map(([category, links]) => (
               <div key={category}>
                 <h4 className="mb-3 text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 sm:mb-4 sm:text-xs">
                   {category}

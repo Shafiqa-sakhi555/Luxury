@@ -5,6 +5,7 @@ export type Product = {
   title: string;
   location: string;
   price: number;
+  compareAtPrice?: number;
   rating: number;
   image: string;
   badge?: string;
@@ -113,6 +114,7 @@ export const products: Product[] = [
     title: "Hunza Heritage Carpet",
     location: "Hand-knotted · 8×10 ft",
     price: 85000,
+    compareAtPrice: 105000,
     rating: 4.9,
     image: images.products.heritageCarpet,
     badge: "Bestseller",
@@ -133,6 +135,7 @@ export const products: Product[] = [
     title: "Gilgit Wool Rug",
     location: "Traditional · 6×9 ft",
     price: 42000,
+    compareAtPrice: 52000,
     rating: 4.9,
     image: images.products.woolRug,
     badge: "Handmade",
@@ -152,6 +155,7 @@ export const products: Product[] = [
     title: "Silk Kashan Carpet",
     location: "Silk blend · 5×7 ft",
     price: 120000,
+    compareAtPrice: 155000,
     rating: 5.0,
     image: images.products.silkCarpet,
     badge: "Premium",
@@ -171,6 +175,7 @@ export const products: Product[] = [
     title: "Velvet Window Curtains",
     location: "Pair · 8 ft height",
     price: 18000,
+    compareAtPrice: 24000,
     rating: 4.7,
     image: images.products.velvetCurtains,
     badge: "Popular",
@@ -190,6 +195,7 @@ export const products: Product[] = [
     title: "Traditional Kilim Rug",
     location: "Handwoven · 4×6 ft",
     price: 28000,
+    compareAtPrice: 35000,
     rating: 4.9,
     image: images.products.kilimRug,
     category: "rug",
@@ -332,10 +338,10 @@ export const gbCities: GBCity[] = [
 ];
 
 export const stats = [
-  { label: "Products Available", value: 950, suffix: "+" },
-  { label: "Happy Customers", value: 4200, suffix: "+" },
-  { label: "Customer Satisfaction", value: 98, suffix: "%" },
-  { label: "GB Showrooms", value: 6, suffix: "" },
+  { label: "Premium Products", value: 1000, suffix: "+" },
+  { label: "Years Experience", value: 20, suffix: "+" },
+  { label: "Satisfied Customers", value: 50000, suffix: "+" },
+  { label: "GB Showrooms", value: 5, suffix: "" },
 ];
 
 export const membershipPlans = [

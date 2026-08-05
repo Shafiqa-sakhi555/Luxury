@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { Quote } from "lucide-react";
 import { Footer } from "@/components/layout/Footer";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import { TimelineCard } from "@/components/shared/TimelineCard";
+import { resolveTimelineMedia } from "@/lib/timeline";
 import { founder, company } from "@/lib/content";
 
 const milestones = [
@@ -15,7 +17,7 @@ const milestones = [
       "Born on 16 March 1980, spending childhood learning resilience in modest circumstances.",
   },
   {
-    year: "9000",
+    year: "2000",
     title: "The Learning Years",
     description:
       "Began working in a small carpet and rug shop in Gilgit, learning the craft over five years.",
@@ -127,7 +129,7 @@ export function AboutPageContent() {
         </section>
 
         {/* Founder message + portrait */}
-        <section className="relative px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-20 sm:mb-32 section-brand-alt py-16 sm:py-20">
+        <section className="relative px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-20 sm:mb-32 section-brand-light py-16 sm:py-20 overflow-hidden">
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
@@ -166,12 +168,12 @@ export function AboutPageContent() {
               </h2>
               <p className="mt-1 text-sm text-muted">{founder.title}</p>
 
-              <div className="relative mt-8 overflow-hidden rounded-2xl border border-blue/15 bg-gradient-to-br from-white to-brand-50 p-8 shadow-lg shadow-blue/10 sm:p-10">
+              <div className="relative mt-8 overflow-hidden rounded-2xl border border-blue/15 bg-white p-8 shadow-lg shadow-navy/5 sm:p-10">
                 <Quote className="absolute -top-2 right-6 h-10 w-10 text-red/20" />
                 <p className="font-display text-xl sm:text-2xl md:text-3xl italic font-light leading-relaxed text-navy/90">
                   &ldquo;{founder.quote}&rdquo;
                 </p>
-                <div className="mt-6 pt-6 border-t border-navy/10">
+                <div className="mt-6 pt-6 border-t border-navy/8">
                   <p className="text-sm font-medium text-navy">{founder.name}</p>
                   <p className="text-xs text-muted mt-1">{founder.company}</p>
                 </div>
@@ -206,9 +208,7 @@ export function AboutPageContent() {
         </section>
 
         {/* Timeline */}
-        <section className="relative overflow-hidden section-brand px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto mb-24 sm:mb-36 py-16 sm:py-20">
-          <div className="blob-cyan -right-10 top-0 h-64 w-64" />
-
+        <section className="relative overflow-hidden section-timeline px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto mb-24 sm:mb-36 py-16 sm:py-24">
           <SectionHeading
             eyebrow="Milestones"
             title="The Journey at a Glance"
@@ -218,50 +218,29 @@ export function AboutPageContent() {
           <div className="relative mt-12 sm:mt-16">
             <div className="absolute left-4 top-0 h-full w-[3px] rounded-full timeline-line md:left-1/2 md:-translate-x-1/2" />
 
-            <div className="space-y-12">
+            <div className="space-y-14 sm:space-y-16">
               {milestones.map((milestone, i) => {
-                const accents = [
-                  "border-l-red from-red/10 to-white",
-                  "border-l-blue from-blue/10 to-white",
-                  "border-l-navy from-navy/10 to-white",
-                  "border-l-cyan from-cyan/10 to-white",
-                ];
-                const accent = accents[i % accents.length];
+                const media = resolveTimelineMedia(milestone.title, i);
+                const item = { ...milestone, ...media };
 
                 return (
-                <motion.div
-                  key={milestone.year}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-10%" }}
-                  transition={{ duration: 0.6, delay: i * 0.05 }}
-                  className={`relative flex flex-col md:flex-row items-start ${
-                    i % 2 === 0 ? "md:flex-row-reverse" : ""
-                  }`}
-                >
-                  <div className="absolute left-4 top-6 h-4 w-4 -translate-x-[7px] rounded-full border-[3px] border-white bg-gradient-to-br from-red to-blue shadow-md z-20 md:left-1/2 md:-translate-x-1/2" />
+                  <div
+                    key={milestone.year + milestone.title}
+                    className={`relative md:w-[calc(50%-2rem)] ${
+                      i % 2 === 0 ? "md:mr-auto md:pr-8" : "md:ml-auto md:pl-8"
+                    }`}
+                  >
+                    <div className="absolute left-4 top-8 z-10 h-4 w-4 -translate-x-[7px] rounded-full border-[3px] border-white bg-gradient-to-br from-red to-blue shadow-md md:left-1/2 md:-translate-x-1/2" />
 
-                  <div className="w-full md:w-1/2 pl-10 md:pl-0 md:px-12">
-                    <div
-                      className={`card-brand border-l-4 bg-gradient-to-br p-6 transition-all hover:shadow-lg hover:-translate-y-0.5 ${accent} ${
-                        i % 2 === 0 ? "md:text-left md:border-l-0 md:border-r-4 md:border-r-red" : ""
-                      }`}
-                    >
-                      <span className="inline-block rounded-full bg-red/10 px-3 py-1 text-sm font-semibold text-red tracking-wider">
-                        {milestone.year}
-                      </span>
-                      <h3 className="mt-2 font-display text-lg font-light text-navy sm:text-xl">
-                        {milestone.title}
-                      </h3>
-                      <p className="mt-2 text-xs sm:text-sm text-muted leading-relaxed font-light">
-                        {milestone.description}
-                      </p>
+                    <div className="pl-10 md:pl-0">
+                      <TimelineCard
+                        item={item}
+                        index={i}
+                        align={i % 2 === 0 ? "right" : "left"}
+                      />
                     </div>
                   </div>
-
-                  <div className="hidden md:block w-1/2" />
-                </motion.div>
-              );
+                );
               })}
             </div>
           </div>

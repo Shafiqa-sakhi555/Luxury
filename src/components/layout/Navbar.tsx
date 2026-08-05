@@ -10,11 +10,31 @@ import { categories } from "@/lib/categories";
 import { useLogoIntro } from "@/contexts/LogoIntroContext";
 import { cn } from "@/lib/utils";
 
+const navLinks = [
+  { label: "Home", href: "/" },
+  { label: "Offers", href: "/#products" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
+];
+
+const collectionFeatured = [
+  {
+    label: "Carpets",
+    href: "/shop?category=carpet",
+    description: "Wall-to-wall & handmade carpets",
+  },
+  {
+    label: "Furniture",
+    href: "/shop?category=furniture",
+    description: "Sofas, beds, dining & more",
+  },
+];
+
 export function Navbar() {
   const { showNavLogo, showNavLabel } = useLogoIntro();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [shopOpen, setShopOpen] = useState(false);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,7 +54,7 @@ export function Navbar() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setMobileOpen(false);
-        setShopOpen(false);
+        setCollectionsOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -44,7 +64,7 @@ export function Navbar() {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShopOpen(false);
+        setCollectionsOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -55,14 +75,17 @@ export function Navbar() {
     <>
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ease-out",
+          "relative w-full transition-all duration-300 ease-out",
           scrolled
-            ? "border-b border-navy/10 bg-white/95 py-2 shadow-md shadow-navy/5 backdrop-blur-md"
-            : "bg-white/85 py-3 backdrop-blur-sm sm:py-4"
+            ? "border-b border-navy/10 bg-white/98 py-3 shadow-md shadow-navy/5 backdrop-blur-md"
+            : "bg-white/90 py-4 backdrop-blur-sm sm:py-5"
         )}
       >
         <div className="brand-accent-bar absolute inset-x-0 bottom-0 opacity-80" />
-        <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <nav
+          className="relative mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
+          aria-label="Main navigation"
+        >
           <Link href="/" className="flex items-center gap-3 sm:gap-3.5">
             {showNavLogo ? (
               <BrandLogo size="nav" layoutId priority />
@@ -83,47 +106,67 @@ export function Navbar() {
             )}
           </Link>
 
-          <div className="hidden lg:flex lg:items-center lg:gap-8">
-            <Link
-              href="/"
-              className="text-sm font-medium text-navy/70 transition-colors hover:text-red"
-            >
-              Home
-            </Link>
+          <div className="hidden xl:flex xl:items-center xl:gap-7">
+            {navLinks.slice(0, 1).map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium text-navy/75 transition-colors hover:text-red"
+              >
+                {link.label}
+              </Link>
+            ))}
 
             <div
               className="relative"
               ref={dropdownRef}
-              onMouseEnter={() => setShopOpen(true)}
-              onMouseLeave={() => setShopOpen(false)}
+              onMouseEnter={() => setCollectionsOpen(true)}
+              onMouseLeave={() => setCollectionsOpen(false)}
             >
               <button
-                onClick={() => setShopOpen(!shopOpen)}
-                onFocus={() => setShopOpen(true)}
-                className="flex items-center gap-1 text-sm font-medium text-navy/70 transition-colors hover:text-red focus:outline-none"
-                aria-expanded={shopOpen}
+                onClick={() => setCollectionsOpen(!collectionsOpen)}
+                className="flex items-center gap-1 text-sm font-medium text-navy/75 transition-colors hover:text-red focus:outline-none"
+                aria-expanded={collectionsOpen}
                 aria-haspopup="true"
               >
-                Shop
+                Collections
                 <ChevronDown
                   className={cn(
                     "h-3.5 w-3.5 transition-transform duration-200",
-                    shopOpen && "rotate-180"
+                    collectionsOpen && "rotate-180"
                   )}
                 />
               </button>
 
               <AnimatePresence>
-                {shopOpen && (
+                {collectionsOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="absolute left-1/2 top-full z-55 mt-2 w-[560px] -translate-x-1/2 overflow-hidden rounded-2xl border border-blue/15 bg-white p-6 shadow-xl shadow-navy/10"
+                    transition={{ duration: 0.2 }}
+                    className="absolute left-1/2 top-full z-55 mt-2 w-[520px] -translate-x-1/2 overflow-hidden rounded-2xl border border-navy/10 bg-white p-6 shadow-xl"
                   >
                     <div className="brand-accent-bar absolute inset-x-0 top-0" />
-                    <p className="relative mb-4 mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-red">
+                    <p className="relative mb-3 mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-red">
+                      Featured
+                    </p>
+                    <div className="relative mb-4 grid grid-cols-2 gap-2">
+                      {collectionFeatured.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className="group rounded-xl bg-luxury-cream p-3 transition-colors hover:bg-red/5 ring-1 ring-navy/8 hover:ring-red/25"
+                          onClick={() => setCollectionsOpen(false)}
+                        >
+                          <span className="block text-sm font-semibold text-navy group-hover:text-red">
+                            {item.label}
+                          </span>
+                          <span className="block text-[11px] text-muted">{item.description}</span>
+                        </Link>
+                      ))}
+                    </div>
+                    <p className="relative mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
                       All Categories
                     </p>
                     <div className="grid grid-cols-2 gap-3">
@@ -131,13 +174,13 @@ export function Navbar() {
                         <Link
                           key={category.slug}
                           href={`/shop?category=${category.slug}`}
-                          className="group rounded-lg p-2 transition-colors hover:bg-mist"
-                          onClick={() => setShopOpen(false)}
+                          className="group rounded-lg p-2 transition-colors hover:bg-luxury-cream"
+                          onClick={() => setCollectionsOpen(false)}
                         >
                           <span className="block text-sm font-semibold text-navy group-hover:text-red">
                             {category.name}
                           </span>
-                          <span className="block text-[11px] text-muted">
+                          <span className="block text-[11px] text-muted line-clamp-1">
                             {category.description}
                           </span>
                         </Link>
@@ -146,7 +189,7 @@ export function Navbar() {
                     <Link
                       href="/shop"
                       className="mt-4 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-red hover:underline"
-                      onClick={() => setShopOpen(false)}
+                      onClick={() => setCollectionsOpen(false)}
                     >
                       View Full Catalog
                     </Link>
@@ -155,19 +198,15 @@ export function Navbar() {
               </AnimatePresence>
             </div>
 
-            <Link
-              href="/about"
-              className="text-sm font-medium text-navy/70 transition-colors hover:text-red"
-            >
-              About
-            </Link>
-
-            <Link
-              href="/contact"
-              className="text-sm font-medium text-navy/70 transition-colors hover:text-red"
-            >
-              Contact
-            </Link>
+            {navLinks.slice(1).map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium text-navy/75 transition-colors hover:text-red"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
@@ -189,7 +228,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden ml-1"
+              className="xl:hidden ml-1"
               onClick={() => setMobileOpen(true)}
               aria-label="Open navigation menu"
               aria-expanded={mobileOpen}
@@ -206,7 +245,7 @@ export function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-white lg:hidden"
+            className="fixed inset-0 z-[100] bg-white xl:hidden"
           >
             <div className="flex h-full flex-col p-5 sm:p-6">
               <div className="flex items-center justify-between">
@@ -224,9 +263,34 @@ export function Navbar() {
                 </Button>
               </div>
 
-              <div className="mt-10 flex flex-col gap-5 overflow-y-auto">
+              <div className="mt-10 flex flex-col gap-4 overflow-y-auto">
                 <Link href="/" onClick={() => setMobileOpen(false)} className="font-display text-2xl text-navy">
                   Home
+                </Link>
+                <Link href="/shop" onClick={() => setMobileOpen(false)} className="font-display text-2xl text-navy">
+                  Collections
+                </Link>
+                <div className="ml-4 flex flex-col gap-2 border-l-2 border-red/20 pl-4">
+                  {collectionFeatured.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="text-lg text-navy/75 hover:text-red"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                  <Link
+                    href="/shop"
+                    onClick={() => setMobileOpen(false)}
+                    className="text-sm font-medium text-red"
+                  >
+                    View all categories
+                  </Link>
+                </div>
+                <Link href="/#products" onClick={() => setMobileOpen(false)} className="font-display text-2xl text-navy">
+                  Offers
                 </Link>
                 <Link href="/about" onClick={() => setMobileOpen(false)} className="font-display text-2xl text-navy">
                   About
@@ -234,24 +298,6 @@ export function Navbar() {
                 <Link href="/contact" onClick={() => setMobileOpen(false)} className="font-display text-2xl text-navy">
                   Contact
                 </Link>
-
-                <div className="mt-2 border-t border-navy/10 pt-6">
-                  <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-red">
-                    Shop Categories
-                  </p>
-                  <div className="grid gap-3">
-                    {categories.map((category) => (
-                      <Link
-                        key={category.slug}
-                        href={`/shop?category=${category.slug}`}
-                        onClick={() => setMobileOpen(false)}
-                        className="text-sm text-navy/70 hover:text-red"
-                      >
-                        {category.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
               </div>
 
               <div className="mt-auto pt-6">
@@ -263,7 +309,7 @@ export function Navbar() {
                     window.location.href = "/shop";
                   }}
                 >
-                  Shop Catalog
+                  Explore Collection
                 </Button>
               </div>
             </div>
