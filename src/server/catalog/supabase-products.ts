@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { isSupabaseCatalogSlug, normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
 import type {
   CatalogCategory,
   CatalogProduct,
@@ -85,6 +86,51 @@ type SupabaseProductRow = {
   }> | null;
   product_variants: SupabaseVariantRow[];
 };
+
+/** Lean select for product grids — avoids nested variant galleries and specs. */
+const PRODUCT_LIST_SELECT = `
+  id,
+  name,
+  slug,
+  short_description,
+  original_price,
+  sale_price,
+  discount_percentage,
+  currency,
+  selling_unit,
+  size,
+  sku,
+  has_variants,
+  is_featured,
+  created_at,
+  categories (
+    id,
+    name,
+    slug,
+    description,
+    image_url
+  ),
+  product_images (
+    id,
+    image_url,
+    alt_text,
+    sort_order,
+    is_primary,
+    variant_id
+  ),
+  inventory (
+    stock_quantity,
+    stock_status
+  ),
+  product_variants (
+    sku,
+    is_default,
+    original_price,
+    sale_price,
+    discount_percentage,
+    sort_order
+  )
+`;
 
 const PRODUCT_SELECT = `
   id,
@@ -200,6 +246,117 @@ async function resolvePrismaVariantIdBySku(sku: string) {
     select: { id: true },
   });
   return variant?.id ?? null;
+}
+
+export async function batchResolvePrismaVariantIds(
+  skus: string[]
+): Promise<Map<string, string>> {
+  const unique = [...new Set(skus.filter(Boolean))];
+  if (unique.length === 0) return new Map();
+
+  const variants = await db.productVariant.findMany({
+    where: { sku: { in: unique } },
+    select: { id: true, sku: true },
+  });
+
+  return new Map(variants.map((variant) => [variant.sku, variant.id]));
+}
+
+type SupabaseProductListRow = {
+  id: string;
+  name: string;
+  slug: string;
+  short_description: string | null;
+  original_price: number;
+  sale_price: number;
+  discount_percentage: number;
+  currency: string;
+  selling_unit: string | null;
+  size: string | null;
+  sku: string | null;
+  has_variants: boolean;
+  is_featured: boolean;
+  created_at: string;
+  categories: SupabaseProductRow["categories"];
+  product_images: SupabaseProductRow["product_images"];
+  inventory: SupabaseProductRow["inventory"];
+  product_variants: Array<{
+    sku: string;
+    is_default: boolean;
+    original_price: number;
+    sale_price: number;
+    discount_percentage: number;
+    sort_order: number;
+  }>;
+};
+
+function listRowSkus(row: SupabaseProductListRow): string[] {
+  if (row.has_variants) {
+    const variants = [...(row.product_variants ?? [])].sort(
+      (a, b) => a.sort_order - b.sort_order
+    );
+    const preferred = variants.find((variant) => variant.is_default) ?? variants[0];
+    return preferred?.sku ? [preferred.sku] : [];
+  }
+  return row.sku ? [row.sku] : [];
+}
+
+function mapSupabaseProductForList(
+  row: SupabaseProductListRow,
+  skuToVariantId: Map<string, string>
+): CatalogProduct {
+  const variants = row.has_variants
+    ? [...(row.product_variants ?? [])].sort((a, b) => a.sort_order - b.sort_order)
+    : [];
+  const defaultVariant = variants.find((variant) => variant.is_default) ?? variants[0];
+  const inventory = row.inventory?.[0] ?? null;
+
+  const originalPriceMinor = row.has_variants
+    ? pkrToMinor(Number(defaultVariant?.original_price ?? row.original_price))
+    : pkrToMinor(Number(row.original_price));
+  const salePriceMinor = row.has_variants
+    ? pkrToMinor(Number(defaultVariant?.sale_price ?? row.sale_price))
+    : pkrToMinor(Number(row.sale_price));
+  const discountPercentage = row.has_variants
+    ? Number(defaultVariant?.discount_percentage ?? row.discount_percentage)
+    : Number(row.discount_percentage);
+
+  const galleryImages = mapImages(row.product_images, row.has_variants ? null : undefined);
+  const cartSku = row.has_variants ? defaultVariant?.sku ?? null : row.sku;
+
+  return {
+    id: row.id,
+    source: "supabase",
+    name: row.name,
+    slug: row.slug,
+    shortDescription: row.short_description,
+    description: null,
+    originalPriceMinor,
+    salePriceMinor,
+    discountPercentage,
+    currency: row.currency,
+    sellingUnit: row.selling_unit,
+    includedItems: null,
+    fabric: null,
+    design: null,
+    size: row.size,
+    sku: cartSku,
+    isFeatured: row.is_featured,
+    category: {
+      id: row.categories.id,
+      name: row.categories.name,
+      slug: row.categories.slug,
+      description: row.categories.description,
+      imageUrl: row.categories.image_url,
+    },
+    images: galleryImages.slice(0, 1),
+    specifications: [],
+    stockQuantity: inventory?.stock_quantity ?? null,
+    stockStatus: inventory?.stock_status ?? null,
+    hasVariants: row.has_variants,
+    variantId: cartSku ? skuToVariantId.get(cartSku) ?? null : null,
+    brand: null,
+  };
 }
 
 async function resolveVariantId(product: SupabaseProductRow): Promise<string | null> {
@@ -381,16 +538,19 @@ export async function listSupabaseProductsByCategorySlug(
 
   let query = supabase
     .from("products")
-    .select(PRODUCT_SELECT, { count: "exact" })
+    .select(PRODUCT_LIST_SELECT, { count: "exact" })
     .eq("is_active", true)
     .eq("category_id", category.id)
     .order("created_at", { ascending: false })
     .range(from, to);
 
   if (params.search) {
-    query = query.or(
-      `name.ilike.%${params.search}%,slug.ilike.%${params.search}%,sku.ilike.%${params.search}%`
-    );
+    const term = params.search.replace(/[%_,().]/g, " ").trim();
+    if (term) {
+      query = query.or(
+        `name.ilike.%${term}%,slug.ilike.%${term}%,sku.ilike.%${term}%`
+      );
+    }
   }
 
   const { data, error, count } = await query;
@@ -400,9 +560,9 @@ export async function listSupabaseProductsByCategorySlug(
     return null;
   }
 
-  const items = await Promise.all(
-    (data as unknown as SupabaseProductRow[]).map((row) => mapSupabaseProduct(row, false))
-  );
+  const rows = (data ?? []) as unknown as SupabaseProductListRow[];
+  const skuMap = await batchResolvePrismaVariantIds(rows.flatMap(listRowSkus));
+  const items = rows.map((row) => mapSupabaseProductForList(row, skuMap));
 
   const total = count ?? 0;
   return {
@@ -462,6 +622,33 @@ export async function getSupabaseCategoryBySlug(
 
 export async function isSupabaseCategorySlug(slug: string) {
   if (!isSupabaseConfigured()) return false;
-  const category = await getSupabaseCategoryBySlug(slug);
-  return Boolean(category);
+  const normalized = normalizeCategorySlug(slug) ?? slug;
+  return isSupabaseCatalogSlug(normalized);
+}
+
+export async function countSupabaseProductsInCategory(categorySlug: string): Promise<number> {
+  if (!isSupabaseConfigured()) return 0;
+
+  const supabase = await getSupabaseClient();
+  const { data: category } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("slug", categorySlug)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!category) return 0;
+
+  const { count, error } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("is_active", true)
+    .eq("category_id", category.id);
+
+  if (error) {
+    console.error("[supabase] countProductsInCategory:", error.message);
+    return 0;
+  }
+
+  return count ?? 0;
 }

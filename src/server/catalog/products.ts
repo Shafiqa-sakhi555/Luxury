@@ -21,7 +21,16 @@ export type ProductListParams = {
   sort?: "newest" | "price_asc" | "price_desc" | "name";
 };
 
-const CURTAINS_SLUG = "curtains";
+const MERGED_CATALOG_FETCH_LIMIT = 2000;
+
+function categoryFilterWhere(slug: string): Prisma.ProductWhereInput["category"] {
+  return {
+    OR: [
+      { slug },
+      { parent: { slug, status: "ACTIVE" } },
+    ],
+  };
+}
 
 function prismaExcludesSupabaseCategories(where: Prisma.ProductWhereInput) {
   if (!isSupabaseConfigured()) return;
@@ -75,7 +84,7 @@ function mapPrismaProduct(
       alt: m.alt,
       sortOrder: m.sortOrder,
       isPrimary: m.sortOrder === 0,
-    })),
+    })).slice(0, 1),
     specifications: [],
     stockQuantity: null,
     stockStatus: null,
@@ -106,7 +115,7 @@ async function fetchPrismaProducts(params: ProductListParams) {
   }
 
   if (params.categorySlug) {
-    where.category = { slug: params.categorySlug };
+    where.category = categoryFilterWhere(params.categorySlug);
   }
 
   if (params.brandSlug) {
@@ -131,7 +140,7 @@ async function fetchPrismaProducts(params: ProductListParams) {
       include: {
         category: { select: { id: true, name: true, slug: true } },
         brand: { select: { name: true, slug: true } },
-        media: { orderBy: { sortOrder: "asc" } },
+        media: { orderBy: { sortOrder: "asc" }, take: 1 },
         variants: {
           where: { isActive: true },
           orderBy: { priceMinor: "asc" },
@@ -177,15 +186,26 @@ export async function listProducts(
     if (supabaseResult) return supabaseResult;
   }
 
-  // All products — merge Supabase catalog with Prisma catalog
+  // All products — merge Supabase catalog with Prisma catalog (lightweight list queries)
   if (isSupabaseConfigured() && !params.categorySlug) {
-    const supabaseLists = await Promise.all(
-      SUPABASE_CATALOG_SLUGS.map((slug) =>
-        listSupabaseProductsByCategorySlug(slug, { page: 1, pageSize: 200 })
-      )
-    );
+    const [supabaseLists, prismaResult] = await Promise.all([
+      Promise.all(
+        SUPABASE_CATALOG_SLUGS.map((slug) =>
+          listSupabaseProductsByCategorySlug(slug, {
+            page: 1,
+            pageSize: MERGED_CATALOG_FETCH_LIMIT,
+          })
+        )
+      ),
+      fetchPrismaProducts({
+        ...params,
+        page: 1,
+        pageSize: MERGED_CATALOG_FETCH_LIMIT,
+      }),
+    ]);
+
     const supabaseItems = supabaseLists.flatMap((result) => result?.items ?? []);
-    const prismaResult = await fetchPrismaProducts(params);
+    const supabaseTotal = supabaseLists.reduce((sum, result) => sum + (result?.total ?? 0), 0);
     const prismaItems = prismaResult.items.map(mapPrismaProduct);
     const merged = [...supabaseItems, ...prismaItems];
 
@@ -195,7 +215,7 @@ export async function listProducts(
     if (params.sort === "price_desc")
       merged.sort((a, b) => b.salePriceMinor - a.salePriceMinor);
 
-    const total = merged.length;
+    const total = supabaseTotal + prismaResult.total;
     const start = (page - 1) * pageSize;
     const items = merged.slice(start, start + pageSize);
 
@@ -281,10 +301,12 @@ export async function listShopFilterCategories() {
   };
 
   if (isSupabaseConfigured()) {
-    for (const slug of SUPABASE_CATALOG_SLUGS) {
-      const category = await getSupabaseCategoryBySlug(slug);
-      add(slug, category?.name ?? formatCategoryLabel(slug));
-    }
+    await Promise.all(
+      SUPABASE_CATALOG_SLUGS.map(async (slug) => {
+        const category = await getSupabaseCategoryBySlug(slug);
+        add(slug, category?.name ?? formatCategoryLabel(slug));
+      })
+    );
   }
 
   const prismaCategories = await db.category.findMany({
