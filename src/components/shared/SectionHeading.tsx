@@ -12,6 +12,7 @@ interface SectionHeadingProps {
   className?: string;
   children?: ReactNode;
   light?: boolean;
+  dark?: boolean;
 }
 
 export function SectionHeading({
@@ -21,6 +22,7 @@ export function SectionHeading({
   align = "left",
   className,
   light = false,
+  dark = false,
 }: SectionHeadingProps) {
   return (
     <motion.div
@@ -35,14 +37,22 @@ export function SectionHeading({
       )}
     >
       {eyebrow && (
-        <span className={cn("eyebrow-pill mb-4 sm:mb-5", light && "border-white/30 bg-white/10 text-white")}>
+        <span
+          className={cn(
+            "mb-4 sm:mb-5",
+            dark
+              ? "eyebrow-pill-dark"
+              : "eyebrow-pill",
+            light && "border-white/30 bg-white/10 text-white"
+          )}
+        >
           {eyebrow}
         </span>
       )}
       <h2
         className={cn(
           "font-display text-3xl font-light leading-[1.12] tracking-tight sm:text-4xl md:text-5xl lg:text-6xl",
-          light ? "text-white" : "text-navy"
+          dark || light ? "text-white" : "text-navy"
         )}
       >
         {title}
@@ -58,7 +68,7 @@ export function SectionHeading({
         <p
           className={cn(
             "mt-4 text-sm leading-relaxed sm:mt-6 sm:text-base md:text-lg",
-            light ? "text-white/80" : "text-muted"
+            light ? "text-white/80" : dark ? "text-white/65" : "text-muted"
           )}
         >
           {description}
