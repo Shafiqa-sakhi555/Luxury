@@ -308,7 +308,10 @@ export async function listCategories(includeDraft = false) {
     where: includeDraft ? undefined : { status: "ACTIVE" },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     include: {
-      children: { orderBy: { sortOrder: "asc" } },
+      children: {
+        orderBy: { sortOrder: "asc" },
+        include: { _count: { select: { products: true } } },
+      },
       _count: { select: { products: true } },
     },
   });
