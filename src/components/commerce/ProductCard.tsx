@@ -18,9 +18,11 @@ function productSubtitle(product: CatalogProduct) {
 export function ProductCard({
   product,
   index = 0,
+  priorityImage = false,
 }: {
   product: CatalogProduct;
   index?: number;
+  priorityImage?: boolean;
 }) {
   const [wishlisted, setWishlisted] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -59,10 +61,10 @@ export function ProductCard({
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={index < 8 ? { opacity: 0, y: 16 } : false}
+      whileInView={index < 8 ? { opacity: 1, y: 0 } : undefined}
       viewport={{ once: true, margin: "-5%" }}
-      transition={{ duration: 0.5, delay: index * 0.05 }}
+      transition={{ duration: 0.35, delay: Math.min(index, 7) * 0.03 }}
       className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-navy/8 transition-all hover:-translate-y-1 hover:shadow-xl hover:ring-red/20"
     >
       <Link href={`/products/${product.slug}`} className="block">
@@ -74,6 +76,8 @@ export function ProductCard({
               fill
               className="object-cover transition-transform duration-700 group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              priority={priorityImage}
+              loading={priorityImage ? undefined : "lazy"}
             />
           ) : (
             <div className="flex h-full items-center justify-center bg-gradient-to-br from-brand-50 to-mist">

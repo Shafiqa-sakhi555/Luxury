@@ -7,6 +7,8 @@ import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Footer } from "@/components/layout/Footer";
 import { normalizeCategorySlug, formatCategoryLabel } from "@/lib/supabase/catalog-categories";
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Shop",
   description: "Browse carpets, rugs, curtains, furniture, flooring and home décor.",
@@ -20,7 +22,7 @@ export default async function ShopPage({
   const params = await searchParams;
   const page = Number(params.page ?? 1);
   const categorySlug = normalizeCategorySlug(params.category);
-  const [{ items, totalPages }, filterCategories, activeCategoryRecord] = await Promise.all([
+  const [{ items, total, totalPages }, filterCategories, activeCategoryRecord] = await Promise.all([
     listProducts({
       categorySlug,
       search: params.q,
@@ -61,6 +63,12 @@ export default async function ShopPage({
             }
             className="mb-0"
           />
+          {total > 0 && (
+            <p className="mt-4 text-sm text-muted">
+              {total} product{total !== 1 ? "s" : ""}
+              {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
+            </p>
+          )}
         </div>
       </section>
 
@@ -81,26 +89,38 @@ export default async function ShopPage({
         ) : (
           <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
             {items.map((product, i) => (
-              <ProductCard key={`${product.source}-${product.id}`} product={product} index={i} />
+              <ProductCard
+                key={`${product.source}-${product.id}`}
+                product={product}
+                index={i}
+                priorityImage={i < 4}
+              />
             ))}
           </div>
         )}
 
         {totalPages > 1 && (
-          <div className="mt-12 flex justify-center gap-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <Link
-                key={p}
-                href={`/shop?category=${params.category ?? ""}&page=${p}`}
-                className={`rounded-full px-4 py-2 text-sm transition ${
-                  p === page
-                    ? "bg-red font-medium text-white shadow-md shadow-red/20"
-                    : "border border-navy/10 bg-white text-navy/70 hover:border-red/30 hover:bg-red/5"
-                }`}
-              >
-                {p}
-              </Link>
-            ))}
+          <div className="mt-12 flex flex-wrap justify-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+              const query = new URLSearchParams();
+              if (params.category) query.set("category", params.category);
+              if (params.q) query.set("q", params.q);
+              if (p > 1) query.set("page", String(p));
+              const href = query.size ? `/shop?${query.toString()}` : "/shop";
+              return (
+                <Link
+                  key={p}
+                  href={href}
+                  className={`rounded-full px-4 py-2 text-sm transition ${
+                    p === page
+                      ? "bg-red font-medium text-white shadow-md shadow-red/20"
+                      : "border border-navy/10 bg-white text-navy/70 hover:border-red/30 hover:bg-red/5"
+                  }`}
+                >
+                  {p}
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>
