@@ -18,18 +18,18 @@ const footerColumns = {
     { label: "Home Decor", href: "/shop?category=decor" },
   ],
   Services: [
-    { label: "Store Locator", href: "/contact#branches" },
-    { label: "Delivery Information", href: "/contact" },
+    { label: "Store Locator", href: "/stores" },
+    { label: "Delivery Information", href: "/delivery" },
     { label: "Installation Services", href: "/contact" },
-    { label: "Warranty", href: "/about" },
-    { label: "FAQ", href: "/contact" },
+    { label: "Warranty", href: "/warranty" },
+    { label: "FAQ", href: "/faqs" },
   ],
   Company: [
     { label: "About Us", href: "/about" },
-    { label: "Our Showrooms", href: "/contact#branches" },
+    { label: "Our Showrooms", href: "/stores" },
     { label: "Contact", href: "/contact" },
-    { label: "Privacy Policy", href: "/about" },
-    { label: "Terms & Conditions", href: "/about" },
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms & Conditions", href: "/terms" },
   ],
 };
 

@@ -7,12 +7,14 @@ import { Menu, X, Heart, Search, ShoppingBag, User, ChevronDown } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { BrandLogo, BrandWordmark } from "@/components/brand/BrandLogo";
 import { categories } from "@/lib/categories";
+import { SUPABASE_CATALOG_SLUGS, normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
 import { useLogoIntro } from "@/contexts/LogoIntroContext";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
   { label: "Home", href: "/" },
-  { label: "Offers", href: "/#products" },
+  { label: "Shop", href: "/shop" },
+  { label: "Stores", href: "/stores" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
@@ -20,7 +22,7 @@ const navLinks = [
 const collectionFeatured = [
   {
     label: "Carpets",
-    href: "/shop?category=carpet",
+    href: "/shop?category=carpets",
     description: "Wall-to-wall & handmade carpets",
   },
   {
@@ -29,6 +31,11 @@ const collectionFeatured = [
     description: "Sofas, beds, dining & more",
   },
 ];
+
+const navCategories = categories.filter((category) => {
+  const canonical = normalizeCategorySlug(category.slug) ?? category.slug;
+  return !(SUPABASE_CATALOG_SLUGS as readonly string[]).includes(canonical);
+});
 
 export function Navbar() {
   const { showNavLogo, showNavLabel } = useLogoIntro();
@@ -170,7 +177,7 @@ export function Navbar() {
                       All Categories
                     </p>
                     <div className="grid grid-cols-2 gap-3">
-                      {categories.map((category) => (
+                      {navCategories.map((category) => (
                         <Link
                           key={category.slug}
                           href={`/shop?category=${category.slug}`}
@@ -216,14 +223,15 @@ export function Navbar() {
             <Button variant="ghost" size="icon" aria-label="Wishlist" className="hidden sm:inline-flex">
               <Heart className="h-4.5 w-4.5" />
             </Button>
-            <Button variant="ghost" size="icon" className="relative" aria-label="Cart">
-              <ShoppingBag className="h-4.5 w-4.5" />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red text-[9px] font-bold text-white">
-                0
-              </span>
+            <Button variant="ghost" size="icon" className="relative" aria-label="Cart" asChild>
+              <Link href="/cart">
+                <ShoppingBag className="h-4.5 w-4.5" />
+              </Link>
             </Button>
-            <Button variant="ghost" size="icon" aria-label="Account" className="hidden sm:inline-flex">
-              <User className="h-4.5 w-4.5" />
+            <Button variant="ghost" size="icon" aria-label="Account" className="hidden sm:inline-flex" asChild>
+              <Link href="/login">
+                <User className="h-4.5 w-4.5" />
+              </Link>
             </Button>
             <Button
               variant="ghost"
