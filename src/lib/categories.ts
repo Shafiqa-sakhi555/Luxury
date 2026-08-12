@@ -22,8 +22,8 @@ export const categories: Category[] = [
     image: placeholder("1600166898405-da9535204843"),
   },
   {
-    name: "Carpet",
-    slug: "carpet",
+    name: "Carpets",
+    slug: "carpets",
     description: "Wall-to-wall carpet and tiles for full-room coverage.",
     image: placeholder("1616486338812-3dadae4b4ace"),
   },
@@ -85,6 +85,12 @@ export const categories: Category[] = [
     slug: "cushions",
     description: "Covers, filled cushions, throws and bolsters.",
     image: placeholder("1584100936595-c0654b55a2d2"),
+  },
+  {
+    name: "Curtains",
+    slug: "curtains",
+    description: "Premium machine-made curtains — towel fabric, velvet, sheer and jacquard weaves.",
+    image: placeholder("1616046229476-9481a218f8b8"),
   },
   {
     name: "Decor",

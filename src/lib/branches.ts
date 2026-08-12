@@ -1,5 +1,11 @@
 export type BranchBrand = "jalals-home" | "pak-turk" | "jalal-carpets";
 
+export type BranchContact = {
+  label: string;
+  phone: string;
+  phoneDisplay: string;
+};
+
 export type Branch = {
   id: string;
   brand: BranchBrand;
@@ -8,10 +14,11 @@ export type Branch = {
   city: string;
   region: string;
   address: string;
+  /** Primary line — usually branch office */
   phone: string;
   phoneDisplay: string;
+  contacts: BranchContact[];
   hours?: string;
-  /** Approximate coordinates for map embed — verify with client */
   lat: number;
   lng: number;
   googleMapsQuery: string;
@@ -31,70 +38,46 @@ export const branchBrands: Record<
   "jalal-carpets": { label: "Jalal Carpets", color: "bg-blue" },
 };
 
+/** Official operations branches — 5 locations across Gilgit-Baltistan */
 export const branches: Branch[] = [
   {
-    id: "gilgit-flagship",
+    id: "gilgit-branch",
     brand: "jalals-home",
     brandLabel: "Jalal's Home Solution",
-    name: "Gilgit Flagship Showroom",
+    name: "Gilgit Branch",
     city: "Gilgit",
     region: "Gilgit District",
     address:
-      "W929+R2G, Shahr-e-Quaid-e-Azam, opposite Supreme Appellate Court, Jutial, Gilgit",
-    phone: "+923135205272",
-    phoneDisplay: "0313 5205272",
+      "Shahr-e-Quaid-e-Azam, near Bank Alfalah, near Pizza King, Tehsil Gilgit, 15100, Gilgit-Baltistan, Pakistan",
+    phone: "+923554948703",
+    phoneDisplay: "0355 4948703",
+    contacts: [
+      { label: "Branch Office", phone: "+923554948703", phoneDisplay: "0355 4948703" },
+      { label: "HR", phone: "+923554948708", phoneDisplay: "0355 4948708" },
+      { label: "Management", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+    ],
     hours: "Open daily — call for exact hours",
     lat: 35.9194,
     lng: 74.3178,
     googleMapsQuery:
-      "Jalal's Home Solution, Supreme Appellate Court, Jutial, Gilgit",
-    googleRating: 4.5,
-    googleReviewCount: 33,
+      "Jalal's Home Solution, Shahr-e-Quaid-e-Azam, near Bank Alfalah, Gilgit",
     isFlagship: true,
   },
   {
-    id: "pak-turk-jutial",
-    brand: "pak-turk",
-    brandLabel: "Pak Turk Carpets",
-    name: "Jutial Showroom",
-    city: "Gilgit",
-    region: "Gilgit District",
-    address: "Jutial, Gilgit — opposite Askari Bank, Snow Leopard Shopping Complex area",
-    phone: "+923555404571",
-    phoneDisplay: "0355 5404571",
-    hours: "Open daily — call for exact hours",
-    lat: 35.9083,
-    lng: 74.3583,
-    googleMapsQuery: "Pak Turk Carpets, Jutial, Gilgit",
-    opened: "2010s",
-    note: "Premium Turkish rugs and carpets.",
-  },
-  {
-    id: "jalal-carpets-kashrot",
-    brand: "jalal-carpets",
-    brandLabel: "Jalal Carpets",
-    name: "Kashrot (Original Store)",
-    city: "Gilgit",
-    region: "Gilgit District",
-    address: "Kashrot, Gilgit",
-    phone: "+923135205272",
-    phoneDisplay: "0313 5205272",
-    lat: 35.928,
-    lng: 74.305,
-    googleMapsQuery: "Jalal Carpets, Kashrot, Gilgit",
-    opened: "2005",
-    note: "Where Jalal Uddin founded the business — rugs and wall-to-wall carpets.",
-  },
-  {
-    id: "jalals-hunza",
+    id: "hunza-branch",
     brand: "jalals-home",
     brandLabel: "Jalal's Home Solution",
-    name: "Aliabad, Hunza",
+    name: "Hunza Branch",
     city: "Hunza",
     region: "Hunza District",
     address: "Hospital Road, Aliabad, Hunza",
     phone: "+923554323944",
     phoneDisplay: "0355 4323944",
+    contacts: [
+      { label: "Branch Office", phone: "+923554323944", phoneDisplay: "0355 4323944" },
+      { label: "HR", phone: "+923554948708", phoneDisplay: "0355 4948708" },
+      { label: "Management", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+    ],
     hours: "Open daily — call for exact hours",
     lat: 36.3075,
     lng: 74.6675,
@@ -103,36 +86,71 @@ export const branches: Branch[] = [
     note: "Full home furnishing range for Hunza valley.",
   },
   {
-    id: "pak-turk-skardu",
+    id: "skardu-branch",
     brand: "pak-turk",
     brandLabel: "Pak Turk Carpets",
     name: "Skardu Branch",
     city: "Skardu",
     region: "Skardu District",
-    address: "Khushobagh, near GPO, Skardu",
-    phone: "+923555404571",
-    phoneDisplay: "0355 5404571",
+    address: "Pak Turk Carpet 2, 7JWR+XXH, Skardu, Gilgit-Baltistan, Pakistan",
+    phone: "+923554948709",
+    phoneDisplay: "0355 4948709",
+    contacts: [
+      { label: "Branch Office", phone: "+923554948709", phoneDisplay: "0355 4948709" },
+      { label: "HR", phone: "+923554948708", phoneDisplay: "0355 4948708" },
+      { label: "Management", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+    ],
+    hours: "Open daily — call for exact hours",
     lat: 35.2971,
     lng: 75.6338,
     googleMapsQuery: "Pak Turk Carpets, Skardu",
     opened: "2022",
   },
   {
-    id: "pak-turk-gakuch",
+    id: "gakuch-branch",
     brand: "pak-turk",
     brandLabel: "Pak Turk Carpets",
     name: "Gakuch Branch",
     city: "Gakuch",
     region: "Ghizer District",
-    address: "Near Higher Secondary School, Gakuch, Ghizer",
+    address: "Near Higher Secondary School, Gakuch, Ghizer, Gilgit-Baltistan, Pakistan",
     phone: "+923555404571",
     phoneDisplay: "0355 5404571",
+    contacts: [
+      { label: "Branch Office", phone: "+923555404571", phoneDisplay: "0355 5404571" },
+      { label: "HR", phone: "+923554948708", phoneDisplay: "0355 4948708" },
+      { label: "Management", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+    ],
+    hours: "Open daily — call for exact hours",
     lat: 36.184,
     lng: 73.763,
     googleMapsQuery: "Pak Turk Carpets, Gakuch, Ghizer",
     opened: "2024",
   },
+  {
+    id: "kashrot-branch",
+    brand: "jalal-carpets",
+    brandLabel: "Jalal Carpets",
+    name: "Kashrot Branch",
+    city: "Gilgit",
+    region: "Gilgit District",
+    address: "Kashrot, Gilgit, Gilgit-Baltistan, Pakistan",
+    phone: "+923135205272",
+    phoneDisplay: "0313 5205272",
+    contacts: [
+      { label: "Branch Office", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+      { label: "HR", phone: "+923554948708", phoneDisplay: "0355 4948708" },
+      { label: "Management", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+    ],
+    lat: 35.928,
+    lng: 74.305,
+    googleMapsQuery: "Jalal Carpets, Kashrot, Gilgit",
+    opened: "2005",
+    note: "Original store — where Jalal Uddin founded the business.",
+  },
 ];
+
+export const TOTAL_BRANCHES = branches.length;
 
 export function googleMapsDirectionsUrl(branch: Branch): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${branch.lat},${branch.lng}`;

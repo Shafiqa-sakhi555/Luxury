@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -17,9 +17,19 @@ function salePercent(price: number, compareAt?: number) {
   return Math.round((1 - price / compareAt) * 100);
 }
 
-export function PropertiesShowcase() {
-  const [activeFilter, setActiveFilter] = useState("All");
+export function PropertiesShowcase({
+  initialFilter = "All",
+  showViewAllLink = true,
+}: {
+  initialFilter?: string;
+  showViewAllLink?: boolean;
+}) {
+  const [activeFilter, setActiveFilter] = useState(initialFilter);
   const [wishlist, setWishlist] = useState<string[]>([]);
+
+  useEffect(() => {
+    setActiveFilter(initialFilter);
+  }, [initialFilter]);
 
   const filtered =
     activeFilter === "All"
@@ -43,16 +53,18 @@ export function PropertiesShowcase() {
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <SectionHeading
             eyebrow="Weekly Bestsellers"
-            title="Handpicked For Your Home"
+            title={showViewAllLink ? "Handpicked For Your Home" : "Shop Catalog"}
             description="Premium carpets, rugs, furniture and decor — curated deals with transparent pricing."
             className="mb-0"
           />
+          {showViewAllLink && (
           <Link href="/shop" className="shrink-0">
             <Button variant="outline" size="lg">
               View All Products
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
+          )}
         </div>
 
         <div className="mb-8 mt-10 flex gap-2 overflow-x-auto pb-2 hide-scrollbar sm:mb-12 sm:flex-wrap sm:gap-3">

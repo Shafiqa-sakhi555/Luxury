@@ -21,5 +21,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </SmoothScrollProvider>
       </LayoutGroup>
     </LogoIntroProvider>
+
   );
 }

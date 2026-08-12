@@ -57,7 +57,7 @@ export function FounderPreviewSection() {
 
             <div className="relative mt-8 overflow-hidden rounded-2xl border border-blue/15 bg-white p-6 shadow-lg shadow-navy/5 sm:p-8">
               <Quote className="absolute -top-2 right-6 h-9 w-9 text-red/25" />
-              <p className="font-display text-xl italic leading-relaxed text-navy/90 sm:text-2xl">
+              <p className="font-display text-xl italic leading-relaxed text-red/90 sm:text-2xl">
                 &ldquo;{founder.quote}&rdquo;
               </p>
               <div className="mt-5 border-t border-navy/8 pt-4">

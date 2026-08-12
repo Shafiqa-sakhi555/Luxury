@@ -79,15 +79,24 @@ function BranchCard({
           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red" />
           <span>{branch.address}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <Phone className="h-4 w-4 shrink-0 text-red" />
-          <a
-            href={`tel:${branch.phone}`}
-            onClick={(e) => e.stopPropagation()}
-            className="hover:text-red"
-          >
-            {branch.phoneDisplay}
-          </a>
+        <div className="flex items-start gap-2">
+          <Phone className="mt-0.5 h-4 w-4 shrink-0 text-red" />
+          <div className="space-y-1">
+            {branch.contacts.map((contact) => (
+              <div key={contact.label} className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                  {contact.label}:
+                </span>
+                <a
+                  href={`tel:${contact.phone}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-navy hover:text-red"
+                >
+                  {contact.phoneDisplay}
+                </a>
+              </div>
+            ))}
+          </div>
         </div>
         {branch.hours && (
           <div className="flex items-center gap-2">
@@ -145,7 +154,7 @@ export function BranchesSection() {
             Our Branches Across Gilgit-Baltistan
           </h2>
           <p className="mt-4 text-sm text-muted sm:text-base">
-            Jalal&apos;s Home Solution, Pak Turk Carpets, and Jalal Carpets — six
+            Jalal&apos;s Home Solution, Pak Turk Carpets, and Jalal Carpets — five
             showrooms across GB. Select a branch to view it on the map.
           </p>
         </div>

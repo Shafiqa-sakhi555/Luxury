@@ -87,24 +87,17 @@ export const showrooms: Showroom[] = [
   },
   {
     id: "4",
-    name: "Ghizer",
-    region: "Ghizer Valley",
+    name: "Gakuch",
+    region: "Ghizer District",
     image: images.showrooms.ghizer,
     products: 95,
   },
   {
     id: "5",
-    name: "Astore",
-    region: "Astore Valley",
-    image: images.showrooms.astore,
-    products: 78,
-  },
-  {
-    id: "6",
-    name: "Nagar",
-    region: "Nagar District",
-    image: images.showrooms.nagar,
-    products: 64,
+    name: "Kashrot",
+    region: "Gilgit City",
+    image: images.showrooms.gilgit,
+    products: 120,
   },
 ];
 
