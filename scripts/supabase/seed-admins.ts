@@ -27,6 +27,38 @@ const rolesToCreate = [
   { name: 'Customer', description: 'Standard customer role' },
 ];
 
+const permissionsToCreate = [
+  { key: '*', description: 'All permissions' },
+  { key: 'catalog.write', description: 'Create and update catalog categories' },
+  { key: 'catalog.delete', description: 'Delete catalog categories' },
+  { key: 'category.write', description: 'Create and update categories' },
+  { key: 'product.write', description: 'Create and update products' },
+  { key: 'product.delete', description: 'Delete products' },
+  { key: 'order.read', description: 'View orders' },
+  { key: 'order.write', description: 'Update orders' },
+  { key: 'customer.read', description: 'View customers' },
+  { key: 'inventory.read', description: 'View inventory' },
+  { key: 'inventory.write', description: 'Adjust inventory' },
+  { key: 'finance.read', description: 'View finance reports' },
+];
+
+const rolePermissionMap: Record<string, string[]> = {
+  'Super Admin': ['*'],
+  Admin: [
+    'catalog.write',
+    'catalog.delete',
+    'category.write',
+    'product.write',
+    'product.delete',
+    'order.read',
+    'order.write',
+    'customer.read',
+    'inventory.read',
+    'inventory.write',
+  ],
+  Finance: ['order.read', 'finance.read', 'customer.read'],
+};
+
 const usersToCreate = [
   { email: 'superadmin@jalals.com', password: 'Password123!', name: 'Super Admin', role: 'Super Admin' },
   { email: 'admin@jalals.com', password: 'Password123!', name: 'Store Admin', role: 'Admin' },
@@ -49,7 +81,47 @@ async function seed() {
     }
   }
 
-  // 2. Create Users & Assign Roles
+  // 2. Ensure Permissions Exist
+  for (const permission of permissionsToCreate) {
+    const { error } = await supabase
+      .from('permissions')
+      .upsert({ key: permission.key, description: permission.description }, { onConflict: 'key' });
+
+    if (error) {
+      console.error(`Error creating permission ${permission.key}:`, error.message);
+    } else {
+      console.log(`Permission ensured: ${permission.key}`);
+    }
+  }
+
+  // 3. Link Roles to Permissions
+  for (const [roleName, permissionKeys] of Object.entries(rolePermissionMap)) {
+    const { data: roleData } = await supabase.from('roles').select('id').eq('name', roleName).single();
+    if (!roleData) continue;
+
+    for (const permissionKey of permissionKeys) {
+      const { data: permissionData } = await supabase
+        .from('permissions')
+        .select('id')
+        .eq('key', permissionKey)
+        .single();
+
+      if (!permissionData) continue;
+
+      const { error } = await supabase.from('role_permissions').upsert(
+        { role_id: roleData.id, permission_id: permissionData.id },
+        { onConflict: 'role_id,permission_id' }
+      );
+
+      if (error) {
+        console.error(`Error linking ${roleName} -> ${permissionKey}:`, error.message);
+      }
+    }
+
+    console.log(`Permissions linked for role: ${roleName}`);
+  }
+
+  // 4. Create Users & Assign Roles
   for (const u of usersToCreate) {
     // Check if user already exists
     const { data: existingUsers } = await supabase.auth.admin.listUsers();

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import { AdminButton, AdminInput, AdminLabel, AdminSelect, AdminTextarea } from "@/components/admin/ui";
 import { AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import { saveProductAction } from "@/server/catalog/admin-actions";
@@ -99,7 +100,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
         return;
       }
 
-      router.push(`/admin/catalog/products/${result.id}`);
+      toast.success(isEdit ? "Product updated" : "Product created");
+      router.push("/admin/catalog/products");
       router.refresh();
     });
   });

@@ -190,6 +190,8 @@ export async function adminGetProduct(
       slug,
       short_description,
       description,
+      original_price,
+      sale_price,
       original_price_minor,
       sale_price_minor,
       sku,
@@ -208,6 +210,7 @@ export async function adminGetProduct(
   if (!data) return null;
 
   const category = unwrapRelation(data.categories as any);
+  const inventory = unwrapRelation(data.inventory as any);
   const images = [...(data.product_images ?? [])]
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
     .map((img) => img.image_url);
@@ -222,9 +225,9 @@ export async function adminGetProduct(
     shortDescription: data.short_description ?? "",
     description: data.description ?? "",
     sku: data.sku ?? "",
-    originalPriceMajor: data.original_price_minor / 100,
-    salePriceMajor: data.sale_price_minor / 100,
-    stockQuantity: data.inventory?.[0]?.stock_quantity ?? 0,
+    originalPriceMajor: Number(data.original_price ?? data.original_price_minor / 100),
+    salePriceMajor: Number(data.sale_price ?? data.sale_price_minor / 100),
+    stockQuantity: inventory?.stock_quantity ?? 0,
     status: data.status as any,
     isFeatured: data.is_featured,
     sellingUnit: data.selling_unit ?? "",

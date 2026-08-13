@@ -12,6 +12,44 @@ function discountPercent(original: number, sale: number) {
   return Math.round((1 - sale / original) * 100);
 }
 
+function buildProductPrices(input: AdminProductFormValues) {
+  const originalMajor = input.originalPriceMajor;
+  const saleMajor =
+    input.salePriceMajor > 0 && input.salePriceMajor < originalMajor
+      ? input.salePriceMajor
+      : originalMajor;
+
+  return {
+    original_price: originalMajor,
+    sale_price: saleMajor,
+    discount_percentage: discountPercent(originalMajor, saleMajor),
+    original_price_minor: Math.round(originalMajor * 100),
+    sale_price_minor: Math.round(saleMajor * 100),
+  };
+}
+
+async function createDefaultVariant(
+  productId: string,
+  input: AdminProductFormValues,
+  sku: string
+) {
+  const supabase = createSupabaseAdminClient();
+  const prices = buildProductPrices(input);
+
+  await supabase.from("product_variants").insert({
+    product_id: productId,
+    sku,
+    name: input.name.trim(),
+    original_price: prices.original_price,
+    sale_price: prices.sale_price,
+    discount_percentage: prices.discount_percentage,
+    price_minor: prices.original_price_minor,
+    sale_price_minor: prices.sale_price_minor,
+    is_default: true,
+    is_active: input.status === "ACTIVE",
+  });
+}
+
 async function replaceSupabaseImages(productId: string, imageUrls: string[], alt: string) {
   const supabase = createSupabaseAdminClient();
   await supabase.from("product_images").delete().eq("product_id", productId).is("variant_id", null);
@@ -77,11 +115,7 @@ export async function createSupabaseCatalogProduct(
   });
 
   const sku = input.sku.trim() || slug.toUpperCase().replace(/-/g, "_");
-  const original = input.originalPriceMajor * 100;
-  const sale =
-    input.salePriceMajor > 0 && input.salePriceMajor < input.originalPriceMajor
-      ? input.salePriceMajor * 100
-      : original;
+  const prices = buildProductPrices(input);
 
   const { data: product, error } = await supabase
     .from("products")
@@ -91,11 +125,11 @@ export async function createSupabaseCatalogProduct(
       slug,
       short_description: input.shortDescription.trim() || null,
       description: input.description.trim() || null,
-      original_price_minor: original,
-      sale_price_minor: sale,
+      ...prices,
       sku,
       selling_unit: input.sellingUnit.trim() || null,
       status: input.status,
+      is_active: input.status === "ACTIVE",
       is_featured: input.isFeatured,
       has_variants: false,
     })
@@ -107,6 +141,7 @@ export async function createSupabaseCatalogProduct(
   }
 
   const imageUrls = parseImageUrlsFromText(input.imageUrls);
+  await createDefaultVariant(product.id, input, sku);
   await replaceSupabaseImages(product.id, imageUrls, input.name.trim());
   await upsertSupabaseInventory(product.id, input.stockQuantity);
 
@@ -160,11 +195,7 @@ export async function updateSupabaseCatalogProduct(
     return Boolean(data);
   }, existing.slug);
 
-  const original = input.originalPriceMajor * 100;
-  const sale =
-    input.salePriceMajor > 0 && input.salePriceMajor < input.originalPriceMajor
-      ? input.salePriceMajor * 100
-      : original;
+  const prices = buildProductPrices(input);
 
   const updatePayload: Record<string, unknown> = {
     category_id: category.id,
@@ -173,17 +204,16 @@ export async function updateSupabaseCatalogProduct(
     short_description: input.shortDescription.trim() || null,
     description: input.description.trim() || null,
     status: input.status,
+    is_active: input.status === "ACTIVE",
     is_featured: input.isFeatured,
     selling_unit: input.sellingUnit.trim() || null,
   };
 
   if (!existing.has_variants) {
-    updatePayload.original_price_minor = original;
-    updatePayload.sale_price_minor = sale;
+    Object.assign(updatePayload, prices);
     if (input.sku.trim()) updatePayload.sku = input.sku.trim();
   } else {
-    updatePayload.original_price_minor = original;
-    updatePayload.sale_price_minor = sale;
+    Object.assign(updatePayload, prices);
   }
 
   const { error } = await supabase.from("products").update(updatePayload).eq("id", id);
