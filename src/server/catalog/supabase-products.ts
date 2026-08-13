@@ -305,7 +305,7 @@ export async function getSupabaseCategoryBySlug(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("categories")
-    .select("id, name, slug, description, image_url")
+    .select("id, name, slug, description, image_url, cloudinary_public_id")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -317,6 +317,7 @@ export async function getSupabaseCategoryBySlug(
     slug: data.slug,
     description: data.description,
     imageUrl: data.image_url,
+    cloudinaryPublicId: data.cloudinary_public_id,
   };
 }
 

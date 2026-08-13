@@ -6,6 +6,7 @@ import type { AdminCategoryFormValues } from "@/types/admin-category";
 import { AuthorizationError, requirePermission } from "@/server/rbac";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/slug";
+import { deleteCloudinaryImage } from "@/lib/cloudinary";
 import { writeAuditLog } from "@/server/audit";
 
 const categorySchema = z.object({
@@ -13,6 +14,7 @@ const categorySchema = z.object({
   slug: z.string().max(120).optional(),
   description: z.string().max(5000).optional(),
   heroImage: z.string().max(2048).optional(),
+  heroImagePublicId: z.string().max(512).nullable().optional(),
   parentId: z.string().nullable().optional(),
   sortOrder: z.coerce.number().int().min(0),
   status: z.enum(["ACTIVE", "DRAFT", "ARCHIVED"]),
@@ -25,6 +27,7 @@ function parseCategoryValues(values: AdminCategoryFormValues) {
     slug: values.slug?.trim() || undefined,
     description: values.description?.trim() || undefined,
     heroImage: values.heroImage?.trim() || undefined,
+    heroImagePublicId: values.heroImagePublicId?.trim() || undefined,
   });
 }
 
@@ -58,14 +61,36 @@ export async function saveCategoryAction(input: {
       slug: finalSlug,
       description: values.description || null,
       image_url: values.heroImage || null,
+      cloudinary_public_id: values.heroImagePublicId || null,
       parent_id: values.parentId || null,
       sort_order: values.sortOrder,
       is_active: values.status === "ACTIVE",
     };
 
     if (input.id) {
+      const { data: existingCategory } = await supabase
+        .from("categories")
+        .select("cloudinary_public_id")
+        .eq("id", input.id)
+        .maybeSingle();
+
       const { error } = await supabase.from("categories").update(payload).eq("id", input.id);
       if (error) throw new Error(error.message);
+
+      const oldPublicId = existingCategory?.cloudinary_public_id;
+      if (
+        oldPublicId &&
+        oldPublicId !== values.heroImagePublicId &&
+        !payload.cloudinary_public_id
+      ) {
+        await deleteCloudinaryImage(oldPublicId).catch(() => undefined);
+      } else if (
+        oldPublicId &&
+        values.heroImagePublicId &&
+        oldPublicId !== values.heroImagePublicId
+      ) {
+        await deleteCloudinaryImage(oldPublicId).catch(() => undefined);
+      }
       
       await writeAuditLog({
         actorId: user.id,
@@ -110,8 +135,18 @@ export async function removeCategoryAction(input: { id: string }) {
     const user = await requirePermission("catalog.delete");
     const supabase = createSupabaseAdminClient();
     
+    const { data: existingCategory } = await supabase
+      .from("categories")
+      .select("cloudinary_public_id")
+      .eq("id", input.id)
+      .maybeSingle();
+
     const { error } = await supabase.from("categories").delete().eq("id", input.id);
     if (error) throw new Error(error.message);
+
+    if (existingCategory?.cloudinary_public_id) {
+      await deleteCloudinaryImage(existingCategory.cloudinary_public_id).catch(() => undefined);
+    }
 
     await writeAuditLog({
       actorId: user.id,

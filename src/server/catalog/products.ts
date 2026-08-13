@@ -160,11 +160,12 @@ export async function listCategories(includeDraft = false) {
     slug: cat.slug,
     description: cat.description,
     heroImage: cat.image_url,
+    heroImagePublicId: cat.cloudinary_public_id ?? null,
     parentId: cat.parent_id,
     sortOrder: cat.sort_order,
     status: cat.is_active ? "ACTIVE" : "ARCHIVED",
     _count: { products: cat.products?.[0]?.count ?? 0 },
-    children: []
+    children: [],
   }));
 }
 
@@ -178,6 +179,7 @@ export async function getCategoryBySlug(slug: string) {
       slug: category.slug,
       description: category.description,
       heroImage: category.imageUrl,
+      heroImagePublicId: category.cloudinaryPublicId ?? null,
       parentId: null,
       sortOrder: 0,
       status: "ACTIVE" as const,

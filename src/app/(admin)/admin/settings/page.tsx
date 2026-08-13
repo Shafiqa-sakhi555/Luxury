@@ -24,7 +24,7 @@ export default function AdminSettingsPage() {
               <strong>Curtains / Prayer mats / Carpets</strong> — Supabase catalog (includes your
               imported carpet collections)
             </li>
-            <li>Paste image URLs one per line, or use paths like /images/category/...</li>
+            <li>Upload product and category images directly — files are stored in Cloudinary</li>
             <li>Products with order history are archived instead of permanently deleted</li>
           </ul>
         </AdminCard>
