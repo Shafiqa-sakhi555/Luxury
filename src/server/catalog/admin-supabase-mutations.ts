@@ -4,119 +4,12 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { requirePermission } from "@/server/rbac";
 import { writeAuditLog } from "@/server/audit";
 import { slugify, uniqueProductSlug } from "@/lib/slug";
-import type { AdminProductFormValues } from "@/types/admin-catalog";
+import type { AdminProductFormValues, MutationResult } from "@/types/admin-catalog";
 import { parseImageUrlsFromText } from "@/server/catalog/admin-queries";
-import {
-  syncPrismaCarpetCollection,
-  syncPrismaVariantForSupabaseProduct,
-} from "@/server/catalog/supabase-sync";
-import type { MutationResult } from "@/server/catalog/admin-mutations";
 
 function discountPercent(original: number, sale: number) {
   if (original <= 0 || sale >= original) return 0;
   return Math.round((1 - sale / original) * 100);
-}
-
-function unwrapRelation<T extends Record<string, unknown>>(
-  value: T | T[] | null | undefined
-): T | null {
-  if (!value) return null;
-  return Array.isArray(value) ? (value[0] ?? null) : value;
-}
-
-async function syncSupabaseProductToPrisma(productId: string) {
-  const supabase = createSupabaseAdminClient();
-  const { data } = await supabase
-    .from("products")
-    .select(
-      `
-      id,
-      name,
-      slug,
-      short_description,
-      description,
-      original_price,
-      sale_price,
-      sku,
-      has_variants,
-      categories ( slug ),
-      product_images ( image_url, alt_text, sort_order, variant_id ),
-      product_variants (
-        id,
-        sku,
-        name,
-        original_price,
-        sale_price,
-        is_active,
-        product_images ( image_url, alt_text, sort_order )
-      )
-    `
-    )
-    .eq("id", productId)
-    .maybeSingle();
-
-  if (!data) return;
-
-  const category = unwrapRelation(data.categories as { slug: string } | { slug: string }[] | null);
-  if (!category?.slug) return;
-
-  const collectionImages = (data.product_images ?? [])
-    .filter((img) => !img.variant_id)
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((img, index) => ({
-      url: img.image_url,
-      alt: img.alt_text,
-      sortOrder: img.sort_order ?? index,
-    }));
-
-  const primaryImage = collectionImages[0]?.url ?? null;
-
-  if (data.has_variants && (data.product_variants?.length ?? 0) > 0) {
-    await syncPrismaCarpetCollection({
-      supabaseProductId: data.id,
-      name: data.name,
-      slug: data.slug,
-      shortDescription: data.short_description,
-      description: data.description,
-      categorySlug: category.slug,
-      primaryImageUrl: primaryImage,
-      variants: (data.product_variants ?? [])
-        .filter((v) => v.is_active)
-        .map((variant) => ({
-          supabaseVariantId: variant.id,
-          sku: variant.sku,
-          name: variant.name ?? data.name,
-          originalPriceMinor: Math.round(Number(variant.original_price) * 100),
-          salePriceMinor: Math.round(Number(variant.sale_price) * 100),
-          images:
-            variant.product_images?.length > 0
-              ? variant.product_images
-                  .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                  .map((img, index) => ({
-                    url: img.image_url,
-                    alt: img.alt_text,
-                    sortOrder: img.sort_order ?? index,
-                  }))
-              : collectionImages,
-        })),
-    });
-    return;
-  }
-
-  const sku = data.sku ?? data.slug.toUpperCase().replace(/-/g, "_");
-  await syncPrismaVariantForSupabaseProduct({
-    supabaseId: data.id,
-    name: data.name,
-    slug: data.slug,
-    sku,
-    shortDescription: data.short_description,
-    description: data.description,
-    originalPriceMinor: Math.round(Number(data.original_price) * 100),
-    salePriceMinor: Math.round(Number(data.sale_price) * 100),
-    categorySlug: category.slug,
-    primaryImageUrl: primaryImage,
-    images: collectionImages,
-  });
 }
 
 async function replaceSupabaseImages(productId: string, imageUrls: string[], alt: string) {
@@ -167,7 +60,7 @@ export async function createSupabaseCatalogProduct(
     return { ok: false, error: "Supabase is not configured." };
   }
 
-  const session = await requirePermission("product.write");
+  const user = await requirePermission("product.write");
   const supabase = createSupabaseAdminClient();
 
   const { data: category } = await supabase
@@ -184,10 +77,10 @@ export async function createSupabaseCatalogProduct(
   });
 
   const sku = input.sku.trim() || slug.toUpperCase().replace(/-/g, "_");
-  const original = input.originalPriceMajor;
+  const original = input.originalPriceMajor * 100;
   const sale =
-    input.salePriceMajor > 0 && input.salePriceMajor < original
-      ? input.salePriceMajor
+    input.salePriceMajor > 0 && input.salePriceMajor < input.originalPriceMajor
+      ? input.salePriceMajor * 100
       : original;
 
   const { data: product, error } = await supabase
@@ -198,12 +91,11 @@ export async function createSupabaseCatalogProduct(
       slug,
       short_description: input.shortDescription.trim() || null,
       description: input.description.trim() || null,
-      original_price: original,
-      sale_price: sale,
-      discount_percentage: discountPercent(original, sale),
+      original_price_minor: original,
+      sale_price_minor: sale,
       sku,
       selling_unit: input.sellingUnit.trim() || null,
-      is_active: input.status === "ACTIVE",
+      status: input.status,
       is_featured: input.isFeatured,
       has_variants: false,
     })
@@ -217,10 +109,9 @@ export async function createSupabaseCatalogProduct(
   const imageUrls = parseImageUrlsFromText(input.imageUrls);
   await replaceSupabaseImages(product.id, imageUrls, input.name.trim());
   await upsertSupabaseInventory(product.id, input.stockQuantity);
-  await syncSupabaseProductToPrisma(product.id);
 
   await writeAuditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     action: "product.create",
     entityType: "SupabaseProduct",
     entityId: product.id,
@@ -241,7 +132,7 @@ export async function updateSupabaseCatalogProduct(
     return { ok: false, error: "Supabase is not configured." };
   }
 
-  const session = await requirePermission("product.write");
+  const user = await requirePermission("product.write");
   const supabase = createSupabaseAdminClient();
 
   const { data: existing } = await supabase
@@ -269,10 +160,10 @@ export async function updateSupabaseCatalogProduct(
     return Boolean(data);
   }, existing.slug);
 
-  const original = input.originalPriceMajor;
+  const original = input.originalPriceMajor * 100;
   const sale =
-    input.salePriceMajor > 0 && input.salePriceMajor < original
-      ? input.salePriceMajor
+    input.salePriceMajor > 0 && input.salePriceMajor < input.originalPriceMajor
+      ? input.salePriceMajor * 100
       : original;
 
   const updatePayload: Record<string, unknown> = {
@@ -281,20 +172,18 @@ export async function updateSupabaseCatalogProduct(
     slug,
     short_description: input.shortDescription.trim() || null,
     description: input.description.trim() || null,
-    is_active: input.status === "ACTIVE",
+    status: input.status,
     is_featured: input.isFeatured,
     selling_unit: input.sellingUnit.trim() || null,
   };
 
   if (!existing.has_variants) {
-    updatePayload.original_price = original;
-    updatePayload.sale_price = sale;
-    updatePayload.discount_percentage = discountPercent(original, sale);
+    updatePayload.original_price_minor = original;
+    updatePayload.sale_price_minor = sale;
     if (input.sku.trim()) updatePayload.sku = input.sku.trim();
   } else {
-    updatePayload.original_price = original;
-    updatePayload.sale_price = sale;
-    updatePayload.discount_percentage = discountPercent(original, sale);
+    updatePayload.original_price_minor = original;
+    updatePayload.sale_price_minor = sale;
   }
 
   const { error } = await supabase.from("products").update(updatePayload).eq("id", id);
@@ -303,10 +192,9 @@ export async function updateSupabaseCatalogProduct(
   const imageUrls = parseImageUrlsFromText(input.imageUrls);
   await replaceSupabaseImages(id, imageUrls, input.name.trim());
   await upsertSupabaseInventory(id, input.stockQuantity);
-  await syncSupabaseProductToPrisma(id);
 
   await writeAuditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     action: "product.update",
     entityType: "SupabaseProduct",
     entityId: id,
@@ -325,14 +213,14 @@ export async function archiveSupabaseCatalogProduct(id: string): Promise<Mutatio
     return { ok: false, error: "Supabase is not configured." };
   }
 
-  const session = await requirePermission("product.delete");
+  const user = await requirePermission("product.delete");
   const supabase = createSupabaseAdminClient();
 
-  const { error } = await supabase.from("products").update({ is_active: false }).eq("id", id);
+  const { error } = await supabase.from("products").update({ status: "ARCHIVED" }).eq("id", id);
   if (error) return { ok: false, error: error.message };
 
   await writeAuditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     action: "product.archive",
     entityType: "SupabaseProduct",
     entityId: id,

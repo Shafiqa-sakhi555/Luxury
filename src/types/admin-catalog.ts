@@ -1,8 +1,7 @@
-export type CatalogSource = "prisma" | "supabase";
+export type CatalogSource = "supabase";
 
 export type AdminProductListItem = {
   id: string;
-  source: CatalogSource;
   name: string;
   slug: string;
   categoryName: string;
@@ -20,11 +19,9 @@ export type AdminCategoryOption = {
   id: string;
   name: string;
   slug: string;
-  source: CatalogSource;
 };
 
 export type AdminProductFormValues = {
-  source: CatalogSource;
   categoryId: string;
   name: string;
   slug: string;
@@ -46,3 +43,5 @@ export type AdminProductDetail = AdminProductFormValues & {
   categoryName: string;
   categorySlug: string;
 };
+
+export type MutationResult = { ok: true; id: string } | { ok: false; error: string };

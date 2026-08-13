@@ -32,7 +32,7 @@ const categorySchema = z.object({
   description: z.string().optional(),
   heroImage: z.string().optional(),
   parentId: z.string().nullable().optional(),
-  sortOrder: z.coerce.number().int().min(0),
+  sortOrder: z.number().int().min(0),
   status: z.enum(["ACTIVE", "DRAFT", "ARCHIVED"]),
 });
 

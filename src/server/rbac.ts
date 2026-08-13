@@ -1,5 +1,6 @@
-import { auth } from "@/lib/auth";
-import { db } from "@/server/db";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { hasStaffRoleFromRows } from "@/lib/auth/staff";
 
 export class AuthorizationError extends Error {
   constructor(message = "Forbidden") {
@@ -9,21 +10,23 @@ export class AuthorizationError extends Error {
 }
 
 export async function getUserPermissions(userId: string): Promise<Set<string>> {
-  const userRoles = await db.userRole.findMany({
-    where: { userId },
-    include: {
-      role: {
-        include: {
-          rolePermissions: { include: { permission: true } },
-        },
-      },
-    },
-  });
+  const supabase = await createSupabaseServerClient();
+  const { data: userRoles } = await supabase
+    .from("user_roles")
+    .select("role_id, roles(role_permissions(permissions(key)))")
+    .eq("user_id", userId);
 
   const keys = new Set<string>();
-  for (const ur of userRoles) {
-    for (const rp of ur.role.rolePermissions) {
-      keys.add(rp.permission.key);
+  if (userRoles) {
+    for (const ur of userRoles) {
+      const role: any = ur.roles;
+      if (role && role.role_permissions) {
+        for (const rp of role.role_permissions) {
+          if (rp.permissions?.key) {
+            keys.add(rp.permissions.key);
+          }
+        }
+      }
     }
   }
   return keys;
@@ -39,29 +42,34 @@ export async function hasPermission(
 }
 
 export async function requirePermission(permission: string) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user?.id) {
     throw new AuthorizationError("Unauthorized");
   }
-  const allowed = await hasPermission(session.user.id, permission);
+  const allowed = await hasPermission(user.id, permission);
   if (!allowed) {
     throw new AuthorizationError("Forbidden");
   }
-  return session;
+  return user;
 }
 
 export async function requireAuth() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.id) {
     throw new AuthorizationError("Unauthorized");
   }
-  return session;
+  return user;
 }
 
 export async function isStaff(userId: string): Promise<boolean> {
-  const roles = await db.userRole.findMany({
-    where: { userId },
-    include: { role: true },
-  });
-  return roles.some((r) => r.role.name !== "Customer");
+  const supabase = createSupabaseAdminClient();
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("roles(name)")
+    .eq("user_id", userId);
+
+  return hasStaffRoleFromRows(roles);
 }

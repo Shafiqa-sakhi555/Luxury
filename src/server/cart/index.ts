@@ -1,5 +1,5 @@
-import { db } from "@/server/db";
-import { effectivePriceMinor } from "@/lib/money";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 
@@ -21,103 +21,51 @@ export async function getCartToken(): Promise<string> {
 }
 
 export async function getOrCreateCart(customerId?: string) {
+  const supabase = createSupabaseAdminClient(); // Admin client to bypass RLS for guest carts
+  
   if (customerId) {
-    let cart = await db.cart.findUnique({
-      where: { customerId },
-      include: cartInclude,
-    });
+    let { data: cart } = await supabase.from("carts").select("*, cart_items(*, product_variants(*, products(*, product_images(*))))").eq("customer_id", customerId).maybeSingle();
     if (!cart) {
-      cart = await db.cart.create({
-        data: { customerId },
-        include: cartInclude,
-      });
+      const { data: newCart } = await supabase.from("carts").insert({ customer_id: customerId }).select("*, cart_items(*, product_variants(*, products(*, product_images(*))))").single();
+      cart = newCart;
     }
     return cart;
   }
 
   const token = await getCartToken();
-  let cart = await db.cart.findUnique({
-    where: { token },
-    include: cartInclude,
-  });
+  let { data: cart } = await supabase.from("carts").select("*, cart_items(*, product_variants(*, products(*, product_images(*))))").eq("token", token).maybeSingle();
   if (!cart) {
-    cart = await db.cart.create({
-      data: { token, expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
-      include: cartInclude,
-    });
+    const { data: newCart } = await supabase.from("carts").insert({ token }).select("*, cart_items(*, product_variants(*, products(*, product_images(*))))").single();
+    cart = newCart;
   }
   return cart;
 }
 
-const cartInclude = {
-  items: {
-    include: {
-      variant: {
-        include: {
-          product: {
-            include: { media: { orderBy: { sortOrder: "asc" as const }, take: 1 } },
-          },
-        },
-      },
-    },
-  },
-} as const;
-
 export async function addToCart(variantId: string, quantity = 1, customerId?: string) {
+  const supabase = createSupabaseAdminClient();
   const cart = await getOrCreateCart(customerId);
-  const variant = await db.productVariant.findUnique({
-    where: { id: variantId, isActive: true },
-    include: { product: true },
-  });
-  if (!variant || variant.product.status !== "ACTIVE") {
-    throw new Error("Product unavailable");
-  }
+  
+  const { data: variant } = await supabase.from("product_variants").select("*, products(*)").eq("id", variantId).single();
+  if (!variant || variant.products.status !== "ACTIVE") throw new Error("Product unavailable");
 
-  const price = effectivePriceMinor(variant.priceMinor, variant.salePriceMinor);
+  const price = variant.sale_price_minor > 0 ? variant.sale_price_minor : variant.price_minor;
 
-  const existing = await db.cartItem.findUnique({
-    where: { cartId_variantId: { cartId: cart.id, variantId } },
-  });
+  const { data: existing } = await supabase.from("cart_items").select("*").eq("cart_id", cart.id).eq("variant_id", variantId).maybeSingle();
 
   if (existing) {
-    return db.cartItem.update({
-      where: { id: existing.id },
-      data: {
-        quantity: existing.quantity + quantity,
-        priceSnapshotMinor: price,
-      },
-    });
+    return supabase.from("cart_items").update({ quantity: existing.quantity + quantity, price_snapshot_minor: price }).eq("id", existing.id);
   }
 
-  return db.cartItem.create({
-    data: {
-      cartId: cart.id,
-      variantId,
-      quantity,
-      priceSnapshotMinor: price,
-    },
-  });
+  return supabase.from("cart_items").insert({ cart_id: cart.id, variant_id: variantId, quantity, price_snapshot_minor: price });
 }
 
 export async function updateCartItem(itemId: string, quantity: number) {
-  if (quantity <= 0) {
-    return db.cartItem.delete({ where: { id: itemId } });
-  }
-  return db.cartItem.update({ where: { id: itemId }, data: { quantity } });
+  const supabase = createSupabaseAdminClient();
+  if (quantity <= 0) return supabase.from("cart_items").delete().eq("id", itemId);
+  return supabase.from("cart_items").update({ quantity }).eq("id", itemId);
 }
 
 export async function removeCartItem(itemId: string) {
-  return db.cartItem.delete({ where: { id: itemId } });
-}
-
-export function cartTotals(cart: Awaited<ReturnType<typeof getOrCreateCart>>) {
-  let subtotalMinor = 0;
-  let itemCount = 0;
-  for (const item of cart.items) {
-    const price = item.priceSnapshotMinor ?? item.variant.priceMinor;
-    subtotalMinor += price * item.quantity;
-    itemCount += item.quantity;
-  }
-  const deliveryMinor = subtotalMinor >= 5_000_000 ? 0 : 250_000;
-  return { subtotalMinor, deliveryMinor, totalMinor: subtotalMinor + deliveryMinor, itemCount };
+  const supabase = createSupabaseAdminClient();
+  return supabase.from("cart_items").delete().eq("id", itemId);
 }

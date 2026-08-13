@@ -13,9 +13,9 @@ function mapCategory(
     heroImage: category.heroImage,
     parentId: category.parentId,
     sortOrder: category.sortOrder,
-    status: category.status,
+    status: category.status as any,
     productCount: category._count.products,
-    children: category.children.map((child) => ({
+    children: category.children.map((child: any) => ({
       id: child.id,
       name: child.name,
       slug: child.slug,
@@ -23,7 +23,7 @@ function mapCategory(
       heroImage: child.heroImage,
       parentId: child.parentId,
       sortOrder: child.sortOrder,
-      status: child.status,
+      status: child.status as any,
       productCount: child._count.products,
     })),
   };

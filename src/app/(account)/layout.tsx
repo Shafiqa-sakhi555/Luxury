@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const links = [
   { href: "/account", label: "Overview" },
@@ -13,7 +13,8 @@ export default async function AccountLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   return (
     <div className="min-h-screen bg-brand-50 text-ink">
@@ -22,7 +23,7 @@ export default async function AccountLayout({
           <Link href="/" className="font-display text-xl text-navy">
             <span className="text-red">J</span>alal&apos;s
           </Link>
-          <span className="text-sm text-muted">{session?.user?.email}</span>
+          <span className="text-sm text-muted">{user?.email}</span>
         </div>
       </header>
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[220px_1fr]">

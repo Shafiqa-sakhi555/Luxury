@@ -1,20 +1,24 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth";
-import { listCustomerOrders } from "@/server/orders";
-import { db } from "@/server/db";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 
 export default async function AccountPage() {
-  const session = await auth();
-  const customer = session?.user?.id
-    ? await db.customer.findUnique({ where: { userId: session.user.id } })
-    : null;
-  const orders = customer ? await listCustomerOrders(customer.id).catch(() => []) : [];
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let orders: any[] = [];
+  if (user) {
+    const { data: customer } = await supabase.from("customers").select("id").eq("profile_id", user.id).maybeSingle();
+    if (customer) {
+      const { data } = await supabase.from("orders").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false });
+      orders = data ?? [];
+    }
+  }
 
   return (
     <div>
       <h1 className="font-display text-3xl text-navy">Welcome back</h1>
-      <p className="mt-2 text-muted">{session?.user?.email}</p>
+      <p className="mt-2 text-muted">{user?.email}</p>
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-navy/10 bg-white p-5">
           <p className="text-xs uppercase tracking-wide text-muted">Orders</p>
@@ -37,11 +41,11 @@ export default async function AccountPage() {
               <li key={order.id} className="flex items-center justify-between rounded-xl border border-navy/10 bg-white p-4 text-sm">
                 <div>
                   <Link href={`/account/orders/${order.id}`} className="font-medium text-navy hover:underline">
-                    {order.orderNumber}
+                    {order.order_number}
                   </Link>
                   <p className="text-xs text-muted">{order.status}</p>
                 </div>
-                <span className="tabular-nums">{formatMoney(order.totalMinor)}</span>
+                <span className="tabular-nums">{formatMoney(order.total_minor)}</span>
               </li>
             ))}
           </ul>

@@ -5,12 +5,6 @@ import { AdminBadge } from "@/components/admin/ui";
 import { ProductListFilters } from "@/components/admin/catalog/ProductListFilters";
 import { formatMoney } from "@/lib/money";
 
-function productEditHref(id: string, source: "prisma" | "supabase") {
-  return source === "supabase"
-    ? `/admin/catalog/products/${id}?source=supabase`
-    : `/admin/catalog/products/${id}`;
-}
-
 export default async function AdminProductsPage({
   searchParams,
 }: {
@@ -65,7 +59,6 @@ export default async function AdminProductsPage({
               <tr>
                 <th className="px-4 py-3">Product</th>
                 <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Source</th>
                 <th className="px-4 py-3">SKUs</th>
                 <th className="px-4 py-3">Price from</th>
                 <th className="px-4 py-3">Status</th>
@@ -75,7 +68,7 @@ export default async function AdminProductsPage({
             <tbody>
               {result.items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-muted">
+                  <td colSpan={6} className="px-4 py-12 text-center text-muted">
                     No products found.{" "}
                     <Link href="/admin/catalog/products/new" className="text-navy hover:underline">
                       Add your first product
@@ -84,7 +77,7 @@ export default async function AdminProductsPage({
                 </tr>
               ) : (
                 result.items.map((product) => (
-                  <tr key={`${product.source}-${product.id}`} className="border-b border-navy/5 hover:bg-navy/[0.02]">
+                  <tr key={product.id} className="border-b border-navy/5 hover:bg-navy/[0.02]">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 overflow-hidden rounded-lg bg-navy/5">
@@ -100,11 +93,6 @@ export default async function AdminProductsPage({
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted">{product.categoryName}</td>
-                    <td className="px-4 py-3">
-                      <AdminBadge tone={product.source === "supabase" ? "default" : "muted"}>
-                        {product.source === "supabase" ? "Supabase" : "Standard"}
-                      </AdminBadge>
-                    </td>
                     <td className="px-4 py-3 tabular-nums">
                       {product.skuCount}
                       {product.hasVariants ? "+" : ""}
@@ -127,7 +115,7 @@ export default async function AdminProductsPage({
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link
-                        href={productEditHref(product.id, product.source)}
+                        href={`/admin/catalog/products/${product.id}`}
                         className="text-navy hover:underline"
                       >
                         Edit

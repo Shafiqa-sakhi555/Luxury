@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
-import { db } from "@/server/db";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getOrCreateCart } from "@/server/cart";
 import { placeOrder } from "@/server/orders";
 
@@ -22,19 +21,21 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user?.id) {
       return NextResponse.json({ error: "Sign in required" }, { status: 401 });
     }
 
-    const customer = await db.customer.findUnique({ where: { userId: session.user.id } });
+    const { data: customer } = await supabase.from("customers").select("id").eq("profile_id", user.id).maybeSingle();
     if (!customer) {
       return NextResponse.json({ error: "Customer profile missing" }, { status: 400 });
     }
 
     const body = schema.parse(await request.json());
     const cart = await getOrCreateCart(customer.id);
-    if (cart.items.length === 0) {
+    if (!cart || !cart.cart_items || cart.cart_items.length === 0) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
       notes: body.notes,
     });
 
-    return NextResponse.json({ orderNumber: order.orderNumber, id: order.id });
+    return NextResponse.json({ orderNumber: order.order_number, id: order.id });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid checkout data" }, { status: 400 });

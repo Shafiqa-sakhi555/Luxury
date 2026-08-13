@@ -1,19 +1,43 @@
 import { NextResponse } from "next/server";
-import { addToCart, getOrCreateCart, removeCartItem, updateCartItem, cartTotals } from "@/server/cart";
-import { auth } from "@/lib/auth";
+import { addToCart, getOrCreateCart, removeCartItem, updateCartItem } from "@/server/cart";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+function cartTotals(cart: any) {
+  if (!cart || !cart.cart_items) return { subtotalMinor: 0, deliveryMinor: 0, totalMinor: 0, itemCount: 0 };
+  
+  let subtotalMinor = 0;
+  let itemCount = 0;
+  
+  for (const item of cart.cart_items) {
+    const price = item.price_snapshot_minor ?? item.product_variants?.price_minor ?? 0;
+    subtotalMinor += price * item.quantity;
+    itemCount += item.quantity;
+  }
+  
+  const deliveryMinor = subtotalMinor >= 5_000_000 ? 0 : 250_000;
+  return {
+    subtotalMinor,
+    deliveryMinor,
+    totalMinor: subtotalMinor + deliveryMinor,
+    itemCount
+  };
+}
 
 export async function GET() {
   try {
-    const session = await auth();
-    const customerId = session?.user?.id
-      ? (await import("@/server/db").then((m) =>
-          m.db.customer.findUnique({ where: { userId: session.user!.id } })
-        ))?.id
-      : undefined;
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    let customerId;
+    if (user) {
+      const { data: customer } = await supabase.from("customers").select("id").eq("profile_id", user.id).maybeSingle();
+      customerId = customer?.id;
+    }
+    
     const cart = await getOrCreateCart(customerId);
     return NextResponse.json({ cart, totals: cartTotals(cart) });
   } catch {
-    return NextResponse.json({ cart: { items: [] }, totals: { subtotalMinor: 0, deliveryMinor: 0, totalMinor: 0, itemCount: 0 } });
+    return NextResponse.json({ cart: { cart_items: [] }, totals: { subtotalMinor: 0, deliveryMinor: 0, totalMinor: 0, itemCount: 0 } });
   }
 }
 
@@ -23,12 +47,18 @@ export async function POST(request: Request) {
     if (!variantId) {
       return NextResponse.json({ error: "variantId required" }, { status: 400 });
     }
-    const session = await auth();
-    const customer = session?.user?.id
-      ? await (await import("@/server/db")).db.customer.findUnique({ where: { userId: session.user.id } })
-      : null;
-    await addToCart(variantId, quantity, customer?.id);
-    const cart = await getOrCreateCart(customer?.id);
+    
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    let customerId;
+    if (user) {
+      const { data: customer } = await supabase.from("customers").select("id").eq("profile_id", user.id).maybeSingle();
+      customerId = customer?.id;
+    }
+    
+    await addToCart(variantId, quantity, customerId);
+    const cart = await getOrCreateCart(customerId);
     return NextResponse.json({ ok: true, totals: cartTotals(cart) });
   } catch (error) {
     return NextResponse.json(
