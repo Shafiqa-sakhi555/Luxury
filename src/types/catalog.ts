@@ -36,6 +36,7 @@ export type CatalogCategory = {
   slug: string;
   description: string | null;
   imageUrl: string | null;
+  cloudinaryPublicId?: string | null;
 };
 
 export type CatalogProduct = {

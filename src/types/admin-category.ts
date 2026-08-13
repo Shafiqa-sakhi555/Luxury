@@ -6,6 +6,7 @@ export type AdminCategoryRow = {
   slug: string;
   description: string | null;
   heroImage: string | null;
+  heroImagePublicId: string | null;
   parentId: string | null;
   sortOrder: number;
   status: AdminCategoryStatus;
@@ -19,6 +20,7 @@ export type AdminCategoryChildRow = {
   slug: string;
   description: string | null;
   heroImage: string | null;
+  heroImagePublicId: string | null;
   parentId: string | null;
   sortOrder: number;
   status: AdminCategoryStatus;
@@ -30,6 +32,7 @@ export type AdminCategoryFormValues = {
   slug?: string;
   description?: string;
   heroImage?: string;
+  heroImagePublicId?: string | null;
   parentId?: string | null;
   sortOrder: number;
   status: AdminCategoryStatus;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,8 @@ import { z } from "zod";
 import Link from "next/link";
 import { Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { ImageUploader } from "@/components/admin/media/ImageUploader";
+import type { AdminHeroImage } from "@/types/media";
 import {
   AdminBadge,
   AdminButton,
@@ -30,7 +32,6 @@ const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
   slug: z.string().optional(),
   description: z.string().optional(),
-  heroImage: z.string().optional(),
   parentId: z.string().nullable().optional(),
   sortOrder: z.number().int().min(0),
   status: z.enum(["ACTIVE", "DRAFT", "ARCHIVED"]),
@@ -63,11 +64,24 @@ function CategoryFormModal({
   const [pending, startTransition] = useTransition();
   const isEdit = Boolean(category);
 
+  const [heroImage, setHeroImage] = useState<AdminHeroImage>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setHeroImage(
+      category?.heroImage
+        ? {
+            url: category.heroImage,
+            publicId: category.heroImagePublicId ?? "",
+          }
+        : null
+    );
+  }, [open, category?.id, category?.heroImage, category?.heroImagePublicId]);
+
   const defaultValues: FormValues = {
     name: category?.name ?? "",
     slug: category?.slug ?? "",
     description: category?.description ?? "",
-    heroImage: category?.heroImage ?? "",
     parentId: category?.parentId ?? "",
     sortOrder: category?.sortOrder ?? 0,
     status: category?.status ?? "ACTIVE",
@@ -86,7 +100,8 @@ function CategoryFormModal({
       name: values.name,
       slug: values.slug?.trim() || slugify(values.name),
       description: values.description,
-      heroImage: values.heroImage,
+      heroImage: heroImage?.url,
+      heroImagePublicId: heroImage?.publicId?.trim() || null,
       parentId: values.parentId || null,
       sortOrder: values.sortOrder,
       status: values.status,
@@ -169,14 +184,7 @@ function CategoryFormModal({
             />
           </div>
 
-          <div>
-            <AdminLabel htmlFor="category-hero">Hero image URL</AdminLabel>
-            <AdminInput
-              id="category-hero"
-              {...form.register("heroImage")}
-              placeholder="/images/category/example.jpg"
-            />
-          </div>
+          <ImageUploader value={heroImage} onChange={setHeroImage} />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

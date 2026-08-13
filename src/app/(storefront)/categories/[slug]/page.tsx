@@ -7,6 +7,7 @@ import { ProductCard } from "@/components/commerce/ProductCard";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Footer } from "@/components/layout/Footer";
 import { normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
+import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
 
 export const revalidate = 60;
 
@@ -74,7 +75,7 @@ export default async function CategoryPage({
         {heroImage && (
           <div className="absolute inset-0">
             <Image
-              src={heroImage}
+              src={getOptimizedImageUrl(heroImage, { width: 1920, crop: "limit" })}
               alt={category.name}
               fill
               className="object-cover opacity-20"

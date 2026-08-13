@@ -5,7 +5,8 @@ import { requirePermission } from "@/server/rbac";
 import { writeAuditLog } from "@/server/audit";
 import { slugify, uniqueProductSlug } from "@/lib/slug";
 import type { AdminProductFormValues, MutationResult } from "@/types/admin-catalog";
-import { parseImageUrlsFromText } from "@/server/catalog/admin-queries";
+import type { AdminProductImage } from "@/types/media";
+import { deleteCloudinaryImage } from "@/lib/cloudinary";
 
 function discountPercent(original: number, sale: number) {
   if (original <= 0 || sale >= original) return 0;
@@ -50,17 +51,38 @@ async function createDefaultVariant(
   });
 }
 
-async function replaceSupabaseImages(productId: string, imageUrls: string[], alt: string) {
+async function syncProductImages(
+  productId: string,
+  images: AdminProductImage[],
+  alt: string
+) {
   const supabase = createSupabaseAdminClient();
+
+  const { data: existing } = await supabase
+    .from("product_images")
+    .select("cloudinary_public_id")
+    .eq("product_id", productId)
+    .is("variant_id", null);
+
+  const nextPublicIds = new Set(images.map((image) => image.publicId).filter(Boolean));
+  const removedPublicIds = (existing ?? [])
+    .map((row) => row.cloudinary_public_id)
+    .filter((publicId): publicId is string => Boolean(publicId && !nextPublicIds.has(publicId)));
+
+  for (const publicId of removedPublicIds) {
+    await deleteCloudinaryImage(publicId).catch(() => undefined);
+  }
+
   await supabase.from("product_images").delete().eq("product_id", productId).is("variant_id", null);
 
-  if (imageUrls.length === 0) return;
+  if (images.length === 0) return;
 
   await supabase.from("product_images").insert(
-    imageUrls.map((url, index) => ({
+    images.map((image, index) => ({
       product_id: productId,
-      image_url: url,
-      alt_text: alt,
+      image_url: image.url,
+      cloudinary_public_id: image.publicId || null,
+      alt_text: image.alt ?? alt,
       sort_order: index,
       is_primary: index === 0,
     }))
@@ -140,9 +162,8 @@ export async function createSupabaseCatalogProduct(
     return { ok: false, error: error?.message ?? "Failed to create product." };
   }
 
-  const imageUrls = parseImageUrlsFromText(input.imageUrls);
   await createDefaultVariant(product.id, input, sku);
-  await replaceSupabaseImages(product.id, imageUrls, input.name.trim());
+  await syncProductImages(product.id, input.images, input.name.trim());
   await upsertSupabaseInventory(product.id, input.stockQuantity);
 
   await writeAuditLog({
@@ -219,8 +240,7 @@ export async function updateSupabaseCatalogProduct(
   const { error } = await supabase.from("products").update(updatePayload).eq("id", id);
   if (error) return { ok: false, error: error.message };
 
-  const imageUrls = parseImageUrlsFromText(input.imageUrls);
-  await replaceSupabaseImages(id, imageUrls, input.name.trim());
+  await syncProductImages(id, input.images, input.name.trim());
   await upsertSupabaseInventory(id, input.stockQuantity);
 
   await writeAuditLog({

@@ -1,3 +1,5 @@
+import type { AdminProductImage } from "@/types/media";
+
 export type CatalogSource = "supabase";
 
 export type AdminProductListItem = {
@@ -34,7 +36,7 @@ export type AdminProductFormValues = {
   status: "ACTIVE" | "DRAFT" | "ARCHIVED";
   isFeatured: boolean;
   sellingUnit: string;
-  imageUrls: string;
+  images: AdminProductImage[];
 };
 
 export type AdminProductDetail = AdminProductFormValues & {

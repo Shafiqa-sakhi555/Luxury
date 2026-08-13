@@ -54,7 +54,7 @@ async function adminListSupabaseProducts(params: {
       is_featured,
       updated_at,
       categories!inner ( name, slug ),
-      product_images ( image_url, sort_order, is_primary )
+      product_images ( image_url, cloudinary_public_id, alt_text, sort_order, is_primary )
     `, { count: 'exact' }
     );
 
@@ -200,7 +200,7 @@ export async function adminGetProduct(
       status,
       is_featured,
       categories ( name, slug ),
-      product_images ( image_url, sort_order ),
+      product_images ( image_url, cloudinary_public_id, alt_text, sort_order ),
       inventory ( stock_quantity )
     `
     )
@@ -213,7 +213,13 @@ export async function adminGetProduct(
   const inventory = unwrapRelation(data.inventory as any);
   const images = [...(data.product_images ?? [])]
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((img) => img.image_url);
+    .map((img) => ({
+      url: img.image_url,
+      publicId: img.cloudinary_public_id ?? "",
+      alt: img.alt_text ?? undefined,
+      sortOrder: img.sort_order ?? 0,
+    }))
+    .filter((img) => img.url);
 
   return {
     id: data.id,
@@ -231,7 +237,7 @@ export async function adminGetProduct(
     status: data.status as any,
     isFeatured: data.is_featured,
     sellingUnit: data.selling_unit ?? "",
-    imageUrls: imageUrlsToText(images),
+    images,
     hasVariants: data.has_variants,
   };
 }

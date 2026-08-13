@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Heart, ShoppingCart } from "lucide-react";
 import type { CatalogProduct } from "@/types/catalog";
 import { formatMoney } from "@/lib/money";
+import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -71,7 +72,7 @@ export function ProductCard({
         <div className="relative aspect-square overflow-hidden bg-mist">
           {primaryImage ? (
             <Image
-              src={primaryImage}
+              src={getOptimizedImageUrl(primaryImage, { width: 600, height: 600, crop: "fill" })}
               alt={product.name}
               fill
               className="object-cover transition-transform duration-700 group-hover:scale-105"

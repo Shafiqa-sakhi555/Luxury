@@ -8,9 +8,11 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { AdminButton, AdminInput, AdminLabel, AdminSelect, AdminTextarea } from "@/components/admin/ui";
 import { AdminCard } from "@/components/admin/layout/AdminPageHeader";
+import { ProductImageUploader } from "@/components/admin/media/ProductImageUploader";
 import { saveProductAction } from "@/server/catalog/admin-actions";
 import { slugify } from "@/lib/slug";
 import type { AdminCategoryOption, AdminProductDetail } from "@/types/admin-catalog";
+import type { AdminProductImage } from "@/types/media";
 
 type FormValues = {
   categoryId: string;
@@ -25,7 +27,6 @@ type FormValues = {
   status: "ACTIVE" | "DRAFT" | "ARCHIVED";
   isFeatured: boolean;
   sellingUnit?: string;
-  imageUrls?: string;
 };
 
 const productSchema = z.object({
@@ -41,7 +42,6 @@ const productSchema = z.object({
   status: z.enum(["ACTIVE", "DRAFT", "ARCHIVED"]),
   isFeatured: z.boolean(),
   sellingUnit: z.string().optional(),
-  imageUrls: z.string().optional(),
 });
 
 type ProductFormProps = {
@@ -53,6 +53,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [images, setImages] = useState<AdminProductImage[]>(product?.images ?? []);
   const isEdit = Boolean(product);
 
   const defaultValues: FormValues = {
@@ -68,7 +69,6 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     status: product?.status ?? "DRAFT",
     isFeatured: product?.isFeatured ?? false,
     sellingUnit: product?.sellingUnit ?? "",
-    imageUrls: product?.imageUrls ?? "",
   };
 
   const form = useForm<FormValues>({
@@ -91,7 +91,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           description: values.description ?? "",
           sku: values.sku ?? "",
           sellingUnit: values.sellingUnit ?? "",
-          imageUrls: values.imageUrls ?? "",
+          images,
         },
       });
 
@@ -156,12 +156,11 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           </AdminCard>
 
           <AdminCard className="space-y-4 p-5">
-            <h2 className="text-sm font-semibold text-navy">Images</h2>
-            <p className="text-xs text-muted">
-              Paste one image URL per line. Use Supabase public URLs or paths like
-              /images/category/carpets/nagar/photo.jpg
-            </p>
-            <AdminTextarea id="imageUrls" rows={6} {...form.register("imageUrls")} />
+            <ProductImageUploader
+              value={images}
+              onChange={setImages}
+              altFallback={watchName || "Product image"}
+            />
           </AdminCard>
         </div>
 
