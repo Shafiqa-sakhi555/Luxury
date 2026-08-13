@@ -1,15 +1,13 @@
-import { db } from "@/server/db";
-import type { PublicationStatus, Prisma } from "@/generated/prisma/client";
 import type { CatalogProduct, CatalogProductListResult } from "@/types/catalog";
-import { effectivePriceMinor } from "@/lib/money";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { SUPABASE_CATALOG_SLUGS, isSupabaseCatalogSlug, normalizeCategorySlug, isDeprecatedCategorySlug, formatCategoryLabel } from "@/lib/supabase/catalog-categories";
 import {
   getSupabaseCategoryBySlug,
   getSupabaseProductBySlug,
   isSupabaseCategorySlug,
   listSupabaseProductsByCategorySlug,
 } from "@/server/catalog/supabase-products";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { formatCategoryLabel } from "@/lib/supabase/catalog-categories";
 
 export type ProductListParams = {
   page?: number;
@@ -17,224 +15,106 @@ export type ProductListParams = {
   search?: string;
   categorySlug?: string;
   brandSlug?: string;
-  status?: PublicationStatus;
+  status?: "ACTIVE" | "DRAFT" | "ARCHIVED";
   sort?: "newest" | "price_asc" | "price_desc" | "name";
 };
-
-const MERGED_CATALOG_FETCH_LIMIT = 2000;
-
-function categoryFilterWhere(slug: string): Prisma.ProductWhereInput["category"] {
-  return {
-    OR: [
-      { slug },
-      { parent: { slug, status: "ACTIVE" } },
-    ],
-  };
-}
-
-function prismaExcludesSupabaseCategories(where: Prisma.ProductWhereInput) {
-  if (!isSupabaseConfigured()) return;
-  const slugs = [...SUPABASE_CATALOG_SLUGS];
-  where.NOT = {
-    OR: slugs.map((slug) => ({ category: { slug } })),
-  };
-}
-
-function mapPrismaProduct(
-  product: Awaited<ReturnType<typeof fetchPrismaProducts>>["items"][number]
-): CatalogProduct {
-  const variant = product.variants[0];
-  const priceMinor = variant?.priceMinor ?? 0;
-  const salePriceMinor = variant
-    ? effectivePriceMinor(variant.priceMinor, variant.salePriceMinor)
-    : 0;
-  const discount =
-    variant?.salePriceMinor && variant.priceMinor > variant.salePriceMinor
-      ? Math.round((1 - variant.salePriceMinor / variant.priceMinor) * 100)
-      : 0;
-
-  return {
-    id: product.id,
-    source: "prisma",
-    name: product.name,
-    slug: product.slug,
-    shortDescription: product.shortDescription,
-    description: product.description,
-    originalPriceMinor: priceMinor,
-    salePriceMinor,
-    discountPercentage: discount,
-    currency: "PKR",
-    sellingUnit: null,
-    includedItems: null,
-    size: null,
-    fabric: null,
-    design: null,
-    sku: variant?.sku ?? null,
-    isFeatured: product.isFeatured,
-    category: {
-      id: product.category.id ?? product.category.slug,
-      name: product.category.name,
-      slug: product.category.slug,
-      description: null,
-      imageUrl: null,
-    },
-    images: product.media.map((m) => ({
-      id: m.id,
-      url: m.url,
-      alt: m.alt,
-      sortOrder: m.sortOrder,
-      isPrimary: m.sortOrder === 0,
-    })).slice(0, 1),
-    specifications: [],
-    stockQuantity: null,
-    stockStatus: null,
-    variantId: variant?.id ?? null,
-    brand: product.brand,
-  };
-}
-
-async function fetchPrismaProducts(params: ProductListParams) {
-  const page = Math.max(1, params.page ?? 1);
-  const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 24));
-  const skip = (page - 1) * pageSize;
-
-  const where: Prisma.ProductWhereInput = {};
-
-  if (params.status) {
-    where.status = params.status;
-  } else {
-    where.status = "ACTIVE";
-  }
-
-  if (params.search) {
-    where.OR = [
-      { name: { contains: params.search, mode: "insensitive" } },
-      { slug: { contains: params.search, mode: "insensitive" } },
-      { variants: { some: { sku: { contains: params.search, mode: "insensitive" } } } },
-    ];
-  }
-
-  if (params.categorySlug) {
-    where.category = categoryFilterWhere(params.categorySlug);
-  }
-
-  if (params.brandSlug) {
-    where.brand = { slug: params.brandSlug };
-  }
-
-  // Exclude Supabase-owned categories when merging the full Prisma catalog
-  if (isSupabaseConfigured() && !params.categorySlug) {
-    prismaExcludesSupabaseCategories(where);
-  }
-
-  let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: "desc" };
-  if (params.sort === "name") orderBy = { name: "asc" };
-  if (params.sort === "newest") orderBy = { createdAt: "desc" };
-
-  const [items, total] = await Promise.all([
-    db.product.findMany({
-      where,
-      skip,
-      take: pageSize,
-      orderBy,
-      include: {
-        category: { select: { id: true, name: true, slug: true } },
-        brand: { select: { name: true, slug: true } },
-        media: { orderBy: { sortOrder: "asc" }, take: 1 },
-        variants: {
-          where: { isActive: true },
-          orderBy: { priceMinor: "asc" },
-          take: 1,
-        },
-        _count: { select: { variants: true, reviews: true } },
-      },
-    }),
-    db.product.count({ where }),
-  ]);
-
-  return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
-}
 
 export async function listProducts(
   params: ProductListParams = {}
 ): Promise<CatalogProductListResult> {
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 24));
-  const categorySlug = normalizeCategorySlug(params.categorySlug);
-
-  // Supabase-owned category
-  if (isSupabaseConfigured() && categorySlug && isSupabaseCatalogSlug(categorySlug)) {
-    const supabaseResult = await listSupabaseProductsByCategorySlug(categorySlug, {
-      page,
-      pageSize,
-      search: params.search,
-    });
-    if (supabaseResult && supabaseResult.total > 0) return supabaseResult;
-
-    // Fallback: Prisma-synced products when Supabase is empty or unreachable
-    const prismaResult = await fetchPrismaProducts({ ...params, categorySlug });
-    if (prismaResult.total > 0) {
-      return {
-        items: prismaResult.items.map(mapPrismaProduct),
-        total: prismaResult.total,
-        page: prismaResult.page,
-        pageSize: prismaResult.pageSize,
-        totalPages: prismaResult.totalPages,
-      };
-    }
-
-    if (supabaseResult) return supabaseResult;
+  
+  if (!isSupabaseConfigured()) {
+    return { items: [], total: 0, page, pageSize, totalPages: 0 };
   }
 
-  // All products — merge Supabase catalog with Prisma catalog (lightweight list queries)
-  if (isSupabaseConfigured() && !params.categorySlug) {
-    const [supabaseLists, prismaResult] = await Promise.all([
-      Promise.all(
-        SUPABASE_CATALOG_SLUGS.map((slug) =>
-          listSupabaseProductsByCategorySlug(slug, {
-            page: 1,
-            pageSize: MERGED_CATALOG_FETCH_LIMIT,
-          })
-        )
-      ),
-      fetchPrismaProducts({
-        ...params,
-        page: 1,
-        pageSize: MERGED_CATALOG_FETCH_LIMIT,
-      }),
-    ]);
+  const supabase = createSupabaseAdminClient();
+  let query = supabase
+    .from("products")
+    .select(`
+      id, name, slug, short_description, description, original_price_minor, sale_price_minor,
+      is_featured, status,
+      categories!inner ( id, name, slug ),
+      product_images ( id, image_url, sort_order, is_primary ),
+      product_variants ( id, sku, price_minor, sale_price_minor )
+    `, { count: 'exact' })
+    .eq("status", params.status || "ACTIVE");
 
-    const supabaseItems = supabaseLists.flatMap((result) => result?.items ?? []);
-    const supabaseTotal = supabaseLists.reduce((sum, result) => sum + (result?.total ?? 0), 0);
-    const prismaItems = prismaResult.items.map(mapPrismaProduct);
-    const merged = [...supabaseItems, ...prismaItems];
+  if (params.search) {
+    query = query.or(`name.ilike.%${params.search}%,slug.ilike.%${params.search}%`);
+  }
 
-    if (params.sort === "name") merged.sort((a, b) => a.name.localeCompare(b.name));
-    if (params.sort === "price_asc")
-      merged.sort((a, b) => a.salePriceMinor - b.salePriceMinor);
-    if (params.sort === "price_desc")
-      merged.sort((a, b) => b.salePriceMinor - a.salePriceMinor);
+  if (params.categorySlug) {
+    query = query.eq('categories.slug', params.categorySlug);
+  }
 
-    const total = supabaseTotal + prismaResult.total;
-    const start = (page - 1) * pageSize;
-    const items = merged.slice(start, start + pageSize);
+  // Sorting
+  if (params.sort === "name") query = query.order("name", { ascending: true });
+  else if (params.sort === "price_asc") query = query.order("sale_price_minor", { ascending: true });
+  else if (params.sort === "price_desc") query = query.order("sale_price_minor", { ascending: false });
+  else query = query.order("created_at", { ascending: false });
 
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize - 1;
+
+  const { data, count, error } = await query.range(start, end);
+
+  if (error || !data) {
+    return { items: [], total: 0, page, pageSize, totalPages: 0 };
+  }
+
+  const items: CatalogProduct[] = data.map((row: any) => {
+    const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
+    const variant = row.product_variants?.[0];
+    
     return {
-      items,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
+      id: row.id,
+      source: "supabase",
+      name: row.name,
+      slug: row.slug,
+      shortDescription: row.short_description,
+      description: row.description,
+      originalPriceMinor: row.original_price_minor,
+      salePriceMinor: row.sale_price_minor,
+      discountPercentage: row.original_price_minor > row.sale_price_minor ? Math.round((1 - row.sale_price_minor / row.original_price_minor) * 100) : 0,
+      currency: "PKR",
+      sellingUnit: null,
+      includedItems: null,
+      size: null,
+      fabric: null,
+      design: null,
+      sku: variant?.sku ?? null,
+      isFeatured: row.is_featured,
+      category: {
+        id: category?.id ?? "",
+        name: category?.name ?? "",
+        slug: category?.slug ?? "",
+        description: null,
+        imageUrl: null,
+      },
+      images: (row.product_images ?? []).map((img: any) => ({
+        id: img.id,
+        url: img.image_url,
+        alt: row.name,
+        sortOrder: img.sort_order,
+        isPrimary: img.is_primary,
+      })),
+      specifications: [],
+      stockQuantity: null,
+      stockStatus: null,
+      variantId: variant?.id ?? null,
+      brand: null,
     };
-  }
+  });
 
-  const prismaResult = await fetchPrismaProducts(params);
+  const total = count ?? 0;
   return {
-    items: prismaResult.items.map(mapPrismaProduct),
-    total: prismaResult.total,
-    page: prismaResult.page,
-    pageSize: prismaResult.pageSize,
-    totalPages: prismaResult.totalPages,
+    items,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize),
   };
 }
 
@@ -242,42 +122,9 @@ export async function getProductBySlug(
   slug: string,
   admin = false
 ): Promise<CatalogProduct | null> {
-  if (!admin && isSupabaseConfigured()) {
-    const supabaseProduct = await getSupabaseProductBySlug(slug);
-    if (supabaseProduct) return supabaseProduct;
-  }
-
-  const product = await db.product.findFirst({
-    where: {
-      slug,
-      ...(admin ? {} : { status: "ACTIVE" }),
-    },
-    include: {
-      category: true,
-      brand: { select: { name: true, slug: true } },
-      media: { orderBy: { sortOrder: "asc" } },
-      variants: {
-        where: admin ? undefined : { isActive: true },
-        orderBy: { priceMinor: "asc" },
-        take: 1,
-      },
-    },
-  });
-
-  if (!product) return null;
-
-  const mapped = mapPrismaProduct({
-    ...product,
-    category: {
-      id: product.category.id,
-      name: product.category.name,
-      slug: product.category.slug,
-    },
-    brand: product.brand,
-    _count: { variants: 1, reviews: 0 },
-  });
-
-  return { ...mapped, variantId: product.variants[0]?.id ?? null };
+  if (!isSupabaseConfigured()) return null;
+  const supabaseProduct = await getSupabaseProductBySlug(slug);
+  return supabaseProduct;
 }
 
 export async function getRelatedProducts(slug: string, categorySlug: string) {
@@ -286,132 +133,70 @@ export async function getRelatedProducts(slug: string, categorySlug: string) {
 }
 
 export async function listShopFilterCategories() {
-  const seen = new Set<string>();
-  const items: Array<{ label: string; href: string; slug: string }> = [];
-
-  const add = (slug: string, label: string) => {
-    const canonical = normalizeCategorySlug(slug) ?? slug;
-    if (isDeprecatedCategorySlug(slug) || seen.has(canonical)) return;
-    seen.add(canonical);
-    items.push({
-      label,
-      href: `/shop?category=${canonical}`,
-      slug: canonical,
-    });
-  };
-
-  if (isSupabaseConfigured()) {
-    await Promise.all(
-      SUPABASE_CATALOG_SLUGS.map(async (slug) => {
-        const category = await getSupabaseCategoryBySlug(slug);
-        add(slug, category?.name ?? formatCategoryLabel(slug));
-      })
-    );
-  }
-
-  const prismaCategories = await db.category.findMany({
-    where: { status: "ACTIVE", parentId: null },
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    select: { name: true, slug: true },
-  });
-
-  for (const category of prismaCategories) {
-    const canonical = normalizeCategorySlug(category.slug) ?? category.slug;
-    if (isDeprecatedCategorySlug(category.slug)) continue;
-    if ((SUPABASE_CATALOG_SLUGS as readonly string[]).includes(canonical)) continue;
-    add(category.slug, category.name);
-  }
-
-  return items;
+  if (!isSupabaseConfigured()) return [];
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase.from("categories").select("name, slug").order("sort_order", { ascending: true });
+  
+  return (data ?? []).map(cat => ({
+    label: cat.name,
+    href: `/shop?category=${cat.slug}`,
+    slug: cat.slug
+  }));
 }
 
 export async function listCategories(includeDraft = false) {
-  return db.category.findMany({
-    where: includeDraft ? undefined : { status: "ACTIVE" },
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    include: {
-      children: {
-        orderBy: { sortOrder: "asc" },
-        include: { _count: { select: { products: true } } },
-      },
-      _count: { select: { products: true } },
-    },
-  });
+  if (!isSupabaseConfigured()) return [];
+  const supabase = createSupabaseAdminClient();
+  
+  const { data } = await supabase
+    .from("categories")
+    .select("*, products(count)")
+    .is("parent_id", null)
+    .order("sort_order", { ascending: true });
+
+  return (data ?? []).map((cat: any) => ({
+    id: cat.id,
+    name: cat.name,
+    slug: cat.slug,
+    description: cat.description,
+    heroImage: cat.image_url,
+    parentId: cat.parent_id,
+    sortOrder: cat.sort_order,
+    status: cat.is_active ? "ACTIVE" : "ARCHIVED",
+    _count: { products: cat.products?.[0]?.count ?? 0 },
+    children: []
+  }));
 }
 
 export async function getCategoryBySlug(slug: string) {
-  const normalized = normalizeCategorySlug(slug) ?? slug;
-  if (isSupabaseConfigured() && (await isSupabaseCategorySlug(normalized))) {
-    const category = await getSupabaseCategoryBySlug(normalized);
-    if (category) {
-      return {
-        id: category.id,
-        name: category.name,
-        slug: category.slug,
-        description: category.description,
-        heroImage: category.imageUrl,
-        parentId: null,
-        sortOrder: 0,
-        status: "ACTIVE" as const,
-        seoTitle: null,
-        seoDescription: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        children: [],
-        attributes: [],
-      };
-    }
+  if (!isSupabaseConfigured()) return null;
+  const category = await getSupabaseCategoryBySlug(slug);
+  if (category) {
+    return {
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      heroImage: category.imageUrl,
+      parentId: null,
+      sortOrder: 0,
+      status: "ACTIVE" as const,
+      seoTitle: null,
+      seoDescription: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      children: [],
+      attributes: [],
+    };
   }
-
-  return db.category.findFirst({
-    where: { slug: normalized, status: "ACTIVE" },
-    include: {
-      children: { where: { status: "ACTIVE" }, orderBy: { sortOrder: "asc" } },
-      attributes: { orderBy: { displayOrder: "asc" }, include: { options: true } },
-    },
-  });
+  return null;
 }
 
 export async function listBrands() {
-  return db.brand.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { name: "asc" },
-  });
+  return []; // Brands removed in Supabase schema for now
 }
 
 export async function adminListProducts(params: ProductListParams = {}) {
-  const page = Math.max(1, params.page ?? 1);
-  const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 25));
-  const skip = (page - 1) * pageSize;
-
-  const where: Prisma.ProductWhereInput = {};
-
-  if (params.status) where.status = params.status;
-  if (params.search) {
-    where.OR = [
-      { name: { contains: params.search, mode: "insensitive" } },
-      { variants: { some: { sku: { contains: params.search, mode: "insensitive" } } } },
-    ];
-  }
-  if (params.categorySlug) where.category = { slug: params.categorySlug };
-  if (params.brandSlug) where.brand = { slug: params.brandSlug };
-
-  const [items, total] = await Promise.all([
-    db.product.findMany({
-      where,
-      skip,
-      take: pageSize,
-      orderBy: { updatedAt: "desc" },
-      include: {
-        category: { select: { name: true } },
-        brand: { select: { name: true } },
-        media: { orderBy: { sortOrder: "asc" }, take: 1 },
-        variants: { select: { id: true, sku: true, priceMinor: true, salePriceMinor: true } },
-        _count: { select: { variants: true } },
-      },
-    }),
-    db.product.count({ where }),
-  ]);
-
-  return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+  const result = await listProducts(params);
+  return result;
 }

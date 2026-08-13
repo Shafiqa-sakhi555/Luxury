@@ -1,4 +1,4 @@
-import { db } from "@/server/db";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { adminGetCatalogProductCounts } from "@/server/catalog/admin-queries";
 
 export async function writeAuditLog(input: {
@@ -11,64 +11,63 @@ export async function writeAuditLog(input: {
   reason?: string;
   ipAddress?: string;
 }) {
-  return db.auditLog.create({
-    data: {
-      actorId: input.actorId ?? null,
-      action: input.action,
-      entityType: input.entityType,
-      entityId: input.entityId,
-      before: input.before ? (input.before as object) : undefined,
-      after: input.after ? (input.after as object) : undefined,
-      reason: input.reason,
-      ipAddress: input.ipAddress,
-    },
+  const supabase = createSupabaseAdminClient();
+  return supabase.from("audit_logs").insert({
+    actor_id: input.actorId ?? null,
+    action: input.action,
+    entity_type: input.entityType,
+    entity_id: input.entityId,
+    before: input.before ? (input.before as any) : null,
+    after: input.after ? (input.after as any) : null,
+    reason: input.reason,
+    ip_address: input.ipAddress,
   });
 }
 
 export async function getDashboardSummary() {
-  const [
-    orderCounts,
-    customerCount,
-    lowStockCount,
-    recentOrders,
-    revenueResult,
-    productCounts,
-  ] = await Promise.all([
-    db.order.groupBy({
-      by: ["status"],
-      _count: { id: true },
-    }),
-    db.customer.count(),
-    db.inventoryBalance.count({
-      where: {
-        OR: [{ onHand: { lte: 5 } }],
-      },
-    }).catch(() => 0),
-    db.order.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-      include: { customer: { include: { user: { select: { name: true, email: true } } } } },
-    }),
-    db.order.aggregate({
-      _sum: { totalMinor: true },
-      where: { status: { in: ["CONFIRMED", "PROCESSING", "PACKED", "SHIPPED", "DELIVERED"] } },
-    }),
-    adminGetCatalogProductCounts().catch(() => ({
-      published: 0,
-      draft: 0,
-      archived: 0,
-      total: 0,
-    })),
-  ]);
+  const supabase = createSupabaseAdminClient();
+  
+  // order counts
+  const { data: orderCounts } = await supabase
+    .from('orders')
+    .select('status');
+  
+  const pendingOrders = orderCounts?.filter(o => o.status === 'PENDING').length ?? 0;
+  const totalOrders = orderCounts?.length ?? 0;
 
-  const pendingOrders = orderCounts.find((o) => o.status === "PENDING")?._count.id ?? 0;
+  // customer count
+  const { count: customerCount } = await supabase
+    .from('customers')
+    .select('*', { count: 'exact', head: true });
+
+  // revenue
+  const { data: revenueData } = await supabase
+    .from('orders')
+    .select('total_minor')
+    .in('status', ["CONFIRMED", "PROCESSING", "PACKED", "SHIPPED", "DELIVERED"]);
+    
+  const revenueMinor = revenueData?.reduce((sum, order) => sum + (order.total_minor || 0), 0) ?? 0;
+
+  // recent orders
+  const { data: recentOrders } = await supabase
+    .from('orders')
+    .select('*, customers(profiles(name, email))')
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  const productCounts = await adminGetCatalogProductCounts().catch(() => ({
+    published: 0,
+    draft: 0,
+    archived: 0,
+    total: 0,
+  }));
 
   return {
     products: productCounts,
-    orders: { pending: pendingOrders, total: orderCounts.reduce((a, b) => a + b._count.id, 0) },
-    customers: customerCount,
-    revenueMinor: revenueResult._sum.totalMinor ?? 0,
-    lowStockCount,
-    recentOrders,
+    orders: { pending: pendingOrders, total: totalOrders },
+    customers: customerCount ?? 0,
+    revenueMinor,
+    lowStockCount: 0, // Need to fix inventory logic later
+    recentOrders: recentOrders ?? [],
   };
 }

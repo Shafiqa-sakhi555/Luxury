@@ -1,12 +1,13 @@
-import { db } from "@/server/db";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
 
 export default async function AdminCustomersPage() {
-  const customers = await db.customer.findMany({
-    take: 50,
-    orderBy: { createdAt: "desc" },
-    include: { user: { select: { name: true, email: true } }, _count: { select: { orders: true } } },
-  }).catch(() => []);
+  const supabase = createSupabaseAdminClient();
+  const { data: customers } = await supabase
+    .from("customers")
+    .select("*, profiles(name, email), orders(count)")
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   return (
     <div>
@@ -21,14 +22,14 @@ export default async function AdminCustomersPage() {
             </tr>
           </thead>
           <tbody>
-            {customers.length === 0 ? (
+            {!customers || customers.length === 0 ? (
               <tr><td colSpan={3} className="px-4 py-12 text-center text-muted">No customers yet.</td></tr>
             ) : (
-              customers.map((c) => (
+              customers.map((c: any) => (
                 <tr key={c.id} className="border-b border-navy/5">
-                  <td className="px-4 py-3">{c.user.name ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted">{c.user.email}</td>
-                  <td className="px-4 py-3 tabular-nums">{c._count.orders}</td>
+                  <td className="px-4 py-3">{c.profiles?.name ?? "—"}</td>
+                  <td className="px-4 py-3 text-muted">{c.profiles?.email}</td>
+                  <td className="px-4 py-3 tabular-nums">{c.orders?.[0]?.count ?? 0}</td>
                 </tr>
               ))
             )}

@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import { AdminButton, AdminInput, AdminLabel, AdminSelect, AdminTextarea } from "@/components/admin/ui";
 import { AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import { saveProductAction } from "@/server/catalog/admin-actions";
@@ -12,7 +13,6 @@ import { slugify } from "@/lib/slug";
 import type { AdminCategoryOption, AdminProductDetail } from "@/types/admin-catalog";
 
 type FormValues = {
-  source: "prisma" | "supabase";
   categoryId: string;
   name: string;
   slug?: string;
@@ -29,7 +29,6 @@ type FormValues = {
 };
 
 const productSchema = z.object({
-  source: z.enum(["prisma", "supabase"]),
   categoryId: z.string().min(1, "Select a category"),
   name: z.string().min(2, "Name is required"),
   slug: z.string().optional(),
@@ -57,7 +56,6 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   const isEdit = Boolean(product);
 
   const defaultValues: FormValues = {
-    source: product?.source ?? "prisma",
     categoryId: product?.categoryId ?? "",
     name: product?.name ?? "",
     slug: product?.slug ?? "",
@@ -78,13 +76,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     defaultValues,
   });
 
-  const watchSource = form.watch("source");
   const watchName = form.watch("name");
-
-  const filteredCategories = useMemo(
-    () => categories.filter((cat) => cat.source === watchSource),
-    [categories, watchSource]
-  );
 
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
@@ -108,11 +100,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
         return;
       }
 
-      router.push(
-        watchSource === "supabase"
-          ? `/admin/catalog/products/${result.id}?source=supabase`
-          : `/admin/catalog/products/${result.id}`
-      );
+      toast.success(isEdit ? "Product updated" : "Product created");
+      router.push("/admin/catalog/products");
       router.refresh();
     });
   });
@@ -137,23 +126,6 @@ export function ProductForm({ categories, product }: ProductFormProps) {
         <div className="space-y-4 lg:col-span-2">
           <AdminCard className="space-y-4 p-5">
             <h2 className="text-sm font-semibold text-navy">Product details</h2>
-
-            {!isEdit && (
-              <div>
-                <AdminLabel htmlFor="source">Catalog</AdminLabel>
-                <AdminSelect
-                  id="source"
-                  {...form.register("source")}
-                  onChange={(event) => {
-                    form.setValue("source", event.target.value as FormValues["source"]);
-                    form.setValue("categoryId", "");
-                  }}
-                >
-                  <option value="prisma">Standard catalog</option>
-                  <option value="supabase">Curtains / Prayer mats / Carpets</option>
-                </AdminSelect>
-              </div>
-            )}
 
             <div>
               <AdminLabel htmlFor="name">Product name</AdminLabel>
@@ -201,8 +173,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
               <AdminLabel htmlFor="categoryId">Category</AdminLabel>
               <AdminSelect id="categoryId" {...form.register("categoryId")}>
                 <option value="">Select category</option>
-                {filteredCategories.map((cat) => (
-                  <option key={`${cat.source}-${cat.id}`} value={cat.id}>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
                     {cat.name}
                   </option>
                 ))}
@@ -237,16 +209,14 @@ export function ProductForm({ categories, product }: ProductFormProps) {
               </div>
             </div>
 
-            {watchSource === "supabase" && (
-              <div>
-                <AdminLabel htmlFor="sellingUnit">Selling unit</AdminLabel>
-                <AdminInput
-                  id="sellingUnit"
-                  {...form.register("sellingUnit")}
-                  placeholder="e.g. per sq ft"
-                />
-              </div>
-            )}
+            <div>
+              <AdminLabel htmlFor="sellingUnit">Selling unit</AdminLabel>
+              <AdminInput
+                id="sellingUnit"
+                {...form.register("sellingUnit")}
+                placeholder="e.g. per sq ft"
+              />
+            </div>
 
             <div>
               <AdminLabel htmlFor="stockQuantity">Stock quantity</AdminLabel>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutDashboard,
@@ -16,7 +16,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { signOut } from "next-auth/react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const nav = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -30,8 +30,18 @@ const nav = [
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const supabase = createSupabaseBrowserClient();
+
+  const handleSignOut = async () => {
+    await fetch("/api/auth/admin/session", { method: "DELETE" });
+    await supabase.auth.signOut();
+    router.push("/admin/login");
+    router.refresh();
+  };
 
   const sidebar = (
     <div className="flex h-full flex-col">
@@ -88,7 +98,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </Link>
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={handleSignOut}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red hover:bg-red/5"
         >
           <LogOut className="h-4 w-4" />

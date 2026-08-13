@@ -1,12 +1,6 @@
 "use server";
 
-import type { AdminProductFormValues, CatalogSource } from "@/types/admin-catalog";
-import {
-  archivePrismaProduct,
-  createPrismaProduct,
-  deletePrismaProduct,
-  updatePrismaProduct,
-} from "@/server/catalog/admin-mutations";
+import type { AdminProductFormValues } from "@/types/admin-catalog";
 import {
   archiveSupabaseCatalogProduct,
   createSupabaseCatalogProduct,
@@ -20,25 +14,14 @@ export async function saveProductAction(input: {
 }) {
   const { id, values } = input;
 
-  if (values.source === "supabase") {
-    if (id) return updateSupabaseCatalogProduct(id, values);
-    return createSupabaseCatalogProduct(values);
-  }
-
-  if (id) return updatePrismaProduct(id, values);
-  return createPrismaProduct(values);
+  if (id) return updateSupabaseCatalogProduct(id, values);
+  return createSupabaseCatalogProduct(values);
 }
 
-export async function removeProductAction(input: { id: string; source: CatalogSource }) {
-  if (input.source === "supabase") {
-    return deleteSupabaseCatalogProduct(input.id);
-  }
-  return deletePrismaProduct(input.id);
+export async function removeProductAction(input: { id: string }) {
+  return deleteSupabaseCatalogProduct(input.id);
 }
 
-export async function archiveProductAction(input: { id: string; source: CatalogSource }) {
-  if (input.source === "supabase") {
-    return archiveSupabaseCatalogProduct(input.id);
-  }
-  return archivePrismaProduct(input.id);
+export async function archiveProductAction(input: { id: string }) {
+  return archiveSupabaseCatalogProduct(input.id);
 }
