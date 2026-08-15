@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { CLOUDINARY_FOLDERS, type CloudinaryFolder } from "@/lib/cloudinary/constants";
+import { z } from "zod";
 import { uploadImageBuffer } from "@/lib/cloudinary";
+import { CLOUDINARY_UPLOAD_TYPES } from "@/lib/cloudinary/constants";
 import { getUploadErrorMessage } from "@/lib/cloudinary/errors";
 import { isCloudinaryConfigured } from "@/lib/cloudinary/env";
 import { requirePermission } from "@/server/rbac";
+import { resolveCloudinaryUploadTarget } from "@/server/catalog/cloudinary-upload-context";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = new Set([
@@ -20,6 +22,16 @@ const EXTENSION_MIME_TYPES: Record<string, string> = {
   ".webp": "image/webp",
 };
 
+const uploadContextSchema = z.object({
+  uploadType: z.enum(CLOUDINARY_UPLOAD_TYPES),
+  categorySlug: z.string().optional(),
+  categoryId: z.string().optional(),
+  productId: z.string().optional(),
+  draftKey: z.string().optional(),
+  imageIndex: z.coerce.number().int().min(0).optional(),
+  bannerKey: z.string().optional(),
+});
+
 function resolveMimeType(file: File): string | null {
   if (ALLOWED_MIME_TYPES.has(file.type)) {
     return file.type;
@@ -29,20 +41,11 @@ function resolveMimeType(file: File): string | null {
   return EXTENSION_MIME_TYPES[extension] ?? null;
 }
 
-function requiredPermissionForFolder(folder: string) {
-  if (folder === CLOUDINARY_FOLDERS.categories) {
+function requiredPermissionForUpload(uploadType: z.infer<typeof uploadContextSchema>["uploadType"]) {
+  if (uploadType === "category" || uploadType === "banner") {
     return "catalog.write";
   }
   return "product.write";
-}
-
-const ALLOWED_FOLDERS = new Set<string>(Object.values(CLOUDINARY_FOLDERS));
-
-function assertAllowedFolder(folder: string): CloudinaryFolder {
-  if (!ALLOWED_FOLDERS.has(folder)) {
-    throw new Error("Invalid upload folder.");
-  }
-  return folder as CloudinaryFolder;
 }
 
 export async function POST(request: Request) {
@@ -53,14 +56,22 @@ export async function POST(request: Request) {
 
     const formData = await request.formData();
     const file = formData.get("file");
-    const folderInput = String(formData.get("folder") ?? CLOUDINARY_FOLDERS.products);
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "No file provided." }, { status: 400 });
     }
 
-    const folder = assertAllowedFolder(folderInput);
-    await requirePermission(requiredPermissionForFolder(folder));
+    const context = uploadContextSchema.parse({
+      uploadType: String(formData.get("uploadType") ?? "product"),
+      categorySlug: formData.get("categorySlug") ? String(formData.get("categorySlug")) : undefined,
+      categoryId: formData.get("categoryId") ? String(formData.get("categoryId")) : undefined,
+      productId: formData.get("productId") ? String(formData.get("productId")) : undefined,
+      draftKey: formData.get("draftKey") ? String(formData.get("draftKey")) : undefined,
+      imageIndex: formData.get("imageIndex") ?? undefined,
+      bannerKey: formData.get("bannerKey") ? String(formData.get("bannerKey")) : undefined,
+    });
+
+    await requirePermission(requiredPermissionForUpload(context.uploadType));
 
     const mimeType = resolveMimeType(file);
     if (!mimeType) {
@@ -74,10 +85,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "File exceeds the 5 MB limit." }, { status: 400 });
     }
 
+    const target = await resolveCloudinaryUploadTarget(context);
     const buffer = Buffer.from(await file.arrayBuffer());
-    const uploaded = await uploadImageBuffer(buffer, folder, {
-      filename: file.name,
+    const uploaded = await uploadImageBuffer(buffer, {
+      publicId: target.publicId,
       mimeType,
+      overwrite: target.overwrite,
     });
 
     return NextResponse.json({
@@ -85,8 +98,12 @@ export async function POST(request: Request) {
       public_id: uploaded.publicId,
       width: uploaded.width,
       height: uploaded.height,
+      folder: target.folder,
     });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid upload request." }, { status: 400 });
+    }
     console.error("[media/upload]", error);
     const message = getUploadErrorMessage(error);
     const status = message === "Forbidden" || message === "Unauthorized" ? 403 : 500;

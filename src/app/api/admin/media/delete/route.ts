@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { CLOUDINARY_FOLDERS } from "@/lib/cloudinary/constants";
 import { deleteCloudinaryImage } from "@/lib/cloudinary";
 import { getUploadErrorMessage } from "@/lib/cloudinary/errors";
+import {
+  isBannerCloudinaryPublicId,
+  isCategoryCloudinaryPublicId,
+  isLegacyCloudinaryPublicId,
+} from "@/lib/cloudinary/paths";
 import { isCloudinaryConfigured } from "@/lib/cloudinary/env";
 import { requirePermission } from "@/server/rbac";
 
@@ -11,7 +15,7 @@ const schema = z.object({
 });
 
 function requiredPermissionForPublicId(publicId: string) {
-  if (publicId.startsWith(`${CLOUDINARY_FOLDERS.categories}/`)) {
+  if (isCategoryCloudinaryPublicId(publicId) || isBannerCloudinaryPublicId(publicId)) {
     return "catalog.write";
   }
   return "product.write";
@@ -24,7 +28,13 @@ export async function DELETE(request: Request) {
     }
 
     const body = schema.parse(await request.json());
-    await requirePermission(requiredPermissionForPublicId(body.publicId));
+
+    if (isLegacyCloudinaryPublicId(body.publicId)) {
+      await requirePermission("product.write");
+    } else {
+      await requirePermission(requiredPermissionForPublicId(body.publicId));
+    }
+
     await deleteCloudinaryImage(body.publicId);
 
     return NextResponse.json({ ok: true });

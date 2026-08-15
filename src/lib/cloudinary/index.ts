@@ -1,5 +1,4 @@
 import { v2 as cloudinary } from "cloudinary";
-import { type CloudinaryFolder } from "@/lib/cloudinary/constants";
 import { formatCloudinaryError } from "@/lib/cloudinary/errors";
 import {
   getCloudinaryApiKey,
@@ -27,14 +26,14 @@ function ensureConfigured() {
 }
 
 type UploadOptions = {
-  filename?: string;
   mimeType?: string;
+  publicId: string;
+  overwrite?: boolean;
 };
 
 export async function uploadImageBuffer(
   buffer: Buffer,
-  folder: CloudinaryFolder,
-  options: UploadOptions = {}
+  options: UploadOptions
 ): Promise<CloudinaryUploadResult> {
   ensureConfigured();
 
@@ -43,11 +42,11 @@ export async function uploadImageBuffer(
 
   try {
     const uploadResult = await cloudinary.uploader.upload(dataUri, {
-      folder,
+      public_id: options.publicId,
       resource_type: "image",
-      use_filename: Boolean(options.filename),
-      unique_filename: true,
-      overwrite: false,
+      unique_filename: false,
+      overwrite: options.overwrite ?? true,
+      invalidate: true,
     });
 
     if (!uploadResult.secure_url || !uploadResult.public_id) {
@@ -65,12 +64,43 @@ export async function uploadImageBuffer(
   }
 }
 
+export async function renameCloudinaryImage(
+  fromPublicId: string,
+  toPublicId: string
+): Promise<CloudinaryUploadResult> {
+  ensureConfigured();
+  if (!fromPublicId || fromPublicId === toPublicId) {
+    throw new Error("Invalid Cloudinary rename request.");
+  }
+
+  try {
+    const result = await cloudinary.uploader.rename(fromPublicId, toPublicId, {
+      overwrite: true,
+      invalidate: true,
+      resource_type: "image",
+    });
+
+    if (!result.secure_url || !result.public_id) {
+      throw new Error("Cloudinary rename returned an incomplete response.");
+    }
+
+    return {
+      secureUrl: result.secure_url,
+      publicId: result.public_id,
+      width: result.width ?? 0,
+      height: result.height ?? 0,
+    };
+  } catch (error) {
+    throw new Error(formatCloudinaryError(error));
+  }
+}
+
 export async function deleteCloudinaryImage(publicId: string) {
   ensureConfigured();
   if (!publicId) return;
 
   try {
-    await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+    await cloudinary.uploader.destroy(publicId, { resource_type: "image", invalidate: true });
   } catch (error) {
     throw new Error(formatCloudinaryError(error));
   }
@@ -79,10 +109,9 @@ export async function deleteCloudinaryImage(publicId: string) {
 export async function replaceCloudinaryImage(
   oldPublicId: string | null | undefined,
   buffer: Buffer,
-  folder: CloudinaryFolder,
-  options: UploadOptions = {}
+  options: UploadOptions
 ) {
-  const uploaded = await uploadImageBuffer(buffer, folder, options);
+  const uploaded = await uploadImageBuffer(buffer, options);
   if (oldPublicId && oldPublicId !== uploaded.publicId) {
     await deleteCloudinaryImage(oldPublicId).catch(() => undefined);
   }
@@ -91,3 +120,4 @@ export async function replaceCloudinaryImage(
 
 export { getOptimizedImageUrl } from "@/lib/cloudinary/url";
 export { formatCloudinaryError, getUploadErrorMessage } from "@/lib/cloudinary/errors";
+export { finalizeProductCloudinaryImages } from "@/lib/cloudinary/finalize-product-images";

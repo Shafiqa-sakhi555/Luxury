@@ -93,6 +93,10 @@ function CategoryFormModal({
     values: open ? defaultValues : undefined,
   });
 
+  const watchName = form.watch("name");
+  const watchSlug = form.watch("slug");
+  const categorySlug = (watchSlug?.trim() || slugify(watchName || "category")).trim();
+
   if (!open) return null;
 
   function onSubmit(values: FormValues) {
@@ -184,7 +188,7 @@ function CategoryFormModal({
             />
           </div>
 
-          <ImageUploader value={heroImage} onChange={setHeroImage} />
+          <ImageUploader value={heroImage} onChange={setHeroImage} categorySlug={categorySlug} />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

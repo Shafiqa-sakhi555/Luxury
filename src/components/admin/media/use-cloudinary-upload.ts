@@ -11,17 +11,61 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/webp",
 ]);
 
+export type CloudinaryUploadContext =
+  | {
+      type: "product";
+      categorySlug?: string;
+      categoryId?: string;
+      productId?: string;
+      draftKey?: string;
+      imageIndex: number;
+    }
+  | {
+      type: "category";
+      categorySlug: string;
+    }
+  | {
+      type: "banner";
+      bannerKey?: string;
+    };
+
 type UploadOptions = {
-  folder: string;
+  context: CloudinaryUploadContext;
   onProgress?: (progress: number) => void;
 };
 
 function validateFile(file: File) {
   if (!ALLOWED_MIME_TYPES.has(file.type)) {
-    throw new Error("Unsupported file type. Use JPG, PNG, or WEBP.");
+    const extension = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+    const allowedExtensions = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+    if (!allowedExtensions.has(extension)) {
+      throw new Error("Unsupported file type. Use JPG, PNG, or WEBP.");
+    }
   }
   if (file.size > MAX_FILE_SIZE) {
     throw new Error("File exceeds the 5 MB limit.");
+  }
+}
+
+function appendUploadContext(formData: FormData, context: CloudinaryUploadContext) {
+  formData.append("uploadType", context.type);
+
+  if (context.type === "product") {
+    if (context.categorySlug) formData.append("categorySlug", context.categorySlug);
+    if (context.categoryId) formData.append("categoryId", context.categoryId);
+    if (context.productId) formData.append("productId", context.productId);
+    if (context.draftKey) formData.append("draftKey", context.draftKey);
+    formData.append("imageIndex", String(context.imageIndex));
+    return;
+  }
+
+  if (context.type === "category") {
+    formData.append("categorySlug", context.categorySlug);
+    return;
+  }
+
+  if (context.bannerKey) {
+    formData.append("bannerKey", context.bannerKey);
   }
 }
 
@@ -35,7 +79,7 @@ export function useCloudinaryUpload() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("folder", options.folder);
+      appendUploadContext(formData, options.context);
 
       const result = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
         const xhr = new XMLHttpRequest();

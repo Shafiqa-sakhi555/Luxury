@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,6 +54,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState<AdminProductImage[]>(product?.images ?? []);
+  const draftKeyRef = useRef(crypto.randomUUID());
   const isEdit = Boolean(product);
 
   const defaultValues: FormValues = {
@@ -77,6 +78,11 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   });
 
   const watchName = form.watch("name");
+  const watchCategoryId = form.watch("categoryId");
+  const resolvedCategoryId = watchCategoryId || product?.categoryId || "";
+  const selectedCategory = categories.find((category) => category.id === resolvedCategoryId);
+  const categorySlug = selectedCategory?.slug ?? product?.categorySlug ?? null;
+  const categoryId = resolvedCategoryId || null;
 
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
@@ -160,6 +166,10 @@ export function ProductForm({ categories, product }: ProductFormProps) {
               value={images}
               onChange={setImages}
               altFallback={watchName || "Product image"}
+              categorySlug={categorySlug}
+              categoryId={categoryId}
+              productId={product?.id}
+              draftKey={draftKeyRef.current}
             />
           </AdminCard>
         </div>
