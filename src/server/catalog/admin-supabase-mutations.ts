@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { requirePermission } from "@/server/rbac";
+import { AuthorizationError, requirePermission } from "@/server/rbac";
 import { writeAuditLog } from "@/server/audit";
 import { slugify, uniqueProductSlug } from "@/lib/slug";
 import type { AdminProductFormValues, MutationResult } from "@/types/admin-catalog";
@@ -120,6 +120,7 @@ export async function createSupabaseCatalogProduct(
     return { ok: false, error: "Supabase is not configured." };
   }
 
+  try {
   const user = await requirePermission("product.write");
   const supabase = createSupabaseAdminClient();
 
@@ -178,6 +179,12 @@ export async function createSupabaseCatalogProduct(
   revalidatePath("/shop");
 
   return { ok: true, id: product.id };
+  } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return { ok: false, error: error.message };
+    }
+    return { ok: false, error: error instanceof Error ? error.message : "Failed to create product." };
+  }
 }
 
 export async function updateSupabaseCatalogProduct(
@@ -188,6 +195,7 @@ export async function updateSupabaseCatalogProduct(
     return { ok: false, error: "Supabase is not configured." };
   }
 
+  try {
   const user = await requirePermission("product.write");
   const supabase = createSupabaseAdminClient();
 
@@ -256,6 +264,12 @@ export async function updateSupabaseCatalogProduct(
   revalidatePath("/shop");
 
   return { ok: true, id };
+  } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return { ok: false, error: error.message };
+    }
+    return { ok: false, error: error instanceof Error ? error.message : "Failed to update product." };
+  }
 }
 
 export async function archiveSupabaseCatalogProduct(id: string): Promise<MutationResult> {
@@ -263,6 +277,7 @@ export async function archiveSupabaseCatalogProduct(id: string): Promise<Mutatio
     return { ok: false, error: "Supabase is not configured." };
   }
 
+  try {
   const user = await requirePermission("product.delete");
   const supabase = createSupabaseAdminClient();
 
@@ -280,6 +295,12 @@ export async function archiveSupabaseCatalogProduct(id: string): Promise<Mutatio
   revalidatePath("/shop");
 
   return { ok: true, id };
+  } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return { ok: false, error: error.message };
+    }
+    return { ok: false, error: error instanceof Error ? error.message : "Failed to archive product." };
+  }
 }
 
 export async function deleteSupabaseCatalogProduct(id: string): Promise<MutationResult> {

@@ -19,7 +19,7 @@ type SupabaseVariantRow = {
   color: string | null;
   quality: string | null;
   size: string | null;
-  original_price_minor: number;
+  price_minor: number;
   sale_price_minor: number;
   sort_order: number;
   is_default: boolean;
@@ -120,7 +120,9 @@ const PRODUCT_SELECT = `
     color,
     quality,
     size,
-    original_price_minor,
+    original_price,
+    sale_price,
+    price_minor,
     sale_price_minor,
     sort_order,
     is_default,
@@ -178,9 +180,9 @@ async function mapVariants(
       color: row.color,
       quality: row.quality,
       size: row.size,
-      originalPriceMinor: row.original_price_minor,
+      originalPriceMinor: row.price_minor,
       salePriceMinor: row.sale_price_minor,
-      discountPercentage: row.original_price_minor > row.sale_price_minor ? Math.round((1 - row.sale_price_minor / row.original_price_minor) * 100) : 0,
+      discountPercentage: row.price_minor > row.sale_price_minor ? Math.round((1 - row.sale_price_minor / row.price_minor) * 100) : 0,
       stockQuantity: null, // Simplified
       stockStatus: null,
       isDefault: row.is_default,
@@ -204,6 +206,9 @@ export async function mapSupabaseProduct(
   const inventory = row.inventory?.[0] ?? null;
   const variants = row.has_variants ? await mapVariants(row) : undefined;
   const defaultVariant = variants?.find((v) => v.isDefault) ?? variants?.[0];
+  const defaultVariantRow =
+    row.product_variants?.find((v) => v.is_default) ?? row.product_variants?.[0];
+  const cartVariantId = row.has_variants ? defaultVariant?.variantId ?? null : defaultVariantRow?.id ?? null;
   
   const categoryData = Array.isArray(row.categories) ? row.categories[0] : row.categories;
   const category: CatalogCategory = {
@@ -255,7 +260,7 @@ export async function mapSupabaseProduct(
       : inventory?.stock_status ?? null,
     hasVariants: row.has_variants,
     variants,
-    variantId: row.has_variants ? defaultVariant?.variantId ?? null : null,
+    variantId: cartVariantId,
     brand: null,
   };
 }

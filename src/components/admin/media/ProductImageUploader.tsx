@@ -94,6 +94,7 @@ export function ProductImageUploader({
           },
         });
 
+        let committedImages: AdminProductImage[] | null = null;
         setItems((current) => {
           const next = current.map((item) =>
             item.clientId === clientId
@@ -106,9 +107,13 @@ export function ProductImageUploader({
                 }
               : item
           );
-          onChange(fromUploadItems(next));
-          return next;
+          const normalized = next.map((item, index) => ({ ...item, sortOrder: index }));
+          committedImages = fromUploadItems(normalized);
+          return normalized;
         });
+        if (committedImages) {
+          onChange(committedImages);
+        }
       } catch (uploadError) {
         setItems((current) => current.filter((item) => item.clientId !== clientId));
         setError(uploadError instanceof Error ? uploadError.message : "Upload failed.");

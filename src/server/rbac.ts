@@ -6,6 +6,31 @@ import {
   type StaffRole,
 } from "@/lib/auth/staff";
 
+export type AdminContext = {
+  user: { id: string; email?: string };
+  permissions: Set<string>;
+  roleNames: string[];
+  primaryRole: string;
+};
+
+export function hasAnyPermission(permissions: Set<string>, required: string[]) {
+  if (required.length === 0) return true;
+  if (permissions.has("*")) return true;
+  return required.some((permission) => permissions.has(permission));
+}
+
+export function canWriteProducts(permissions: Set<string>) {
+  return hasAnyPermission(permissions, ["product.write"]);
+}
+
+export function canWriteCatalog(permissions: Set<string>) {
+  return hasAnyPermission(permissions, ["catalog.write"]);
+}
+
+export function canWriteOrders(permissions: Set<string>) {
+  return hasAnyPermission(permissions, ["order.write"]);
+}
+
 export class AuthorizationError extends Error {
   constructor(message = "Forbidden") {
     super(message);
@@ -30,6 +55,16 @@ const ROLE_DEFAULT_PERMISSIONS: Record<StaffRole, string[]> = {
   Finance: ["order.read", "finance.read", "customer.read"],
 };
 
+type RoleJoin = { name: string } | { name: string }[] | null;
+
+function roleNamesFromJoin(roles: RoleJoin): string[] {
+  if (!roles) return [];
+  if (Array.isArray(roles)) {
+    return roles.map((role) => role.name).filter(Boolean);
+  }
+  return roles.name ? [roles.name] : [];
+}
+
 async function getUserRoleNames(userId: string): Promise<string[]> {
   const supabase = createSupabaseAdminClient();
   const { data: rows } = await supabase
@@ -39,14 +74,7 @@ async function getUserRoleNames(userId: string): Promise<string[]> {
 
   if (!rows?.length) return [];
 
-  return rows.flatMap((row) => {
-    const roles = row.roles;
-    if (!roles) return [];
-    if (Array.isArray(roles)) {
-      return roles.map((role) => role.name).filter(Boolean);
-    }
-    return roles.name ? [roles.name] : [];
-  });
+  return rows.flatMap((row) => roleNamesFromJoin(row.roles as RoleJoin));
 }
 
 export async function getUserPermissions(userId: string): Promise<Set<string>> {
@@ -108,6 +136,27 @@ export async function requirePermission(permission: string) {
   return user;
 }
 
+export async function getAdminContext(): Promise<AdminContext | null> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) return null;
+
+  const permissions = await getUserPermissions(user.id);
+  const roleNames = await getUserRoleNames(user.id);
+  const metadataRole = getStaffRoleFromMetadata(user.app_metadata as Record<string, unknown>);
+  const primaryRole = roleNames[0] ?? metadataRole ?? "Staff";
+
+  return {
+    user: { id: user.id, email: user.email },
+    permissions,
+    roleNames,
+    primaryRole,
+  };
+}
+
 export async function requireAuth() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -133,6 +182,8 @@ export async function isStaff(userId: string): Promise<boolean> {
   const {
     data: { user },
   } = await supabase.auth.admin.getUserById(userId);
+
+  if (!user) return false;
 
   return Boolean(getStaffRoleFromMetadata(user.app_metadata));
 }
