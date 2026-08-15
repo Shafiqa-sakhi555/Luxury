@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { categorySlugsMatch } from "@/lib/supabase/catalog-categories";
 
 type FilterItem = {
   label: string;
@@ -20,7 +21,7 @@ export function CatalogFilterPills({
         const isActive =
           item.slug === undefined
             ? activeSlug === undefined || activeSlug === ""
-            : activeSlug === item.slug;
+            : categorySlugsMatch(activeSlug, item.slug);
 
         return (
           <Link

@@ -7,7 +7,7 @@ import {
   listSupabaseProductsByCategorySlug,
 } from "@/server/catalog/supabase-products";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { formatCategoryLabel } from "@/lib/supabase/catalog-categories";
+import { formatCategoryLabel, normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
 import { resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
 
 export type ProductListParams = {
@@ -47,7 +47,11 @@ export async function listProducts(
   }
 
   if (params.categorySlug) {
-    query = query.eq('categories.slug', params.categorySlug);
+    const canonicalSlug = await resolveShopCategorySlug(params.categorySlug);
+    if (!canonicalSlug) {
+      return { items: [], total: 0, page, pageSize, totalPages: 0 };
+    }
+    query = query.eq("categories.slug", canonicalSlug);
   }
 
   // Sorting
@@ -149,13 +153,32 @@ export async function getRelatedProducts(slug: string, categorySlug: string) {
 export async function listShopFilterCategories() {
   if (!isSupabaseConfigured()) return [];
   const supabase = createSupabaseAdminClient();
-  const { data } = await supabase.from("categories").select("name, slug").order("sort_order", { ascending: true });
-  
-  return (data ?? []).map(cat => ({
+  const { data } = await supabase
+    .from("categories")
+    .select("name, slug, description")
+    .order("sort_order", { ascending: true });
+
+  return (data ?? []).map((cat) => ({
     label: cat.name,
-    href: `/shop?category=${cat.slug}`,
-    slug: cat.slug
+    href: `/shop?category=${encodeURIComponent(cat.slug)}`,
+    slug: cat.slug,
+    description: cat.description ?? "",
   }));
+}
+
+export async function resolveShopCategorySlug(inputSlug?: string | null) {
+  if (!inputSlug || !isSupabaseConfigured()) return null;
+
+  const normalized = normalizeCategorySlug(inputSlug) ?? inputSlug;
+  const supabase = createSupabaseAdminClient();
+
+  const { data } = await supabase
+    .from("categories")
+    .select("slug")
+    .ilike("slug", normalized)
+    .maybeSingle();
+
+  return data?.slug ?? null;
 }
 
 export async function listCategories(includeDraft = false) {

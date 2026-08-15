@@ -7,7 +7,20 @@ import { Navbar } from "@/components/layout/Navbar";
 import { PromoBar } from "@/components/layout/PromoBar";
 import { LogoIntroProvider } from "@/contexts/LogoIntroContext";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export type ShopNavCategory = {
+  label: string;
+  slug: string;
+  href: string;
+  description?: string;
+};
+
+export function AppShell({
+  children,
+  shopCategories = [],
+}: {
+  children: React.ReactNode;
+  shopCategories?: ShopNavCategory[];
+}) {
   return (
     <LogoIntroProvider>
       <LayoutGroup id="brand-intro">
@@ -15,12 +28,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SmoothScrollProvider>
           <div className="fixed top-0 left-0 right-0 z-50">
             <PromoBar />
-            <Navbar />
+            <Navbar shopCategories={shopCategories} />
           </div>
           <main>{children}</main>
         </SmoothScrollProvider>
       </LayoutGroup>
     </LogoIntroProvider>
-
   );
 }
