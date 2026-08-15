@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getOrCreateCart } from "@/server/cart";
+import { getOrCreateCart, resolveCustomerCart } from "@/server/cart";
 import { placeOrder } from "@/server/orders";
 
 const schema = z.object({
@@ -22,25 +22,24 @@ const schema = z.object({
 export async function POST(request: Request) {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user?.id) {
       return NextResponse.json({ error: "Sign in required" }, { status: 401 });
     }
 
-    const { data: customer } = await supabase.from("customers").select("id").eq("profile_id", user.id).maybeSingle();
-    if (!customer) {
-      return NextResponse.json({ error: "Customer profile missing" }, { status: 400 });
-    }
-
+    const customerId = await resolveCustomerCart(user.id);
     const body = schema.parse(await request.json());
-    const cart = await getOrCreateCart(customer.id);
-    if (!cart || !cart.cart_items || cart.cart_items.length === 0) {
+    const cart = await getOrCreateCart(customerId);
+
+    if (!cart?.cart_items?.length) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
     const order = await placeOrder({
-      customerId: customer.id,
+      customerId,
       cartId: cart.id,
       fulfilmentType: body.fulfilmentType,
       storeId: body.storeId,

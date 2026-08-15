@@ -72,6 +72,7 @@ export function LoginForm() {
         }
         router.push("/admin");
       } else {
+        await fetch("/api/cart", { credentials: "same-origin" }).catch(() => undefined);
         router.push(callbackUrl);
       }
     } else {
@@ -111,7 +112,7 @@ export function LoginForm() {
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         No account?{" "}
-        <Link href="/register" className="text-navy hover:underline">
+        <Link href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="text-navy hover:underline">
           Register
         </Link>
       </p>

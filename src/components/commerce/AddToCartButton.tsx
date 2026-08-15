@@ -34,6 +34,8 @@ export function AddToCartButton({ variantId }: { variantId: string }) {
 
         headers: { "Content-Type": "application/json" },
 
+        credentials: "same-origin",
+
         body: JSON.stringify({ variantId, quantity: 1 }),
 
       });

@@ -1,9 +1,11 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 
 const CART_COOKIE = "jalals_cart_token";
+
+const CART_SELECT =
+  "*, cart_items(*, product_variants(*, products(*, product_images(*))))";
 
 export async function getCartToken(): Promise<string> {
   const cookieStore = await cookies();
@@ -20,52 +22,248 @@ export async function getCartToken(): Promise<string> {
   return token;
 }
 
-export async function getOrCreateCart(customerId?: string) {
-  const supabase = createSupabaseAdminClient(); // Admin client to bypass RLS for guest carts
-  
-  if (customerId) {
-    let { data: cart } = await supabase.from("carts").select("*, cart_items(*, product_variants(*, products(*, product_images(*))))").eq("customer_id", customerId).maybeSingle();
-    if (!cart) {
-      const { data: newCart } = await supabase.from("carts").insert({ customer_id: customerId }).select("*, cart_items(*, product_variants(*, products(*, product_images(*))))").single();
-      cart = newCart;
-    }
-    return cart;
-  }
+function getCartTokenFromCookie() {
+  return cookies().then((store) => store.get(CART_COOKIE)?.value ?? null);
+}
 
-  const token = await getCartToken();
-  let { data: cart } = await supabase.from("carts").select("*, cart_items(*, product_variants(*, products(*, product_images(*))))").eq("token", token).maybeSingle();
+async function findOrCreateCustomerCart(customerId: string) {
+  const supabase = createSupabaseAdminClient();
+  let { data: cart } = await supabase
+    .from("carts")
+    .select(CART_SELECT)
+    .eq("customer_id", customerId)
+    .maybeSingle();
+
   if (!cart) {
-    const { data: newCart } = await supabase.from("carts").insert({ token }).select("*, cart_items(*, product_variants(*, products(*, product_images(*))))").single();
+    const { data: newCart } = await supabase
+      .from("carts")
+      .insert({ customer_id: customerId })
+      .select(CART_SELECT)
+      .single();
     cart = newCart;
   }
+
   return cart;
 }
 
-export async function addToCart(variantId: string, quantity = 1, customerId?: string) {
+async function findOrCreateGuestCart(token: string) {
   const supabase = createSupabaseAdminClient();
-  const cart = await getOrCreateCart(customerId);
-  
-  const { data: variant } = await supabase.from("product_variants").select("*, products(*)").eq("id", variantId).single();
-  if (!variant || variant.products.status !== "ACTIVE") throw new Error("Product unavailable");
+  let { data: cart } = await supabase
+    .from("carts")
+    .select(CART_SELECT)
+    .eq("token", token)
+    .maybeSingle();
 
-  const price = variant.sale_price_minor > 0 ? variant.sale_price_minor : variant.price_minor;
-
-  const { data: existing } = await supabase.from("cart_items").select("*").eq("cart_id", cart.id).eq("variant_id", variantId).maybeSingle();
-
-  if (existing) {
-    return supabase.from("cart_items").update({ quantity: existing.quantity + quantity, price_snapshot_minor: price }).eq("id", existing.id);
+  if (!cart) {
+    const { data: newCart } = await supabase
+      .from("carts")
+      .insert({ token })
+      .select(CART_SELECT)
+      .single();
+    cart = newCart;
   }
 
-  return supabase.from("cart_items").insert({ cart_id: cart.id, variant_id: variantId, quantity, price_snapshot_minor: price });
+  return cart;
 }
 
-export async function updateCartItem(itemId: string, quantity: number) {
+export async function ensureCustomerForProfile(profileId: string) {
+  const supabase = createSupabaseAdminClient();
+
+  const { data: existing } = await supabase
+    .from("customers")
+    .select("id")
+    .eq("profile_id", profileId)
+    .maybeSingle();
+
+  if (existing?.id) return existing.id;
+
+  const { data: created, error } = await supabase
+    .from("customers")
+    .insert({ profile_id: profileId })
+    .select("id")
+    .single();
+
+  if (error || !created) {
+    throw new Error("Could not create customer profile.");
+  }
+
+  return created.id;
+}
+
+export async function mergeGuestCartIntoCustomerCart(customerId: string) {
+  const token = await getCartTokenFromCookie();
+  if (!token) return;
+
+  const supabase = createSupabaseAdminClient();
+  const { data: guestCart } = await supabase
+    .from("carts")
+    .select("id, cart_items(variant_id, quantity, price_snapshot_minor)")
+    .eq("token", token)
+    .maybeSingle();
+
+  if (!guestCart?.cart_items?.length) return;
+
+  const customerCart = await findOrCreateCustomerCart(customerId);
+  if (!customerCart) return;
+
+  for (const item of guestCart.cart_items) {
+    await upsertCartItem(
+      customerCart.id,
+      item.variant_id,
+      item.quantity,
+      item.price_snapshot_minor ?? undefined
+    );
+  }
+
+  await supabase.from("cart_items").delete().eq("cart_id", guestCart.id);
+  await supabase.from("carts").delete().eq("id", guestCart.id);
+}
+
+export async function resolveCustomerCart(userId: string) {
+  const customerId = await ensureCustomerForProfile(userId);
+  await mergeGuestCartIntoCustomerCart(customerId);
+  return customerId;
+}
+
+export async function getOrCreateCart(customerId?: string) {
+  if (customerId) {
+    await mergeGuestCartIntoCustomerCart(customerId);
+    return findOrCreateCustomerCart(customerId);
+  }
+
+  const token = await getCartToken();
+  return findOrCreateGuestCart(token);
+}
+
+async function upsertCartItem(
+  cartId: string,
+  variantId: string,
+  quantity: number,
+  priceSnapshotMinor?: number
+) {
+  const supabase = createSupabaseAdminClient();
+
+  let price = priceSnapshotMinor;
+  if (price === undefined) {
+    const { data: variant } = await supabase
+      .from("product_variants")
+      .select("sale_price_minor, price_minor, products(status)")
+      .eq("id", variantId)
+      .single();
+
+    if (!variant) {
+      throw new Error("Product unavailable");
+    }
+
+    const product = Array.isArray(variant.products) ? variant.products[0] : variant.products;
+    if (product?.status !== "ACTIVE") {
+      throw new Error("Product unavailable");
+    }
+
+    price = variant.sale_price_minor > 0 ? variant.sale_price_minor : variant.price_minor;
+  }
+
+  const { data: existing } = await supabase
+    .from("cart_items")
+    .select("id, quantity")
+    .eq("cart_id", cartId)
+    .eq("variant_id", variantId)
+    .maybeSingle();
+
+  if (existing) {
+    return supabase
+      .from("cart_items")
+      .update({
+        quantity: existing.quantity + quantity,
+        price_snapshot_minor: price,
+      })
+      .eq("id", existing.id);
+  }
+
+  return supabase.from("cart_items").insert({
+    cart_id: cartId,
+    variant_id: variantId,
+    quantity,
+    price_snapshot_minor: price,
+  });
+}
+
+export async function addToCart(variantId: string, quantity = 1, customerId?: string) {
+  const cart = await getOrCreateCart(customerId);
+  if (!cart) throw new Error("Could not open cart.");
+
+  return upsertCartItem(cart.id, variantId, quantity);
+}
+
+async function getCartItemWithCart(itemId: string) {
+  const supabase = createSupabaseAdminClient();
+  const { data: item } = await supabase
+    .from("cart_items")
+    .select("id, cart_id, carts(customer_id, token)")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  return item;
+}
+
+export async function assertCartItemAccess(itemId: string, customerId?: string) {
+  const item = await getCartItemWithCart(itemId);
+  if (!item?.carts) throw new Error("Cart item not found.");
+
+  const cart = Array.isArray(item.carts) ? item.carts[0] : item.carts;
+
+  if (customerId) {
+    if (cart.customer_id !== customerId) throw new Error("Forbidden");
+    return;
+  }
+
+  const token = await getCartTokenFromCookie();
+  if (!token || cart.token !== token) throw new Error("Forbidden");
+}
+
+export async function updateCartItem(itemId: string, quantity: number, customerId?: string) {
+  await assertCartItemAccess(itemId, customerId);
+
   const supabase = createSupabaseAdminClient();
   if (quantity <= 0) return supabase.from("cart_items").delete().eq("id", itemId);
   return supabase.from("cart_items").update({ quantity }).eq("id", itemId);
 }
 
-export async function removeCartItem(itemId: string) {
+export async function removeCartItem(itemId: string, customerId?: string) {
+  await assertCartItemAccess(itemId, customerId);
   const supabase = createSupabaseAdminClient();
   return supabase.from("cart_items").delete().eq("id", itemId);
+}
+
+export function cartTotals(cart: {
+  cart_items?: Array<{
+    quantity: number;
+    price_snapshot_minor?: number | null;
+    product_variants?: { price_minor?: number | null; sale_price_minor?: number | null } | null;
+  }> | null;
+} | null) {
+  if (!cart?.cart_items?.length) {
+    return { subtotalMinor: 0, deliveryMinor: 0, totalMinor: 0, itemCount: 0 };
+  }
+
+  let subtotalMinor = 0;
+  let itemCount = 0;
+
+  for (const item of cart.cart_items) {
+    const price =
+      item.price_snapshot_minor ??
+      item.product_variants?.sale_price_minor ??
+      item.product_variants?.price_minor ??
+      0;
+    subtotalMinor += price * item.quantity;
+    itemCount += item.quantity;
+  }
+
+  const deliveryMinor = subtotalMinor >= 5_000_000 ? 0 : 250_000;
+  return {
+    subtotalMinor,
+    deliveryMinor,
+    totalMinor: subtotalMinor + deliveryMinor,
+    itemCount,
+  };
 }

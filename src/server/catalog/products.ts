@@ -34,10 +34,10 @@ export async function listProducts(
     .from("products")
     .select(`
       id, name, slug, short_description, description, original_price_minor, sale_price_minor,
-      is_featured, status,
+      is_featured, status, has_variants,
       categories!inner ( id, name, slug ),
       product_images ( id, image_url, sort_order, is_primary ),
-      product_variants ( id, sku, price_minor, sale_price_minor )
+      product_variants ( id, sku, price_minor, sale_price_minor, is_default )
     `, { count: 'exact' })
     .eq("status", params.status || "ACTIVE");
 
@@ -66,8 +66,10 @@ export async function listProducts(
 
   const items: CatalogProduct[] = data.map((row: any) => {
     const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
-    const variant = row.product_variants?.[0];
-    
+    const variants = row.product_variants ?? [];
+    const defaultVariant =
+      variants.find((entry: { is_default?: boolean }) => entry.is_default) ?? variants[0];
+
     return {
       id: row.id,
       source: "supabase",
@@ -84,8 +86,9 @@ export async function listProducts(
       size: null,
       fabric: null,
       design: null,
-      sku: variant?.sku ?? null,
+      sku: defaultVariant?.sku ?? null,
       isFeatured: row.is_featured,
+      hasVariants: Boolean(row.has_variants),
       category: {
         id: category?.id ?? "",
         name: category?.name ?? "",
@@ -103,7 +106,7 @@ export async function listProducts(
       specifications: [],
       stockQuantity: null,
       stockStatus: null,
-      variantId: variant?.id ?? null,
+      variantId: row.has_variants ? null : (defaultVariant?.id ?? null),
       brand: null,
     };
   });

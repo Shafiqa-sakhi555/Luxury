@@ -48,6 +48,7 @@ export function ProductCard({
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ variantId: product.variantId, quantity: 1 }),
       });
       const data = await res.json();
