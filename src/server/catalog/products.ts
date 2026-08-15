@@ -8,6 +8,7 @@ import {
 } from "@/server/catalog/supabase-products";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatCategoryLabel } from "@/lib/supabase/catalog-categories";
+import { resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
 
 export type ProductListParams = {
   page?: number;
@@ -36,7 +37,7 @@ export async function listProducts(
       id, name, slug, short_description, description, original_price_minor, sale_price_minor,
       is_featured, status, has_variants,
       categories!inner ( id, name, slug ),
-      product_images ( id, image_url, sort_order, is_primary ),
+      product_images ( id, image_url, cloudinary_public_id, sort_order, is_primary ),
       product_variants ( id, sku, price_minor, sale_price_minor, is_default )
     `, { count: 'exact' })
     .eq("status", params.status || "ACTIVE");
@@ -69,6 +70,10 @@ export async function listProducts(
     const variants = row.product_variants ?? [];
     const defaultVariant =
       variants.find((entry: { is_default?: boolean }) => entry.is_default) ?? variants[0];
+    const sortedImages = [...(row.product_images ?? [])].sort(
+      (a: { sort_order?: number }, b: { sort_order?: number }) =>
+        (a.sort_order ?? 0) - (b.sort_order ?? 0)
+    );
 
     return {
       id: row.id,
@@ -96,13 +101,19 @@ export async function listProducts(
         description: null,
         imageUrl: null,
       },
-      images: (row.product_images ?? []).map((img: any) => ({
-        id: img.id,
-        url: img.image_url,
-        alt: row.name,
-        sortOrder: img.sort_order,
-        isPrimary: img.is_primary,
-      })),
+      images: sortedImages
+        .map((img: { id: string; image_url: string; sort_order?: number; is_primary?: boolean; cloudinary_public_id?: string | null }) => {
+          const url = resolveCloudinaryImageUrl(img.image_url, img.cloudinary_public_id);
+          if (!url) return null;
+          return {
+            id: img.id,
+            url,
+            alt: row.name,
+            sortOrder: img.sort_order ?? 0,
+            isPrimary: img.is_primary ?? false,
+          };
+        })
+        .filter(Boolean) as CatalogProduct["images"],
       specifications: [],
       stockQuantity: null,
       stockStatus: null,

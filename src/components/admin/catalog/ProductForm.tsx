@@ -54,6 +54,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState<AdminProductImage[]>(product?.images ?? []);
+  const imagesRef = useRef<AdminProductImage[]>(product?.images ?? []);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const draftKeyRef = useRef(crypto.randomUUID());
   const isEdit = Boolean(product);
 
@@ -84,8 +86,20 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   const categorySlug = selectedCategory?.slug ?? product?.categorySlug ?? null;
   const categoryId = resolvedCategoryId || null;
 
+  function handleImagesChange(nextImages: AdminProductImage[]) {
+    imagesRef.current = nextImages;
+    setImages(nextImages);
+  }
+
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
+
+    const currentImages = imagesRef.current;
+    if (uploadingImages) {
+      setError("Wait for image uploads to finish before saving.");
+      return;
+    }
+
     startTransition(async () => {
       const slug = values.slug?.trim() || slugify(values.name);
       const result = await saveProductAction({
@@ -97,7 +111,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           description: values.description ?? "",
           sku: values.sku ?? "",
           sellingUnit: values.sellingUnit ?? "",
-          images,
+          images: currentImages,
+          draftKey: draftKeyRef.current,
         },
       });
 
@@ -164,7 +179,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           <AdminCard className="space-y-4 p-5">
             <ProductImageUploader
               value={images}
-              onChange={setImages}
+              onChange={handleImagesChange}
+              onUploadingChange={setUploadingImages}
               altFallback={watchName || "Product image"}
               categorySlug={categorySlug}
               categoryId={categoryId}
@@ -253,8 +269,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           </AdminCard>
 
           <div className="flex flex-col gap-2">
-            <AdminButton type="submit" disabled={pending}>
-              {pending ? "Saving..." : isEdit ? "Save changes" : "Create product"}
+            <AdminButton type="submit" disabled={pending || uploadingImages}>
+              {pending ? "Saving..." : uploadingImages ? "Uploading images..." : isEdit ? "Save changes" : "Create product"}
             </AdminButton>
             <AdminButton
               type="button"
