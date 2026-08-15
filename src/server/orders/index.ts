@@ -121,7 +121,12 @@ export async function listCustomerOrders(customerId: string) {
   return data ?? [];
 }
 
-export async function updateOrderStatus(orderId: string, status: string, reason?: string) {
+export async function updateOrderStatus(
+  orderId: string,
+  status: string,
+  reason?: string,
+  actorId?: string
+) {
   const supabase = createSupabaseAdminClient();
   const { data: order } = await supabase.from("orders").select("status").eq("id", orderId).maybeSingle();
   
@@ -133,5 +138,17 @@ export async function updateOrderStatus(orderId: string, status: string, reason?
     from_status: order.status,
     to_status: status,
     reason,
+    actor_id: actorId ?? null,
   });
+}
+
+export async function adminGetOrderById(orderId: string) {
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("orders")
+    .select("*, order_items(*), order_status_history(*), customers(profiles(name, email, phone))")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  return data;
 }

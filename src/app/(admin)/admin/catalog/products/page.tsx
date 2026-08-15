@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { adminListAllProducts, adminListCategoryOptions } from "@/server/catalog/admin-queries";
+import { requireAdminPageAccess } from "@/server/admin/page-access";
+import { canWriteProducts } from "@/server/rbac";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import { AdminBadge } from "@/components/admin/ui";
 import { ProductListFilters } from "@/components/admin/catalog/ProductListFilters";
@@ -11,6 +13,7 @@ export default async function AdminProductsPage({
   searchParams: Promise<{ page?: string; search?: string; status?: string; category?: string }>;
 }) {
   const params = await searchParams;
+  const ctx = await requireAdminPageAccess("product.write");
   const page = Number(params.page ?? 1);
 
   const [result, categoryOptions] = await Promise.all([
@@ -31,12 +34,14 @@ export default async function AdminProductsPage({
         title="Products"
         description="Add, edit, and remove products across your storefront catalog"
         actions={
-          <Link
-            href="/admin/catalog/products/new"
-            className="inline-flex h-9 items-center rounded-lg bg-navy px-4 text-sm font-medium text-white hover:bg-navy/90"
-          >
-            New product
-          </Link>
+          canWriteProducts(ctx.permissions) ? (
+            <Link
+              href="/admin/catalog/products/new"
+              className="inline-flex h-9 items-center rounded-lg bg-navy px-4 text-sm font-medium text-white hover:bg-navy/90"
+            >
+              New product
+            </Link>
+          ) : null
         }
       />
 

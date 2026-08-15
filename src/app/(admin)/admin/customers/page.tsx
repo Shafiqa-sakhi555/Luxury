@@ -1,7 +1,9 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { requireAdminPageAccess } from "@/server/admin/page-access";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
 
 export default async function AdminCustomersPage() {
+  await requireAdminPageAccess("customer.read");
   const supabase = createSupabaseAdminClient();
   const { data: customers } = await supabase
     .from("customers")

@@ -1,5 +1,6 @@
 import { listCategories } from "@/server/catalog/products";
 import { CategoryManager } from "@/components/admin/catalog/CategoryManager";
+import { requireAdminPageAccess } from "@/server/admin/page-access";
 import type { AdminCategoryRow } from "@/types/admin-category";
 
 function mapCategory(
@@ -32,6 +33,7 @@ function mapCategory(
 }
 
 export default async function AdminCategoriesPage() {
+  await requireAdminPageAccess("catalog.write");
   const categories = await listCategories(true).catch(() => []);
 
   const rows: AdminCategoryRow[] = categories

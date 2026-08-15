@@ -50,12 +50,26 @@ export function LoginForm() {
 
       if (callbackUrl.startsWith("/admin")) {
         if (isStaff) {
+          const sessionResponse = await fetch("/api/auth/admin/session", { method: "POST" });
+          if (!sessionResponse.ok) {
+            await supabase.auth.signOut();
+            router.push("/admin/login?error=unauthorized");
+            router.refresh();
+            return;
+          }
           router.push(callbackUrl);
         } else {
           await supabase.auth.signOut();
           router.push("/admin/login?error=unauthorized");
         }
       } else if (isStaff && callbackUrl === "/") {
+        const sessionResponse = await fetch("/api/auth/admin/session", { method: "POST" });
+        if (!sessionResponse.ok) {
+          await supabase.auth.signOut();
+          router.push("/admin/login?error=unauthorized");
+          router.refresh();
+          return;
+        }
         router.push("/admin");
       } else {
         router.push(callbackUrl);

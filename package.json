@@ -11,10 +11,13 @@
     "lint": "next lint",
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
     "supabase:migrate": "npx tsx scripts/supabase/apply-migration.ts",
+    "supabase:seed-admins": "npx tsx scripts/supabase/seed-admins.ts",
     "supabase:seed-curtains": "npx tsx scripts/supabase/seed-curtains.ts",
     "supabase:seed-prayer-mats": "npx tsx scripts/supabase/seed-prayer-mats.ts",
     "supabase:seed-carpets": "npx tsx scripts/supabase/seed-carpets.ts",
-    "supabase:setup": "npm run supabase:migrate && npm run supabase:seed-curtains && npm run supabase:seed-prayer-mats && npm run supabase:seed-carpets"
+    "supabase:seed-catalog": "npx tsx scripts/supabase/seed-catalog.ts",
+    "supabase:setup": "npm run supabase:migrate && npm run supabase:seed-admins",
+    "supabase:bootstrap": "npm run supabase:migrate && npm run supabase:seed-admins && npm run supabase:seed-catalog"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.3.0",

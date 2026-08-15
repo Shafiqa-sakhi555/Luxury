@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
+import { requireAdminPageAccess } from "@/server/admin/page-access";
 
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
+  await requireAdminPageAccess("*");
   return (
     <div>
       <AdminPageHeader title="Settings" description="Store configuration and catalog help" />
@@ -18,11 +20,7 @@ export default function AdminSettingsPage() {
           </p>
           <ul className="list-disc space-y-2 pl-5 text-muted">
             <li>
-              <strong>Standard catalog</strong> — sofas, beds, decor, and other Prisma categories
-            </li>
-            <li>
-              <strong>Curtains / Prayer mats / Carpets</strong> — Supabase catalog (includes your
-              imported carpet collections)
+              <strong>Curtains / Prayer mats / Carpets</strong> — Supabase catalog collections
             </li>
             <li>Upload product and category images directly — files are stored in Cloudinary</li>
             <li>Products with order history are archived instead of permanently deleted</li>
@@ -40,7 +38,7 @@ export default function AdminSettingsPage() {
           </div>
           <div>
             <p className="font-medium text-navy">Admin login</p>
-            <p className="text-muted">Sign in at /login with your staff account (not a customer account).</p>
+            <p className="text-muted">Sign in at /admin/login with your staff account (not a customer account).</p>
           </div>
           <div>
             <p className="font-medium text-navy">Database</p>

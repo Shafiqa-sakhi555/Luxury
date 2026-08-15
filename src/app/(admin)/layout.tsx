@@ -1,13 +1,29 @@
+import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/layout/AdminShell";
+import { ADMIN_NAV } from "@/lib/auth/admin-access";
+import { getAdminContext, hasAnyPermission } from "@/server/rbac";
 
-// The dashboard is session-scoped and reads live operational data, so it must
-// never be prerendered at build time.
 export const dynamic = "force-dynamic";
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AdminShell>{children}</AdminShell>;
+  const ctx = await getAdminContext();
+  if (!ctx) redirect("/admin/login");
+
+  const allowedHrefs = ADMIN_NAV.filter((item) =>
+    hasAnyPermission(ctx.permissions, item.permissions)
+  ).map((item) => item.href);
+
+  if (allowedHrefs.length === 0) {
+    redirect("/admin/login");
+  }
+
+  return (
+    <AdminShell allowedHrefs={allowedHrefs} roleLabel={ctx.primaryRole}>
+      {children}
+    </AdminShell>
+  );
 }

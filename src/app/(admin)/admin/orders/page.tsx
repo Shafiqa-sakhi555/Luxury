@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { adminListOrders } from "@/server/orders";
+import { requireAdminPageAccess } from "@/server/admin/page-access";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import { AdminBadge } from "@/components/admin/ui";
 import { formatMoney } from "@/lib/money";
@@ -10,6 +11,7 @@ export default async function AdminOrdersPage({
   searchParams: Promise<{ page?: string; status?: string }>;
 }) {
   const params = await searchParams;
+  await requireAdminPageAccess("order.read");
   const result = await adminListOrders({
     page: Number(params.page ?? 1),
     status: params.status,

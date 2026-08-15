@@ -4,12 +4,14 @@ import { AdminPageHeader } from "@/components/admin/layout/AdminPageHeader";
 import { ProductForm } from "@/components/admin/catalog/ProductForm";
 import { ProductDeleteButton } from "@/components/admin/catalog/ProductDeleteButton";
 import { adminGetProduct, adminListCategoryOptions } from "@/server/catalog/admin-queries";
+import { requireAdminPageAccess } from "@/server/admin/page-access";
 
 export default async function AdminEditProductPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireAdminPageAccess("product.write");
   const { id } = await params;
 
   const [product, categories] = await Promise.all([

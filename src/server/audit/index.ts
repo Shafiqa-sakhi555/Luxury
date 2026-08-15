@@ -62,12 +62,23 @@ export async function getDashboardSummary() {
     total: 0,
   }));
 
+  const [{ count: lowProductStock }, { count: lowVariantStock }] = await Promise.all([
+    supabase
+      .from("inventory")
+      .select("id", { count: "exact", head: true })
+      .lte("stock_quantity", 5),
+    supabase
+      .from("product_variant_inventory")
+      .select("id", { count: "exact", head: true })
+      .or("stock_quantity.lte.5,stock_quantity.is.null"),
+  ]);
+
   return {
     products: productCounts,
     orders: { pending: pendingOrders, total: totalOrders },
     customers: customerCount ?? 0,
     revenueMinor,
-    lowStockCount: 0, // Need to fix inventory logic later
+    lowStockCount: (lowProductStock ?? 0) + (lowVariantStock ?? 0),
     recentOrders: recentOrders ?? [],
   };
 }
