@@ -6,7 +6,8 @@ import { writeAuditLog } from "@/server/audit";
 import { slugify, uniqueProductSlug } from "@/lib/slug";
 import type { AdminProductFormValues, MutationResult } from "@/types/admin-catalog";
 import type { AdminProductImage } from "@/types/media";
-import { deleteCloudinaryImage } from "@/lib/cloudinary";
+import { deleteCloudinaryImage, finalizeProductCloudinaryImages } from "@/lib/cloudinary";
+import { getCategorySlugById } from "@/server/catalog/cloudinary-upload-context";
 
 function discountPercent(original: number, sale: number) {
   if (original <= 0 || sale >= original) return 0;
@@ -163,7 +164,18 @@ export async function createSupabaseCatalogProduct(
   }
 
   await createDefaultVariant(product.id, input, sku);
-  await syncProductImages(product.id, input.images, input.name.trim());
+
+  const categorySlug = await getCategorySlugById(category.id);
+  if (!categorySlug) {
+    return { ok: false, error: "Category not found." };
+  }
+
+  const finalizedImages = await finalizeProductCloudinaryImages(
+    product.id,
+    categorySlug,
+    input.images
+  );
+  await syncProductImages(product.id, finalizedImages, input.name.trim());
   await upsertSupabaseInventory(product.id, input.stockQuantity);
 
   await writeAuditLog({
@@ -201,7 +213,7 @@ export async function updateSupabaseCatalogProduct(
 
   const { data: category } = await supabase
     .from("categories")
-    .select("id")
+    .select("id, slug")
     .eq("id", input.categoryId)
     .maybeSingle();
   if (!category) return { ok: false, error: "Category not found." };
@@ -240,7 +252,13 @@ export async function updateSupabaseCatalogProduct(
   const { error } = await supabase.from("products").update(updatePayload).eq("id", id);
   if (error) return { ok: false, error: error.message };
 
-  await syncProductImages(id, input.images, input.name.trim());
+  const categorySlug = await getCategorySlugById(category.id);
+  if (!categorySlug) {
+    return { ok: false, error: "Category not found." };
+  }
+
+  const finalizedImages = await finalizeProductCloudinaryImages(id, categorySlug, input.images);
+  await syncProductImages(id, finalizedImages, input.name.trim());
   await upsertSupabaseInventory(id, input.stockQuantity);
 
   await writeAuditLog({

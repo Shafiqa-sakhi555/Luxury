@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ArrowDown, ArrowUp, GripVertical, ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { AdminButton, AdminLabel } from "@/components/admin/ui";
-import { CLOUDINARY_FOLDERS } from "@/lib/cloudinary/constants";
 import type { AdminProductImage } from "@/types/media";
 import { useCloudinaryUpload } from "@/components/admin/media/use-cloudinary-upload";
 
@@ -18,6 +17,10 @@ type ProductImageUploaderProps = {
   value: AdminProductImage[];
   onChange: (images: AdminProductImage[]) => void;
   altFallback?: string;
+  categorySlug?: string | null;
+  categoryId?: string | null;
+  productId?: string;
+  draftKey: string;
 };
 
 function toUploadItems(images: AdminProductImage[]): UploadItem[] {
@@ -43,6 +46,10 @@ export function ProductImageUploader({
   value,
   onChange,
   altFallback = "Product image",
+  categorySlug,
+  categoryId,
+  productId,
+  draftKey,
 }: ProductImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, deleteFile } = useCloudinaryUpload();
@@ -50,6 +57,8 @@ export function ProductImageUploader({
   const [draggingOver, setDraggingOver] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const canUpload = Boolean(categorySlug || categoryId);
 
   useEffect(() => {
     setItems(toUploadItems(value));
@@ -64,10 +73,18 @@ export function ProductImageUploader({
   async function uploadFiles(files: FileList | null) {
     if (!files?.length) return;
 
+    if (!canUpload) {
+      setError("Select a category before uploading images.");
+      return;
+    }
+
     setError(null);
+    let nextIndex = items.filter((item) => item.url && !item.uploading).length;
 
     for (const file of Array.from(files)) {
       const clientId = crypto.randomUUID();
+      const imageIndex = nextIndex;
+      nextIndex += 1;
 
       setItems((current) => [
         ...current,
@@ -84,7 +101,14 @@ export function ProductImageUploader({
 
       try {
         const uploaded = await uploadFile(file, {
-          folder: CLOUDINARY_FOLDERS.products,
+          context: {
+            type: "product",
+            categorySlug: categorySlug ?? undefined,
+            categoryId: categoryId?.trim() ? categoryId : undefined,
+            productId: productId?.trim() ? productId : undefined,
+            draftKey: productId ? undefined : draftKey,
+            imageIndex,
+          },
           onProgress: (progress) => {
             setItems((current) =>
               current.map((item) =>
@@ -111,6 +135,7 @@ export function ProductImageUploader({
         });
       } catch (uploadError) {
         setItems((current) => current.filter((item) => item.clientId !== clientId));
+        nextIndex -= 1;
         setError(uploadError instanceof Error ? uploadError.message : "Upload failed.");
       }
     }
@@ -161,16 +186,23 @@ export function ProductImageUploader({
     <div className="space-y-4">
       <AdminLabel>Product images</AdminLabel>
 
+      {!canUpload && (
+        <p className="text-xs text-amber-700">
+          Select a category first. Images will upload to{" "}
+          <code className="rounded bg-amber-50 px-1">jalals-home-solution/products/&lt;category&gt;/product-&lt;id&gt;</code>.
+        </p>
+      )}
+
       <div
         onDragOver={(event) => {
           event.preventDefault();
-          setDraggingOver(true);
+          if (canUpload) setDraggingOver(true);
         }}
         onDragLeave={() => setDraggingOver(false)}
         onDrop={handleDrop}
         className={`rounded-xl border border-dashed px-4 py-8 text-center transition ${
           draggingOver ? "border-navy bg-brand-50" : "border-navy/20 bg-brand-50/50"
-        }`}
+        } ${!canUpload ? "opacity-60" : ""}`}
       >
         <ImagePlus className="mx-auto mb-2 h-6 w-6 text-navy" />
         <p className="text-sm font-medium text-navy">Drag and drop images here</p>
@@ -180,6 +212,7 @@ export function ProductImageUploader({
           variant="outline"
           size="sm"
           className="mt-4"
+          disabled={!canUpload}
           onClick={() => inputRef.current?.click()}
         >
           Select images
@@ -190,6 +223,7 @@ export function ProductImageUploader({
           accept="image/jpeg,image/jpg,image/png,image/webp"
           multiple
           className="hidden"
+          disabled={!canUpload}
           onChange={(event) => uploadFiles(event.target.files)}
         />
       </div>
@@ -225,9 +259,12 @@ export function ProductImageUploader({
               </div>
 
               <div className="flex items-center justify-between gap-2 border-t border-navy/10 p-3">
-                <div className="flex items-center gap-1 text-muted">
-                  <GripVertical className="h-4 w-4" />
+                <div className="flex min-w-0 items-center gap-1 text-muted">
+                  <GripVertical className="h-4 w-4 shrink-0" />
                   <span className="text-xs">#{index + 1}</span>
+                  {item.publicId && (
+                    <span className="truncate text-[10px]">{item.publicId.split("/").slice(-2).join("/")}</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1">
                   <AdminButton

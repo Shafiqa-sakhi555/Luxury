@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { AdminButton, AdminLabel } from "@/components/admin/ui";
-import { CLOUDINARY_FOLDERS } from "@/lib/cloudinary/constants";
 import type { AdminHeroImage } from "@/types/media";
 import { useCloudinaryUpload } from "@/components/admin/media/use-cloudinary-upload";
 
@@ -12,14 +11,14 @@ type ImageUploaderProps = {
   label?: string;
   value: AdminHeroImage;
   onChange: (value: AdminHeroImage) => void;
-  folder?: string;
+  categorySlug?: string | null;
 };
 
 export function ImageUploader({
   label = "Hero image",
   value,
   onChange,
-  folder = CLOUDINARY_FOLDERS.categories,
+  categorySlug,
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, deleteFile } = useCloudinaryUpload();
@@ -27,9 +26,16 @@ export function ImageUploader({
   const [progress, setProgress] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const canUpload = Boolean(categorySlug?.trim());
+
   async function handleFiles(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
+
+    if (!canUpload || !categorySlug) {
+      setError("Enter a category name/slug before uploading the hero image.");
+      return;
+    }
 
     setError(null);
     setBusy(true);
@@ -37,7 +43,10 @@ export function ImageUploader({
 
     try {
       const uploaded = await uploadFile(file, {
-        folder,
+        context: {
+          type: "category",
+          categorySlug,
+        },
         onProgress: setProgress,
       });
 
@@ -79,6 +88,14 @@ export function ImageUploader({
     <div className="space-y-3">
       <AdminLabel>{label}</AdminLabel>
 
+      {!canUpload && (
+        <p className="text-xs text-amber-700">
+          Images upload to{" "}
+          <code className="rounded bg-amber-50 px-1">jalals-home-solution/categories/&lt;category-slug&gt;/hero</code>{" "}
+          once the category slug is set.
+        </p>
+      )}
+
       {value ? (
         <div className="overflow-hidden rounded-xl border border-navy/10 bg-white">
           <div className="relative aspect-[16/9] w-full bg-brand-50">
@@ -97,7 +114,7 @@ export function ImageUploader({
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={busy}
+                disabled={busy || !canUpload}
                 onClick={() => inputRef.current?.click()}
               >
                 Replace
@@ -117,9 +134,9 @@ export function ImageUploader({
       ) : (
         <button
           type="button"
-          disabled={busy}
+          disabled={busy || !canUpload}
           onClick={() => inputRef.current?.click()}
-          className="flex min-h-40 w-full flex-col items-center justify-center rounded-xl border border-dashed border-navy/20 bg-brand-50/60 px-4 py-8 text-center transition hover:border-navy/40 hover:bg-brand-50"
+          className="flex min-h-40 w-full flex-col items-center justify-center rounded-xl border border-dashed border-navy/20 bg-brand-50/60 px-4 py-8 text-center transition hover:border-navy/40 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? (
             <>
@@ -141,6 +158,7 @@ export function ImageUploader({
         type="file"
         accept="image/jpeg,image/jpg,image/png,image/webp"
         className="hidden"
+        disabled={!canUpload}
         onChange={(event) => handleFiles(event.target.files)}
       />
 

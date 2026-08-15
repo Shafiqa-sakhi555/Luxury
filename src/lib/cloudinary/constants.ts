@@ -1,6 +1,5 @@
-export const CLOUDINARY_FOLDERS = {
-  products: "jalals/products",
-  categories: "jalals/categories",
-} as const;
+export { CLOUDINARY_ROOT } from "@/lib/cloudinary/paths";
 
-export type CloudinaryFolder = (typeof CLOUDINARY_FOLDERS)[keyof typeof CLOUDINARY_FOLDERS];
+export const CLOUDINARY_UPLOAD_TYPES = ["product", "category", "banner"] as const;
+
+export type CloudinaryUploadType = (typeof CLOUDINARY_UPLOAD_TYPES)[number];
