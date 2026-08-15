@@ -308,10 +308,11 @@ export async function getSupabaseCategoryBySlug(
   if (!isSupabaseConfigured()) return null;
 
   const supabase = await createSupabaseServerClient();
+  const normalized = normalizeCategorySlug(slug) ?? slug;
   const { data, error } = await supabase
     .from("categories")
     .select("id, name, slug, description, image_url, cloudinary_public_id")
-    .eq("slug", slug)
+    .ilike("slug", normalized)
     .maybeSingle();
 
   if (error || !data) return null;

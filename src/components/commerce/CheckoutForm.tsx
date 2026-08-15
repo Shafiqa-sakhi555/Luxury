@@ -24,7 +24,18 @@ export function CheckoutForm({ totals }: { totals: { totalMinor: number; subtota
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shipping: form, fulfilmentType: "DELIVERY" }),
+      credentials: "same-origin",
+      body: JSON.stringify({
+        shipping: {
+          name: form.name,
+          line1: form.line1,
+          city: form.city,
+          region: form.region,
+          phone: form.phone,
+        },
+        notes: form.notes,
+        fulfilmentType: "DELIVERY",
+      }),
     });
     const data = await res.json();
     setLoading(false);

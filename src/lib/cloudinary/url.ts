@@ -13,3 +13,24 @@ export function getOptimizedImageUrl(
 
   return url.replace("/upload/", `/upload/${transforms.join(",")}/`);
 }
+
+function readCloudName() {
+  const raw = process.env.CLOUDINARY_CLOUD_NAME?.trim().replace(/^['"]|['"]$/g, "");
+  return raw || null;
+}
+
+export function cloudinaryUrlFromPublicId(publicId: string) {
+  const cloudName = readCloudName();
+  if (!cloudName || !publicId.trim()) return null;
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${publicId.trim()}`;
+}
+
+export function resolveCloudinaryImageUrl(
+  imageUrl: string | null | undefined,
+  publicId: string | null | undefined
+) {
+  const url = imageUrl?.trim();
+  if (url) return url;
+  if (!publicId?.trim()) return null;
+  return cloudinaryUrlFromPublicId(publicId);
+}

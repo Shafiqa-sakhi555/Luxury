@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { cartTotals } from "@/server/cart";
 export type PlaceOrderInput = {
   customerId: string;
   cartId: string;
@@ -24,14 +25,8 @@ export async function placeOrder(input: PlaceOrderInput) {
   const { data: cart } = await supabase.from("carts").select("*, cart_items(*, product_variants(*, products(*, product_images(*))))").eq("id", input.cartId).single();
   if (!cart || cart.cart_items.length === 0) throw new Error("Cart is empty");
 
-  // 2. Calculate Totals
-  let subtotalMinor = 0;
-  for (const item of cart.cart_items) {
-    const price = item.price_snapshot_minor ?? item.product_variants.price_minor;
-    subtotalMinor += price * item.quantity;
-  }
-  const deliveryMinor = subtotalMinor >= 5_000_000 ? 0 : 250_000;
-  const totalMinor = subtotalMinor + deliveryMinor;
+  const totals = cartTotals(cart);
+  const { subtotalMinor, deliveryMinor, totalMinor } = totals;
 
   // 3. Create Order
   const orderNumber = `JHS-${Date.now().toString().slice(-6)}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
@@ -55,15 +50,23 @@ export async function placeOrder(input: PlaceOrderInput) {
   if (orderError) throw new Error(orderError.message);
 
   // 4. Create Order Items
-  const orderItems = cart.cart_items.map((item: any) => ({
-    order_id: order.id,
-    variant_id: item.variant_id,
-    product_name: item.product_variants.products.name,
-    variant_sku: item.product_variants.sku,
-    unit_price_minor: item.price_snapshot_minor ?? item.product_variants.price_minor,
-    quantity: item.quantity,
-    line_total_minor: (item.price_snapshot_minor ?? item.product_variants.price_minor) * item.quantity
-  }));
+  const orderItems = cart.cart_items.map((item: any) => {
+    const unitPrice =
+      item.price_snapshot_minor ??
+      item.product_variants?.sale_price_minor ??
+      item.product_variants?.price_minor ??
+      0;
+
+    return {
+      order_id: order.id,
+      variant_id: item.variant_id,
+      product_name: item.product_variants.products.name,
+      variant_sku: item.product_variants.sku,
+      unit_price_minor: unitPrice,
+      quantity: item.quantity,
+      line_total_minor: unitPrice * item.quantity,
+    };
+  });
 
   await supabase.from("order_items").insert(orderItems);
   await supabase.from("order_status_history").insert({ order_id: order.id, to_status: "PENDING", reason: "Order placed" });

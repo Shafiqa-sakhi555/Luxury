@@ -37,6 +37,7 @@ export type AdminProductFormValues = {
   isFeatured: boolean;
   sellingUnit: string;
   images: AdminProductImage[];
+  draftKey?: string;
 };
 
 export type AdminProductDetail = AdminProductFormValues & {

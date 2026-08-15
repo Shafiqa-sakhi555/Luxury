@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Heart, Search, ShoppingBag, User, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo, BrandWordmark } from "@/components/brand/BrandLogo";
-import { categories } from "@/lib/categories";
-import { SUPABASE_CATALOG_SLUGS, normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
 import { useLogoIntro } from "@/contexts/LogoIntroContext";
 import { cn } from "@/lib/utils";
+import type { ShopNavCategory } from "@/components/layout/AppShell";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -19,30 +18,30 @@ const navLinks = [
   { label: "Contact", href: "/contact" },
 ];
 
-const collectionFeatured = [
-  {
-    label: "Carpets",
-    href: "/shop?category=carpets",
-    description: "Wall-to-wall & handmade carpets",
-  },
-  {
-    label: "Furniture",
-    href: "/shop?category=furniture",
-    description: "Sofas, beds, dining & more",
-  },
-];
+function pickFeaturedCategories(categories: ShopNavCategory[]) {
+  const preferred = ["carpets", "carpet", "furniture"];
+  const featured = categories.filter((category) =>
+    preferred.some(
+      (slug) =>
+        category.slug.toLowerCase() === slug || category.label.toLowerCase() === slug
+    )
+  );
 
-const navCategories = categories.filter((category) => {
-  const canonical = normalizeCategorySlug(category.slug) ?? category.slug;
-  return !(SUPABASE_CATALOG_SLUGS as readonly string[]).includes(canonical);
-});
+  if (featured.length >= 2) return featured.slice(0, 2);
+  return categories.slice(0, 2);
+}
 
-export function Navbar() {
+export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCategory[] }) {
   const { showNavLogo, showNavLabel } = useLogoIntro();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const collectionFeatured = useMemo(
+    () => pickFeaturedCategories(shopCategories),
+    [shopCategories]
+  );
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -155,41 +154,49 @@ export function Navbar() {
                     className="absolute left-1/2 top-full z-55 mt-2 w-[520px] -translate-x-1/2 overflow-hidden rounded-2xl border border-navy/10 bg-white p-6 shadow-xl"
                   >
                     <div className="brand-accent-bar absolute inset-x-0 top-0" />
-                    <p className="relative mb-3 mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-red">
-                      Featured
-                    </p>
-                    <div className="relative mb-4 grid grid-cols-2 gap-2">
-                      {collectionFeatured.map((item) => (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className="group rounded-xl bg-luxury-cream p-3 transition-colors hover:bg-red/5 ring-1 ring-navy/8 hover:ring-red/25"
-                          onClick={() => setCollectionsOpen(false)}
-                        >
-                          <span className="block text-sm font-semibold text-navy group-hover:text-red">
-                            {item.label}
-                          </span>
-                          <span className="block text-[11px] text-muted">{item.description}</span>
-                        </Link>
-                      ))}
-                    </div>
+                    {collectionFeatured.length > 0 && (
+                      <>
+                        <p className="relative mb-3 mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-red">
+                          Featured
+                        </p>
+                        <div className="relative mb-4 grid grid-cols-2 gap-2">
+                          {collectionFeatured.map((item) => (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              className="group rounded-xl bg-luxury-cream p-3 ring-1 ring-navy/8 transition-colors hover:bg-red/5 hover:ring-red/25"
+                              onClick={() => setCollectionsOpen(false)}
+                            >
+                              <span className="block text-sm font-semibold text-navy group-hover:text-red">
+                                {item.label}
+                              </span>
+                              {item.description ? (
+                                <span className="block text-[11px] text-muted">{item.description}</span>
+                              ) : null}
+                            </Link>
+                          ))}
+                        </div>
+                      </>
+                    )}
                     <p className="relative mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
                       All Categories
                     </p>
                     <div className="grid grid-cols-2 gap-3">
-                      {navCategories.map((category) => (
+                      {shopCategories.map((category) => (
                         <Link
                           key={category.slug}
-                          href={`/shop?category=${category.slug}`}
+                          href={category.href}
                           className="group rounded-lg p-2 transition-colors hover:bg-luxury-cream"
                           onClick={() => setCollectionsOpen(false)}
                         >
                           <span className="block text-sm font-semibold text-navy group-hover:text-red">
-                            {category.name}
+                            {category.label}
                           </span>
-                          <span className="block text-[11px] text-muted line-clamp-1">
-                            {category.description}
-                          </span>
+                          {category.description ? (
+                            <span className="block text-[11px] text-muted line-clamp-1">
+                              {category.description}
+                            </span>
+                          ) : null}
                         </Link>
                       ))}
                     </div>
@@ -276,17 +283,17 @@ export function Navbar() {
                   Home
                 </Link>
                 <Link href="/shop" onClick={() => setMobileOpen(false)} className="font-display text-2xl text-navy">
-                  Collections
+                  Shop
                 </Link>
                 <div className="ml-4 flex flex-col gap-2 border-l-2 border-red/20 pl-4">
-                  {collectionFeatured.map((item) => (
+                  {shopCategories.map((category) => (
                     <Link
-                      key={item.href}
-                      href={item.href}
+                      key={category.slug}
+                      href={category.href}
                       onClick={() => setMobileOpen(false)}
                       className="text-lg text-navy/75 hover:text-red"
                     >
-                      {item.label}
+                      {category.label}
                     </Link>
                   ))}
                   <Link
@@ -297,15 +304,16 @@ export function Navbar() {
                     View all categories
                   </Link>
                 </div>
-                <Link href="/#products" onClick={() => setMobileOpen(false)} className="font-display text-2xl text-navy">
-                  Offers
-                </Link>
-                <Link href="/about" onClick={() => setMobileOpen(false)} className="font-display text-2xl text-navy">
-                  About
-                </Link>
-                <Link href="/contact" onClick={() => setMobileOpen(false)} className="font-display text-2xl text-navy">
-                  Contact
-                </Link>
+                {navLinks.slice(1).map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="font-display text-2xl text-navy"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
               </div>
 
               <div className="mt-auto pt-6">

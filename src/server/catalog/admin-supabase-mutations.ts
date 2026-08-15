@@ -5,9 +5,8 @@ import { AuthorizationError, requirePermission } from "@/server/rbac";
 import { writeAuditLog } from "@/server/audit";
 import { slugify, uniqueProductSlug } from "@/lib/slug";
 import type { AdminProductFormValues, MutationResult } from "@/types/admin-catalog";
-import type { AdminProductImage } from "@/types/media";
-import { deleteCloudinaryImage, finalizeProductCloudinaryImages } from "@/lib/cloudinary";
 import { getCategorySlugById } from "@/server/catalog/cloudinary-upload-context";
+import { persistProductImages } from "@/server/catalog/product-image-sync";
 
 function discountPercent(original: number, sale: number) {
   if (original <= 0 || sale >= original) return 0;
@@ -50,44 +49,6 @@ async function createDefaultVariant(
     is_default: true,
     is_active: input.status === "ACTIVE",
   });
-}
-
-async function syncProductImages(
-  productId: string,
-  images: AdminProductImage[],
-  alt: string
-) {
-  const supabase = createSupabaseAdminClient();
-
-  const { data: existing } = await supabase
-    .from("product_images")
-    .select("cloudinary_public_id")
-    .eq("product_id", productId)
-    .is("variant_id", null);
-
-  const nextPublicIds = new Set(images.map((image) => image.publicId).filter(Boolean));
-  const removedPublicIds = (existing ?? [])
-    .map((row) => row.cloudinary_public_id)
-    .filter((publicId): publicId is string => Boolean(publicId && !nextPublicIds.has(publicId)));
-
-  for (const publicId of removedPublicIds) {
-    await deleteCloudinaryImage(publicId).catch(() => undefined);
-  }
-
-  await supabase.from("product_images").delete().eq("product_id", productId).is("variant_id", null);
-
-  if (images.length === 0) return;
-
-  await supabase.from("product_images").insert(
-    images.map((image, index) => ({
-      product_id: productId,
-      image_url: image.url,
-      cloudinary_public_id: image.publicId || null,
-      alt_text: image.alt ?? alt,
-      sort_order: index,
-      is_primary: index === 0,
-    }))
-  );
 }
 
 async function upsertSupabaseInventory(productId: string, stockQuantity: number) {
@@ -171,12 +132,16 @@ export async function createSupabaseCatalogProduct(
     return { ok: false, error: "Category not found." };
   }
 
-  const finalizedImages = await finalizeProductCloudinaryImages(
-    product.id,
+  const finalizedImages = await persistProductImages({
+    productId: product.id,
     categorySlug,
-    input.images
-  );
-  await syncProductImages(product.id, finalizedImages, input.name.trim());
+    images: input.images,
+    draftKey: input.draftKey,
+    alt: input.name.trim(),
+  });
+  if (finalizedImages.length === 0 && input.images.some((image) => image.publicId || image.url)) {
+    return { ok: false, error: "Product images could not be linked. Re-upload and save again." };
+  }
   await upsertSupabaseInventory(product.id, input.stockQuantity);
 
   await writeAuditLog({
@@ -265,8 +230,16 @@ export async function updateSupabaseCatalogProduct(
     return { ok: false, error: "Category not found." };
   }
 
-  const finalizedImages = await finalizeProductCloudinaryImages(id, categorySlug, input.images);
-  await syncProductImages(id, finalizedImages, input.name.trim());
+  const finalizedImages = await persistProductImages({
+    productId: id,
+    categorySlug,
+    images: input.images,
+    draftKey: input.draftKey,
+    alt: input.name.trim(),
+  });
+  if (finalizedImages.length === 0 && input.images.some((image) => image.publicId || image.url)) {
+    return { ok: false, error: "Product images could not be linked. Re-upload and save again." };
+  }
   await upsertSupabaseInventory(id, input.stockQuantity);
 
   await writeAuditLog({

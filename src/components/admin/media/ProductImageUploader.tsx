@@ -16,6 +16,7 @@ type UploadItem = AdminProductImage & {
 type ProductImageUploaderProps = {
   value: AdminProductImage[];
   onChange: (images: AdminProductImage[]) => void;
+  onUploadingChange?: (uploading: boolean) => void;
   altFallback?: string;
   categorySlug?: string | null;
   categoryId?: string | null;
@@ -45,6 +46,7 @@ function fromUploadItems(items: UploadItem[]): AdminProductImage[] {
 export function ProductImageUploader({
   value,
   onChange,
+  onUploadingChange,
   altFallback = "Product image",
   categorySlug,
   categoryId,
@@ -79,9 +81,11 @@ export function ProductImageUploader({
     }
 
     setError(null);
+    onUploadingChange?.(true);
     let nextIndex = items.filter((item) => item.url && !item.uploading).length;
 
-    for (const file of Array.from(files)) {
+    try {
+      for (const file of Array.from(files)) {
       const clientId = crypto.randomUUID();
       const imageIndex = nextIndex;
       nextIndex += 1;
@@ -137,12 +141,33 @@ export function ProductImageUploader({
         });
         if (committedImages) {
           onChange(committedImages);
+
+          if (productId?.trim()) {
+            await fetch(`/api/admin/catalog/products/${productId}/images`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              credentials: "same-origin",
+              body: JSON.stringify({
+                images: committedImages,
+                draftKey: productId ? undefined : draftKey,
+                alt: altFallback,
+              }),
+            }).then(async (response) => {
+              if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.error ?? "Uploaded to Cloudinary but could not save to catalog.");
+              }
+            });
+          }
         }
       } catch (uploadError) {
         setItems((current) => current.filter((item) => item.clientId !== clientId));
         nextIndex -= 1;
         setError(uploadError instanceof Error ? uploadError.message : "Upload failed.");
       }
+    }
+    } finally {
+      onUploadingChange?.(false);
     }
 
     if (inputRef.current) inputRef.current.value = "";

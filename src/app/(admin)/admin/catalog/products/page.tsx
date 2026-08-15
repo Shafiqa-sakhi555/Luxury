@@ -5,6 +5,7 @@ import { canWriteProducts } from "@/server/rbac";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import { AdminBadge } from "@/components/admin/ui";
 import { ProductListFilters } from "@/components/admin/catalog/ProductListFilters";
+import { RepairProductImagesButton } from "@/components/admin/catalog/RepairProductImagesButton";
 import { formatMoney } from "@/lib/money";
 
 export default async function AdminProductsPage({
@@ -35,12 +36,15 @@ export default async function AdminProductsPage({
         description="Add, edit, and remove products across your storefront catalog"
         actions={
           canWriteProducts(ctx.permissions) ? (
-            <Link
-              href="/admin/catalog/products/new"
-              className="inline-flex h-9 items-center rounded-lg bg-navy px-4 text-sm font-medium text-white hover:bg-navy/90"
-            >
-              New product
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <RepairProductImagesButton />
+              <Link
+                href="/admin/catalog/products/new"
+                className="inline-flex h-9 items-center rounded-lg bg-navy px-4 text-sm font-medium text-white hover:bg-navy/90"
+              >
+                New product
+              </Link>
+            </div>
           ) : null
         }
       />

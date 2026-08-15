@@ -14,6 +14,7 @@ export function CartActions({ itemId, quantity }: { itemId: string; quantity: nu
     const res = await fetch("/api/cart", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify({ itemId, quantity: newQty }),
     });
     setLoading(false);
@@ -27,7 +28,7 @@ export function CartActions({ itemId, quantity }: { itemId: string; quantity: nu
 
   async function remove() {
     setLoading(true);
-    await fetch(`/api/cart?itemId=${itemId}`, { method: "DELETE" });
+    await fetch(`/api/cart?itemId=${itemId}`, { method: "DELETE", credentials: "same-origin" });
     setLoading(false);
     router.refresh();
   }

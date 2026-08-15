@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { effectivePriceMinor, toMinor } from "@/lib/money";
+import { effectivePriceMinor } from "@/lib/money";
+import { resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
 import type {
   AdminCategoryOption,
   AdminProductDetail,
@@ -28,6 +29,11 @@ function unwrapRelation<T extends Record<string, unknown>>(
 ): T | null {
   if (!value) return null;
   return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+function asArray<T>(value: T | T[] | null | undefined): T[] {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
 }
 
 async function adminListSupabaseProducts(params: {
@@ -81,7 +87,7 @@ async function adminListSupabaseProducts(params: {
 
   const items = data.map((row) => {
     const category = unwrapRelation(row.categories as any);
-    const images = [...(row.product_images ?? [])].sort(
+    const images = asArray(row.product_images).sort(
       (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
     );
     const primary = images.find((img) => img.is_primary) ?? images[0];
@@ -97,7 +103,7 @@ async function adminListSupabaseProducts(params: {
       priceFromMinor: effectivePriceMinor(row.original_price_minor, row.sale_price_minor),
       status: row.status as any,
       isFeatured: row.is_featured,
-      imageUrl: primary?.image_url ?? null,
+      imageUrl: resolveCloudinaryImageUrl(primary?.image_url, primary?.cloudinary_public_id),
       updatedAt: row.updated_at,
       hasVariants: row.has_variants,
     };
@@ -211,15 +217,19 @@ export async function adminGetProduct(
 
   const category = unwrapRelation(data.categories as any);
   const inventory = unwrapRelation(data.inventory as any);
-  const images = [...(data.product_images ?? [])]
+  const images = asArray(data.product_images)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((img) => ({
-      url: img.image_url,
-      publicId: img.cloudinary_public_id ?? "",
-      alt: img.alt_text ?? undefined,
-      sortOrder: img.sort_order ?? 0,
-    }))
-    .filter((img) => img.url);
+    .map((img) => {
+      const url = resolveCloudinaryImageUrl(img.image_url, img.cloudinary_public_id);
+      if (!url) return null;
+      return {
+        url,
+        publicId: img.cloudinary_public_id ?? "",
+        alt: img.alt_text ?? undefined,
+        sortOrder: img.sort_order ?? 0,
+      };
+    })
+    .filter((img): img is NonNullable<typeof img> => img !== null);
 
   return {
     id: data.id,

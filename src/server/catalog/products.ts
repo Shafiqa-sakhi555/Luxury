@@ -7,7 +7,8 @@ import {
   listSupabaseProductsByCategorySlug,
 } from "@/server/catalog/supabase-products";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { formatCategoryLabel } from "@/lib/supabase/catalog-categories";
+import { formatCategoryLabel, normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
+import { resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
 
 export type ProductListParams = {
   page?: number;
@@ -34,10 +35,10 @@ export async function listProducts(
     .from("products")
     .select(`
       id, name, slug, short_description, description, original_price_minor, sale_price_minor,
-      is_featured, status,
+      is_featured, status, has_variants,
       categories!inner ( id, name, slug ),
-      product_images ( id, image_url, sort_order, is_primary ),
-      product_variants ( id, sku, price_minor, sale_price_minor )
+      product_images ( id, image_url, cloudinary_public_id, sort_order, is_primary ),
+      product_variants ( id, sku, price_minor, sale_price_minor, is_default )
     `, { count: 'exact' })
     .eq("status", params.status || "ACTIVE");
 
@@ -46,7 +47,11 @@ export async function listProducts(
   }
 
   if (params.categorySlug) {
-    query = query.eq('categories.slug', params.categorySlug);
+    const canonicalSlug = await resolveShopCategorySlug(params.categorySlug);
+    if (!canonicalSlug) {
+      return { items: [], total: 0, page, pageSize, totalPages: 0 };
+    }
+    query = query.eq("categories.slug", canonicalSlug);
   }
 
   // Sorting
@@ -66,8 +71,14 @@ export async function listProducts(
 
   const items: CatalogProduct[] = data.map((row: any) => {
     const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
-    const variant = row.product_variants?.[0];
-    
+    const variants = row.product_variants ?? [];
+    const defaultVariant =
+      variants.find((entry: { is_default?: boolean }) => entry.is_default) ?? variants[0];
+    const sortedImages = [...(row.product_images ?? [])].sort(
+      (a: { sort_order?: number }, b: { sort_order?: number }) =>
+        (a.sort_order ?? 0) - (b.sort_order ?? 0)
+    );
+
     return {
       id: row.id,
       source: "supabase",
@@ -84,8 +95,9 @@ export async function listProducts(
       size: null,
       fabric: null,
       design: null,
-      sku: variant?.sku ?? null,
+      sku: defaultVariant?.sku ?? null,
       isFeatured: row.is_featured,
+      hasVariants: Boolean(row.has_variants),
       category: {
         id: category?.id ?? "",
         name: category?.name ?? "",
@@ -93,17 +105,23 @@ export async function listProducts(
         description: null,
         imageUrl: null,
       },
-      images: (row.product_images ?? []).map((img: any) => ({
-        id: img.id,
-        url: img.image_url,
-        alt: row.name,
-        sortOrder: img.sort_order,
-        isPrimary: img.is_primary,
-      })),
+      images: sortedImages
+        .map((img: { id: string; image_url: string; sort_order?: number; is_primary?: boolean; cloudinary_public_id?: string | null }) => {
+          const url = resolveCloudinaryImageUrl(img.image_url, img.cloudinary_public_id);
+          if (!url) return null;
+          return {
+            id: img.id,
+            url,
+            alt: row.name,
+            sortOrder: img.sort_order ?? 0,
+            isPrimary: img.is_primary ?? false,
+          };
+        })
+        .filter(Boolean) as CatalogProduct["images"],
       specifications: [],
       stockQuantity: null,
       stockStatus: null,
-      variantId: variant?.id ?? null,
+      variantId: row.has_variants ? null : (defaultVariant?.id ?? null),
       brand: null,
     };
   });
@@ -135,13 +153,32 @@ export async function getRelatedProducts(slug: string, categorySlug: string) {
 export async function listShopFilterCategories() {
   if (!isSupabaseConfigured()) return [];
   const supabase = createSupabaseAdminClient();
-  const { data } = await supabase.from("categories").select("name, slug").order("sort_order", { ascending: true });
-  
-  return (data ?? []).map(cat => ({
+  const { data } = await supabase
+    .from("categories")
+    .select("name, slug, description")
+    .order("sort_order", { ascending: true });
+
+  return (data ?? []).map((cat) => ({
     label: cat.name,
-    href: `/shop?category=${cat.slug}`,
-    slug: cat.slug
+    href: `/shop?category=${encodeURIComponent(cat.slug)}`,
+    slug: cat.slug,
+    description: cat.description ?? "",
   }));
+}
+
+export async function resolveShopCategorySlug(inputSlug?: string | null) {
+  if (!inputSlug || !isSupabaseConfigured()) return null;
+
+  const normalized = normalizeCategorySlug(inputSlug) ?? inputSlug;
+  const supabase = createSupabaseAdminClient();
+
+  const { data } = await supabase
+    .from("categories")
+    .select("slug")
+    .ilike("slug", normalized)
+    .maybeSingle();
+
+  return data?.slug ?? null;
 }
 
 export async function listCategories(includeDraft = false) {

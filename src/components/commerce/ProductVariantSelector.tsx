@@ -80,12 +80,12 @@ export function ProductVariantSelector({ product }: { product: CatalogProduct })
             {selected.quality && <Spec label="Quality" value={selected.quality} />}
           </dl>
 
-          {selected.variantId &&
+          {selected.id &&
           (selected.stockStatus === "in_stock" ||
             selected.stockStatus === "unknown" ||
             selected.stockStatus === null) ? (
             <div className="mt-6 border-t border-navy/10 pt-6">
-              <AddToCartButton variantId={selected.variantId} />
+              <AddToCartButton variantId={selected.id} />
             </div>
           ) : (
             <p className="mt-6 text-sm text-muted">Currently unavailable in this design.</p>
