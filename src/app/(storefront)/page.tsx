@@ -12,10 +12,10 @@ import { FeaturedDestinations } from "@/components/sections/FeaturedDestinations
 import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
 import { Footer } from "@/components/layout/Footer";
 import { homeJsonLd } from "@/lib/seo";
-import { listProducts, listShopFilterCategories } from "@/server/catalog/products";
+import { listProducts, listShopFilterCategories, listShopCategoryCards } from "@/server/catalog/products";
 
 export default async function HomePage() {
-  const [{ items }, filterCategories] = await Promise.all([
+  const [{ items }, filterCategories, categoryCards] = await Promise.all([
     listProducts({ pageSize: 12 }).catch(() => ({
       items: [],
       total: 0,
@@ -24,6 +24,7 @@ export default async function HomePage() {
       totalPages: 0,
     })),
     listShopFilterCategories().catch(() => []),
+    listShopCategoryCards().catch(() => []),
   ]);
 
   const showcaseProducts = [...items].sort((a, b) => {
@@ -39,7 +40,7 @@ export default async function HomePage() {
       />
       <HeroSection />
       <HeroStatsSection />
-      <FeaturedCategoriesSection />
+      <FeaturedCategoriesSection categories={categoryCards} />
       <WhyChooseUsSection />
       <SocialProofStrip />
       <CollectionsStrip />
