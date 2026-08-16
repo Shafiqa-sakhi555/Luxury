@@ -1,8 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
+import { config } from "dotenv";
+
+config({ path: path.join(process.cwd(), ".env") });
+config({ path: path.join(process.cwd(), ".env.local"), override: true });
+
+import { CLOUDINARY_FOLDERS } from "../../../src/lib/cloudinary/constants";
+import { uploadImageBuffer } from "../../../src/lib/cloudinary/index";
 import { createSupabaseAdminClient } from "../../../src/lib/supabase/admin";
 
-export const BUCKET = "product-images";
 export const IMAGES_PER_PRODUCT = 3;
 
 export function slugify(value: string) {
@@ -35,6 +41,22 @@ export function parsePrice(raw: number | string) {
   const n = Number.parseFloat(cleaned);
   if (!Number.isFinite(n)) throw new Error(`Invalid price: ${raw}`);
   return n;
+}
+
+export function buildProductPrices(originalMajor: number, saleMajor: number) {
+  const sale = saleMajor > 0 && saleMajor < originalMajor ? saleMajor : originalMajor;
+  const discount =
+    originalMajor > 0 && sale < originalMajor
+      ? Math.round((1 - sale / originalMajor) * 100)
+      : 0;
+
+  return {
+    original_price: originalMajor,
+    sale_price: sale,
+    discount_percentage: discount,
+    original_price_minor: Math.round(originalMajor * 100),
+    sale_price_minor: Math.round(sale * 100),
+  };
 }
 
 export function pickImages(files: string[], limit = IMAGES_PER_PRODUCT) {
@@ -117,29 +139,17 @@ export function findDesignImages(
   return [...new Set(matches)].sort((a, b) => score(a) - score(b)).slice(0, limit);
 }
 
-export async function ensureBucket(supabase: ReturnType<typeof createSupabaseAdminClient>) {
-  const { data: buckets } = await supabase.storage.listBuckets();
-  if (!buckets?.some((b) => b.name === BUCKET)) {
-    const { error } = await supabase.storage.createBucket(BUCKET, { public: true });
-    if (error && !error.message.includes("already exists")) {
-      throw new Error(`Failed to create bucket: ${error.message}`);
-    }
-  }
-}
-
-export async function uploadImage(
-  supabase: ReturnType<typeof createSupabaseAdminClient>,
-  localPath: string,
-  storagePath: string
-) {
+export async function uploadLocalImage(localPath: string) {
   const buffer = fs.readFileSync(localPath);
-  const { error } = await supabase.storage.from(BUCKET).upload(storagePath, buffer, {
-    contentType: contentType(localPath),
-    upsert: true,
+  const uploaded = await uploadImageBuffer(buffer, CLOUDINARY_FOLDERS.products, {
+    filename: path.basename(localPath),
+    mimeType: contentType(localPath),
   });
-  if (error) throw new Error(`Upload failed (${storagePath}): ${error.message}`);
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
-  return data.publicUrl;
+
+  return {
+    url: uploaded.secureUrl,
+    publicId: uploaded.publicId,
+  };
 }
 
 export async function upsertCategory(
@@ -178,4 +188,89 @@ export async function clearProductChildren(
   await supabase.from("product_images").delete().eq("product_id", productId).is("variant_id", null);
   await supabase.from("product_specifications").delete().eq("product_id", productId);
   await supabase.from("inventory").delete().eq("product_id", productId);
+}
+
+export async function upsertDefaultVariant(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  productId: string,
+  input: {
+    sku: string;
+    name: string;
+    originalPrice: number;
+    salePrice: number;
+    discountPercentage: number;
+  }
+) {
+  const prices = buildProductPrices(input.originalPrice, input.salePrice);
+
+  const { data: variant, error } = await supabase
+    .from("product_variants")
+    .upsert(
+      {
+        product_id: productId,
+        sku: input.sku,
+        name: input.name,
+        original_price: prices.original_price,
+        sale_price: prices.sale_price,
+        discount_percentage: input.discountPercentage,
+        price_minor: prices.original_price_minor,
+        sale_price_minor: prices.sale_price_minor,
+        is_default: true,
+        is_active: true,
+        sort_order: 0,
+      },
+      { onConflict: "sku" }
+    )
+    .select("id")
+    .single();
+
+  if (error || !variant) {
+    throw new Error(`Default variant upsert failed (${input.sku}): ${error?.message}`);
+  }
+
+  await supabase.from("product_variant_inventory").delete().eq("variant_id", variant.id);
+  return variant.id;
+}
+
+export async function insertProductImages(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  productId: string,
+  images: Array<{ url: string; publicId: string; alt: string }>,
+  variantId?: string | null
+) {
+  for (let i = 0; i < images.length; i++) {
+    const image = images[i];
+    const { error } = await supabase.from("product_images").insert({
+      product_id: productId,
+      variant_id: variantId ?? null,
+      image_url: image.url,
+      cloudinary_public_id: image.publicId,
+      alt_text: image.alt,
+      sort_order: i,
+      is_primary: i === 0,
+    });
+    if (error) throw new Error(`Image insert failed: ${error.message}`);
+  }
+}
+
+export async function uploadAndInsertProductImages(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  productId: string,
+  localPaths: string[],
+  alt: string,
+  variantId?: string | null
+) {
+  const uploaded: Array<{ url: string; publicId: string; alt: string }> = [];
+
+  for (const localPath of localPaths) {
+    const result = await uploadLocalImage(localPath);
+    uploaded.push({
+      url: result.url,
+      publicId: result.publicId,
+      alt,
+    });
+  }
+
+  await insertProductImages(supabase, productId, uploaded, variantId);
+  return uploaded;
 }

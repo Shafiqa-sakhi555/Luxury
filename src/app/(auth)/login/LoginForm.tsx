@@ -1,11 +1,12 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { hasStaffRoleFromRows, isStaffRole } from "@/lib/auth/staff";
 
 export function LoginForm() {
   const router = useRouter();
@@ -16,21 +17,68 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const supabase = createSupabaseBrowserClient();
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const result = await signIn("credentials", {
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      redirect: false,
     });
+    
     setLoading(false);
-    if (result?.error) {
-      setError("Invalid email or password");
+    if (error) {
+      setError(error.message);
       return;
     }
-    router.push(callbackUrl);
+
+    if (data.user) {
+      const metadataRole = data.user.app_metadata?.role;
+      let isStaff = typeof metadataRole === "string" && isStaffRole(metadataRole);
+
+      if (!isStaff) {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("roles(name)")
+          .eq("user_id", data.user.id);
+
+        isStaff = hasStaffRoleFromRows(roles);
+      }
+
+      if (callbackUrl.startsWith("/admin")) {
+        if (isStaff) {
+          const sessionResponse = await fetch("/api/auth/admin/session", { method: "POST" });
+          if (!sessionResponse.ok) {
+            await supabase.auth.signOut();
+            router.push("/admin/login?error=unauthorized");
+            router.refresh();
+            return;
+          }
+          router.push(callbackUrl);
+        } else {
+          await supabase.auth.signOut();
+          router.push("/admin/login?error=unauthorized");
+        }
+      } else if (isStaff && callbackUrl === "/") {
+        const sessionResponse = await fetch("/api/auth/admin/session", { method: "POST" });
+        if (!sessionResponse.ok) {
+          await supabase.auth.signOut();
+          router.push("/admin/login?error=unauthorized");
+          router.refresh();
+          return;
+        }
+        router.push("/admin");
+      } else {
+        await fetch("/api/cart", { credentials: "same-origin" }).catch(() => undefined);
+        router.push(callbackUrl);
+      }
+    } else {
+      router.push(callbackUrl);
+    }
+    
     router.refresh();
   }
 
@@ -64,7 +112,7 @@ export function LoginForm() {
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         No account?{" "}
-        <Link href="/register" className="text-navy hover:underline">
+        <Link href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="text-navy hover:underline">
           Register
         </Link>
       </p>

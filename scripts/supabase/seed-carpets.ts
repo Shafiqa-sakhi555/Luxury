@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Seed Carpets catalog into Supabase (collections + variants).
  * Usage: npm run supabase:seed-carpets
  */
@@ -8,15 +8,13 @@ import path from "node:path";
 import fs from "node:fs";
 import XLSX from "xlsx";
 import { createSupabaseAdminClient } from "../../src/lib/supabase/admin";
-import { syncPrismaCarpetCollection } from "../../src/server/catalog/supabase-sync";
 import {
-  BUCKET,
+  buildProductPrices,
   clearProductChildren,
-  ensureBucket,
   normalizeDiscount,
   pickCollectionFolderImages,
   slugify,
-  uploadImage,
+  uploadAndInsertProductImages,
   upsertCategory,
 } from "./lib/seed-utils";
 
@@ -88,7 +86,7 @@ function shortDescriptionFromCollection(name: string, description: string | null
 }
 
 async function main() {
-  console.log("🚀 Seeding Carpets catalog to Supabase...\n");
+  console.log("Seeding Carpets catalog to Supabase...\n");
 
   if (!fs.existsSync(XLSX_PATH)) {
     throw new Error(`Missing source file: ${XLSX_PATH}`);
@@ -108,7 +106,6 @@ async function main() {
   }
 
   const supabase = createSupabaseAdminClient();
-  await ensureBucket(supabase);
 
   const category = await upsertCategory(supabase, {
     name: "Carpets",
@@ -117,9 +114,9 @@ async function main() {
       "Premium wall-to-wall carpet collections — sold by the square foot with customizable length and fixed-width installation.",
   });
 
-  console.log(`✓ Category "carpets" (${category.id})`);
-  console.log(`✓ Source rows: ${rows.length}`);
-  console.log(`✓ Collections: ${grouped.size}\n`);
+  console.log(`Category "carpets" (${category.id})`);
+  console.log(`Source rows: ${rows.length}`);
+  console.log(`Collections: ${grouped.size}\n`);
 
   let variantCount = 0;
   let imageCount = 0;
@@ -133,7 +130,9 @@ async function main() {
     const minOriginal = Math.min(...collectionRows.map((row) => Number(row["Regular Price sqr feet"])));
     const maxDiscount = Math.max(...collectionRows.map((row) => normalizeDiscount(row["Discount %"])));
 
-    console.log(`→ ${collectionName} (${collectionRows.length} variants)`);
+    console.log(`-> ${collectionName} (${collectionRows.length} variants)`);
+
+    const prices = buildProductPrices(minOriginal, minSale);
 
     const { data: product, error: productError } = await supabase
       .from("products")
@@ -144,9 +143,11 @@ async function main() {
           slug: collectionSlug,
           short_description: shortDescription,
           description,
-          original_price: minOriginal,
-          sale_price: minSale,
+          original_price: prices.original_price,
+          sale_price: prices.sale_price,
           discount_percentage: maxDiscount,
+          original_price_minor: prices.original_price_minor,
+          sale_price_minor: prices.sale_price_minor,
           currency: "PKR",
           selling_unit: "Sold by the Square Foot",
           included_items: null,
@@ -155,6 +156,7 @@ async function main() {
           design: null,
           sku: null,
           has_variants: true,
+          status: "ACTIVE",
           is_active: true,
           is_featured: true,
         },
@@ -173,35 +175,15 @@ async function main() {
     const roots = collectionRoots(folderNames);
     const localCollectionImages = pickCollectionFolderImages(roots, IMAGES_PER_COLLECTION);
 
-    const collectionImages: Array<{ url: string; alt: string; sortOrder: number }> = [];
-    for (let i = 0; i < localCollectionImages.length; i++) {
-      const localPath = localCollectionImages[i];
-      const fileName = path.basename(localPath).replace(/[^a-zA-Z0-9._-]/g, "-").toLowerCase();
-      const storagePath = `carpets/${collectionSlug}/gallery/${fileName}`;
-      const publicUrl = await uploadImage(supabase, localPath, storagePath);
-      collectionImages.push({ url: publicUrl, alt: collectionName, sortOrder: i });
-
-      await supabase.from("product_images").insert({
-        product_id: product.id,
-        variant_id: null,
-        image_url: publicUrl,
-        alt_text: `${collectionName} — image ${i + 1}`,
-        sort_order: i,
-        is_primary: i === 0,
-      });
-      imageCount++;
-    }
+    const collectionImages = await uploadAndInsertProductImages(
+      supabase,
+      product.id,
+      localCollectionImages,
+      collectionName
+    );
+    imageCount += collectionImages.length;
 
     if (collectionImages.length === 0) collectionsWithoutImages++;
-
-    const prismaVariants: Array<{
-      supabaseVariantId: string;
-      sku: string;
-      name: string;
-      originalPriceMinor: number;
-      salePriceMinor: number;
-      images: Array<{ url: string; alt: string; sortOrder: number }>;
-    }> = [];
 
     for (let index = 0; index < collectionRows.length; index++) {
       const row = collectionRows[index];
@@ -212,6 +194,7 @@ async function main() {
       const salePrice = Number(row["Sale Price"]);
       const discount = normalizeDiscount(row["Discount %"]);
       const stock = stockFromSource(row.Stock);
+      const variantPrices = buildProductPrices(originalPrice, salePrice);
 
       const { data: variant, error: variantError } = await supabase
         .from("product_variants")
@@ -224,9 +207,11 @@ async function main() {
             color,
             quality: row.Quality,
             size: "Custom length · fixed width",
-            original_price: originalPrice,
-            sale_price: salePrice,
+            original_price: variantPrices.original_price,
+            sale_price: variantPrices.sale_price,
             discount_percentage: discount,
+            price_minor: variantPrices.original_price_minor,
+            sale_price_minor: variantPrices.sale_price_minor,
             sort_order: index,
             is_active: true,
             is_default: index === 0,
@@ -247,35 +232,15 @@ async function main() {
         stock_status: stock.status,
       });
 
-      prismaVariants.push({
-        supabaseVariantId: variant.id,
-        sku: row.SKU,
-        name: variantName,
-        originalPriceMinor: Math.round(originalPrice * 100),
-        salePriceMinor: Math.round(salePrice * 100),
-        images: collectionImages,
-      });
-
       variantCount++;
     }
 
-    await syncPrismaCarpetCollection({
-      supabaseProductId: product.id,
-      name: collectionName,
-      slug: collectionSlug,
-      shortDescription,
-      description,
-      categorySlug: "carpets",
-      primaryImageUrl: collectionImages[0]?.url ?? null,
-      variants: prismaVariants,
-    });
-
     console.log(
-      `  ✓ ${collectionRows.length} variants, ${collectionImages.length} collection images\n`
+      `  ${collectionRows.length} variants, ${collectionImages.length} collection images\n`
     );
   }
 
-  console.log("✅ Carpets seed complete");
+  console.log("Carpets seed complete");
   console.log(`   Collections: ${grouped.size}`);
   console.log(`   Variants:    ${variantCount}`);
   console.log(`   Images:      ${imageCount}`);
@@ -283,6 +248,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("\n❌ Seed failed:", err instanceof Error ? err.message : err);
+  console.error("\nSeed failed:", err instanceof Error ? err.message : err);
   process.exit(1);
 });

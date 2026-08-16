@@ -2,8 +2,10 @@ import Link from "next/link";
 import { AdminPageHeader } from "@/components/admin/layout/AdminPageHeader";
 import { ProductForm } from "@/components/admin/catalog/ProductForm";
 import { adminListCategoryOptions } from "@/server/catalog/admin-queries";
+import { requireAdminPageAccess } from "@/server/admin/page-access";
 
 export default async function AdminNewProductPage() {
+  await requireAdminPageAccess("product.write");
   const categories = await adminListCategoryOptions().catch(() => []);
 
   return (

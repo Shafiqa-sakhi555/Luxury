@@ -1,24 +1,41 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getOrCreateCart, cartTotals, removeCartItem } from "@/server/cart";
-import { auth } from "@/lib/auth";
-import { db } from "@/server/db";
+import { getOrCreateCart, cartTotals, resolveCustomerCart } from "@/server/cart";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { CartActions } from "@/components/commerce/CartActions";
 
 export default async function CartPage() {
-  const session = await auth();
-  const customer = session?.user?.id
-    ? await db.customer.findUnique({ where: { userId: session.user.id } })
-    : null;
-  const cart = await getOrCreateCart(customer?.id).catch(() => null);
-  const totals = cart ? cartTotals(cart) : { subtotalMinor: 0, deliveryMinor: 0, totalMinor: 0, itemCount: 0 };
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let customerId: string | undefined;
+  if (user) {
+    customerId = await resolveCustomerCart(user.id).catch(() => undefined);
+  }
+
+  const cart = await getOrCreateCart(customerId).catch(() => null);
+  const totals = cartTotals(cart);
 
   return (
     <div>
       <div className="mx-auto max-w-4xl px-4 py-8">
         <h1 className="font-display text-3xl text-navy">Your cart</h1>
-        {!cart || cart.items.length === 0 ? (
+        {!user && cart?.cart_items?.length ? (
+          <p className="mt-2 text-sm text-muted">
+            <Link href="/login?callbackUrl=/checkout" className="text-navy hover:underline">
+              Sign in
+            </Link>{" "}
+            or{" "}
+            <Link href="/register?callbackUrl=/checkout" className="text-navy hover:underline">
+              create an account
+            </Link>{" "}
+            to save your cart and checkout.
+          </p>
+        ) : null}
+        {!cart?.cart_items?.length ? (
           <div className="mt-10 rounded-2xl border border-navy/10 bg-white p-12 text-center">
             <p className="text-muted">Your cart is empty.</p>
             <Link href="/shop" className="mt-4 inline-block text-navy hover:underline">
@@ -28,28 +45,38 @@ export default async function CartPage() {
         ) : (
           <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
             <ul className="space-y-4">
-              {cart.items.map((item) => (
-                <li key={item.id} className="flex gap-4 rounded-xl border border-navy/10 bg-white p-4">
-                  <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg">
-                    <Image
-                      src={item.variant.product.media[0]?.url ?? "/brand/jalals-logo.png"}
-                      alt={item.variant.product.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Link href={`/products/${item.variant.product.slug}`} className="font-medium text-navy hover:underline">
-                      {item.variant.product.name}
-                    </Link>
-                    <p className="text-xs text-muted">{item.variant.sku}</p>
-                    <p className="mt-2 tabular-nums text-navy">
-                      {formatMoney(item.priceSnapshotMinor ?? item.variant.priceMinor)}
-                    </p>
-                    <CartActions itemId={item.id} quantity={item.quantity} />
-                  </div>
-                </li>
-              ))}
+              {cart.cart_items.map((item: any) => {
+                const product = item.product_variants?.products;
+                const image = product?.product_images?.[0]?.image_url ?? "/brand/jalals-logo.png";
+                const price =
+                  item.price_snapshot_minor ??
+                  item.product_variants?.sale_price_minor ??
+                  item.product_variants?.price_minor;
+
+                return (
+                  <li key={item.id} className="flex gap-4 rounded-xl border border-navy/10 bg-white p-4">
+                    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg">
+                      <Image
+                        src={image}
+                        alt={product?.name ?? "Product"}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Link
+                        href={`/products/${product?.slug}`}
+                        className="font-medium text-navy hover:underline"
+                      >
+                        {product?.name}
+                      </Link>
+                      <p className="text-xs text-muted">{item.product_variants?.sku}</p>
+                      <p className="mt-2 tabular-nums text-navy">{formatMoney(price)}</p>
+                      <CartActions itemId={item.id} quantity={item.quantity} />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
             <aside className="h-fit rounded-xl border border-navy/10 bg-white p-6">
               <h2 className="font-medium text-navy">Order summary</h2>
@@ -68,7 +95,7 @@ export default async function CartPage() {
                 </div>
               </dl>
               <Link
-                href="/checkout"
+                href={user ? "/checkout" : "/login?callbackUrl=/checkout"}
                 className="mt-6 block rounded-full bg-red py-3 text-center text-sm font-medium text-white hover:bg-red/90"
               >
                 Proceed to checkout

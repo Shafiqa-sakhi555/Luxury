@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutDashboard,
@@ -14,24 +14,44 @@ import {
   X,
   ChevronLeft,
   LogOut,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { signOut } from "next-auth/react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { ADMIN_NAV } from "@/lib/auth/admin-access";
 
-const nav = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/catalog/products", label: "Products", icon: Package },
-  { href: "/admin/catalog/categories", label: "Categories", icon: Package },
-  { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
-  { href: "/admin/inventory", label: "Inventory", icon: Warehouse },
-  { href: "/admin/customers", label: "Customers", icon: Users },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
-];
+const ICONS: Record<string, LucideIcon> = {
+  "/admin": LayoutDashboard,
+  "/admin/catalog/products": Package,
+  "/admin/catalog/categories": Package,
+  "/admin/orders": ShoppingCart,
+  "/admin/inventory": Warehouse,
+  "/admin/customers": Users,
+  "/admin/settings": Settings,
+};
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+type AdminShellProps = {
+  children: React.ReactNode;
+  allowedHrefs: string[];
+  roleLabel: string;
+};
+
+export function AdminShell({ children, allowedHrefs, roleLabel }: AdminShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const supabase = createSupabaseBrowserClient();
+  const allowed = new Set(allowedHrefs);
+  const nav = ADMIN_NAV.filter((item) => allowed.has(item.href));
+
+  const handleSignOut = async () => {
+    await fetch("/api/auth/admin/session", { method: "DELETE" });
+    await supabase.auth.signOut();
+    router.push("/admin/login");
+    router.refresh();
+  };
 
   const sidebar = (
     <div className="flex h-full flex-col">
@@ -59,7 +79,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </button>
       </div>
       <nav className="flex-1 space-y-1 p-3">
-        {nav.map(({ href, label, icon: Icon }) => {
+        {nav.map(({ href, label }) => {
+          const Icon = ICONS[href] ?? LayoutDashboard;
           const active = pathname === href || (href !== "/admin" && pathname.startsWith(href));
           return (
             <Link
@@ -88,7 +109,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </Link>
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={handleSignOut}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red hover:bg-red/5"
         >
           <LogOut className="h-4 w-4" />
@@ -130,7 +151,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <Menu className="h-5 w-5" />
             </button>
             <div className="text-sm text-muted">Operations dashboard</div>
-            <div className="text-sm font-medium text-navy">Admin</div>
+            <div className="text-sm font-medium text-navy">{roleLabel}</div>
           </header>
           <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
         </div>

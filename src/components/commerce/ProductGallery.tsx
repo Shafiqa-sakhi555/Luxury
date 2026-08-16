@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
 import { cn } from "@/lib/utils";
 
 type GalleryImage = {
@@ -36,7 +37,7 @@ export function ProductGallery({
     <div className="space-y-4">
       <div className="group relative aspect-square overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-navy/8">
         <Image
-          src={active.url}
+          src={getOptimizedImageUrl(active.url, { width: 1200, crop: "limit" })}
           alt={active.alt ?? productName}
           fill
           className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
@@ -62,11 +63,12 @@ export function ProductGallery({
               aria-current={index === activeIndex}
             >
               <Image
-                src={img.url}
+                src={getOptimizedImageUrl(img.url, { width: 160, height: 160, crop: "fill" })}
                 alt={img.alt ?? `${productName} ${index + 1}`}
                 fill
                 className="object-cover"
                 sizes="80px"
+                loading="lazy"
               />
             </button>
           ))}

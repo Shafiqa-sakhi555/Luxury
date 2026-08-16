@@ -1,21 +1,28 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { db } from "@/server/db";
-import { getOrCreateCart, cartTotals } from "@/server/cart";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { cartTotals, getOrCreateCart, resolveCustomerCart } from "@/server/cart";
 import { CheckoutForm } from "@/components/commerce/CheckoutForm";
 
 export default async function CheckoutPage() {
-  const session = await auth();
-  if (!session?.user) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
     redirect("/login?callbackUrl=/checkout");
   }
 
-  const customer = await db.customer.findUnique({ where: { userId: session.user.id } });
-  if (!customer) redirect("/register");
+  let customerId: string;
+  try {
+    customerId = await resolveCustomerCart(user.id);
+  } catch {
+    redirect("/register?callbackUrl=/checkout");
+  }
 
-  const cart = await getOrCreateCart(customer.id);
-  if (cart.items.length === 0) redirect("/cart");
+  const cart = await getOrCreateCart(customerId);
+  if (!cart?.cart_items?.length) redirect("/cart");
 
   const totals = cartTotals(cart);
 
@@ -27,7 +34,9 @@ export default async function CheckoutPage() {
         <CheckoutForm totals={totals} />
       </div>
       <p className="mt-6 text-sm text-muted">
-        <Link href="/cart" className="text-navy hover:underline">Back to cart</Link>
+        <Link href="/cart" className="text-navy hover:underline">
+          Back to cart
+        </Link>
       </p>
     </div>
   );

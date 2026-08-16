@@ -4,15 +4,12 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AdminButton } from "@/components/admin/ui";
 import { removeProductAction } from "@/server/catalog/admin-actions";
-import type { CatalogSource } from "@/types/admin-catalog";
 
 export function ProductDeleteButton({
   id,
-  source,
   name,
 }: {
   id: string;
-  source: CatalogSource;
   name: string;
 }) {
   const router = useRouter();
@@ -44,7 +41,7 @@ export function ProductDeleteButton({
           onClick={() => {
             setError(null);
             startTransition(async () => {
-              const result = await removeProductAction({ id, source });
+              const result = await removeProductAction({ id });
               if (!result.ok) {
                 setError(result.error);
                 return;

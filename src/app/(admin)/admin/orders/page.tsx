@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { adminListOrders } from "@/server/orders";
+import { requireAdminPageAccess } from "@/server/admin/page-access";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import { AdminBadge } from "@/components/admin/ui";
 import { formatMoney } from "@/lib/money";
@@ -10,6 +11,7 @@ export default async function AdminOrdersPage({
   searchParams: Promise<{ page?: string; status?: string }>;
 }) {
   const params = await searchParams;
+  await requireAdminPageAccess("order.read");
   const result = await adminListOrders({
     page: Number(params.page ?? 1),
     status: params.status,
@@ -24,7 +26,6 @@ export default async function AdminOrdersPage({
             <tr>
               <th className="px-4 py-3">Order</th>
               <th className="px-4 py-3">Customer</th>
-              <th className="px-4 py-3">Items</th>
               <th className="px-4 py-3">Total</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3" />
@@ -33,19 +34,18 @@ export default async function AdminOrdersPage({
           <tbody>
             {result.items.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-muted">
+                <td colSpan={5} className="px-4 py-12 text-center text-muted">
                   No orders yet.
                 </td>
               </tr>
             ) : (
-              result.items.map((order) => (
+              result.items.map((order: any) => (
                 <tr key={order.id} className="border-b border-navy/5">
-                  <td className="px-4 py-3 font-medium text-navy">{order.orderNumber}</td>
+                  <td className="px-4 py-3 font-medium text-navy">{order.order_number}</td>
                   <td className="px-4 py-3 text-muted">
-                    {order.customer.user.name ?? order.customer.user.email}
+                    {order.customers?.profiles?.name ?? order.customers?.profiles?.email ?? "—"}
                   </td>
-                  <td className="px-4 py-3">{order.items.length}</td>
-                  <td className="px-4 py-3 tabular-nums">{formatMoney(order.totalMinor)}</td>
+                  <td className="px-4 py-3 tabular-nums">{formatMoney(order.total_minor)}</td>
                   <td className="px-4 py-3">
                     <AdminBadge tone={order.status === "PENDING" ? "warning" : "default"}>
                       {order.status}

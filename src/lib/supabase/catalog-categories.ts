@@ -15,6 +15,13 @@ export function normalizeCategorySlug(slug?: string) {
   return CATEGORY_SLUG_ALIASES[slug] ?? slug;
 }
 
+export function categorySlugsMatch(a?: string | null, b?: string | null) {
+  if (!a || !b) return false;
+  const left = (normalizeCategorySlug(a) ?? a).toLowerCase();
+  const right = (normalizeCategorySlug(b) ?? b).toLowerCase();
+  return left === right;
+}
+
 export function isSupabaseCatalogSlug(slug: string): slug is SupabaseCatalogSlug {
   return (SUPABASE_CATALOG_SLUGS as readonly string[]).includes(normalizeCategorySlug(slug) ?? "");
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { listProducts, listShopFilterCategories, getCategoryBySlug } from "@/server/catalog/products";
+import { listProducts, listShopFilterCategories, getCategoryBySlug, resolveShopCategorySlug } from "@/server/catalog/products";
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { CatalogFilterPills } from "@/components/commerce/CatalogFilterPills";
 import { SectionHeading } from "@/components/shared/SectionHeading";
@@ -21,22 +21,27 @@ export default async function ShopPage({
 }) {
   const params = await searchParams;
   const page = Number(params.page ?? 1);
-  const categorySlug = normalizeCategorySlug(params.category);
+  const requestedCategorySlug = normalizeCategorySlug(params.category);
+  const resolvedCategorySlug = requestedCategorySlug
+    ? await resolveShopCategorySlug(requestedCategorySlug)
+    : null;
   const [{ items, total, totalPages }, filterCategories, activeCategoryRecord] = await Promise.all([
     listProducts({
-      categorySlug,
+      categorySlug: requestedCategorySlug ?? undefined,
       search: params.q,
       page,
       pageSize: 24,
     }).catch(() => ({ items: [], total: 0, page: 1, pageSize: 24, totalPages: 0 })),
     listShopFilterCategories().catch(() => []),
-    categorySlug ? getCategoryBySlug(categorySlug).catch(() => null) : Promise.resolve(null),
+    resolvedCategorySlug
+      ? getCategoryBySlug(resolvedCategorySlug).catch(() => null)
+      : Promise.resolve(null),
   ]);
 
   const activeCategory = activeCategoryRecord
-    ? { name: activeCategoryRecord.name, slug: categorySlug ?? params.category ?? "" }
-    : categorySlug
-      ? { name: formatCategoryLabel(categorySlug), slug: categorySlug }
+    ? { name: activeCategoryRecord.name, slug: resolvedCategorySlug ?? params.category ?? "" }
+    : resolvedCategorySlug
+      ? { name: formatCategoryLabel(resolvedCategorySlug), slug: resolvedCategorySlug }
       : null;
 
   const filterItems = [
@@ -73,7 +78,10 @@ export default async function ShopPage({
       </section>
 
       <section className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
-        <CatalogFilterPills items={filterItems} activeSlug={categorySlug ?? params.category} />
+        <CatalogFilterPills
+          items={filterItems}
+          activeSlug={resolvedCategorySlug ?? params.category}
+        />
 
         {items.length === 0 ? (
           <div className="mt-10 rounded-2xl border border-navy/10 bg-white p-12 text-center shadow-sm ring-1 ring-navy/5">

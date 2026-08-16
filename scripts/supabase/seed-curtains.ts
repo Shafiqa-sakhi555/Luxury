@@ -1,13 +1,5 @@
-/**
- * Seed the Curtains catalog into Supabase (database + storage).
- *
- * Prerequisites:
- *   1. Run supabase/migrations/001_catalog_schema.sql in your Supabase project
- *   2. Create a public storage bucket named "product-images"
- *   3. Add to .env.local:
- *        NEXT_PUBLIC_SUPABASE_URL=
- *        NEXT_PUBLIC_SUPABASE_ANON_KEY=
- *        SUPABASE_SERVICE_ROLE_KEY=
+﻿/**
+ * Seed the Curtains catalog into Supabase (Cloudinary images + database).
  *
  * Usage: npm run supabase:seed-curtains
  */
@@ -16,13 +8,16 @@ import { config } from "dotenv";
 import path from "node:path";
 import fs from "node:fs";
 import { createSupabaseAdminClient } from "../../src/lib/supabase/admin";
-import { syncPrismaVariantForSupabaseProduct } from "../../src/server/catalog/supabase-sync";
+import {
+  buildProductPrices,
+  upsertCategory,
+  uploadAndInsertProductImages,
+  upsertDefaultVariant,
+} from "./lib/seed-utils";
 
 config({ path: path.join(process.cwd(), ".env.local"), override: true });
 
-const BUCKET = "product-images";
 const MIN_IMAGES = 2;
-const IMAGES_PER_PRODUCT = 3;
 const CURTAINS_ROOT = path.join(process.cwd(), "public/images/category/curtains");
 
 type CurtainSeed = {
@@ -62,7 +57,7 @@ const CURTAINS: CurtainSeed[] = [
     salePrice: 2500,
     discountPercentage: 11,
     shortDescription:
-      "Soft plush texture meets everyday durability. These versatile curtains bring warmth and depth to any window — perfect for cozy, relaxed interiors.",
+      "Soft plush texture meets everyday durability. These versatile curtains bring warmth and depth to any window ΓÇö perfect for cozy, relaxed interiors.",
     description:
       "Transform your room with these timeless towel-fabric curtains. Crafted from a soft, plush toweling weave, they bring a warm, tactile texture that feels as good as it looks. The subtle looped surface adds visual depth and a relaxed, cozy character that complements coastal, modern, or classic interiors. Durable and easy to care for, these curtains offer both style and function for any living space.",
     sellingUnit: "Sold as Pair",
@@ -88,7 +83,7 @@ const CURTAINS: CurtainSeed[] = [
     salePrice: 1800,
     discountPercentage: 25,
     shortDescription:
-      "Rich velvet feel meets soft, everyday comfort. These curtains combine luxurious texture with easy maintenance — perfect for elegant, statement-making interiors.",
+      "Rich velvet feel meets soft, everyday comfort. These curtains combine luxurious texture with easy maintenance ΓÇö perfect for elegant, statement-making interiors.",
     description:
       "Elevate your room with these rich Malai velvet curtains. Crafted from a smooth, soft velvet-finish fabric, they blend timeless luxury with everyday practicality. The deep, even pile adds visual depth and a refined sheen that complements contemporary, classic, or glam interiors. Durable and easy to care for, these curtains offer both style and function for any living space.",
     sellingUnit: "Sold as Pair",
@@ -115,7 +110,7 @@ const CURTAINS: CurtainSeed[] = [
     salePrice: 1650,
     discountPercentage: 25,
     shortDescription:
-      "Delicate texture meets soft, filtered light. These sheer curtains combine airy elegance with easy maintenance — perfect for bright, breezy interiors.",
+      "Delicate texture meets soft, filtered light. These sheer curtains combine airy elegance with easy maintenance ΓÇö perfect for bright, breezy interiors.",
     description:
       "Brighten your room with these delicate Bubble curtains. Crafted from a lightweight, sheer dobby weave with a raised dot texture, they blend soft, airy elegance with everyday practicality. The subtle bubble pattern adds visual depth while gently filtering natural light, complementing coastal, modern, or romantic interiors. Durable and easy to care for, these curtains offer both style and function for any living space.",
     sellingUnit: "Sold as Pair",
@@ -141,7 +136,7 @@ const CURTAINS: CurtainSeed[] = [
     salePrice: 1650,
     discountPercentage: 25,
     shortDescription:
-      "Clean matte texture meets soft, everyday comfort. These versatile curtains combine understated style with easy maintenance — perfect for modern, minimalist interiors.",
+      "Clean matte texture meets soft, everyday comfort. These versatile curtains combine understated style with easy maintenance ΓÇö perfect for modern, minimalist interiors.",
     description:
       "Refresh your room with these versatile Moon curtains. Crafted from a soft matte textured weave, they blend clean, understated style with everyday practicality. The smooth finish adds visual depth and a calm, contemporary feel that complements minimalist, modern, or classic interiors. Durable and easy to care for, these curtains offer both style and function for any living space.",
     sellingUnit: "Sold as Pair",
@@ -163,7 +158,7 @@ const CURTAINS: CurtainSeed[] = [
     salePrice: 2500,
     discountPercentage: 22,
     shortDescription:
-      "Classic linen texture meets soft, everyday practicality. These versatile curtains combine timeless style with easy maintenance — perfect for breezy coastal looks or clean modern interiors.",
+      "Classic linen texture meets soft, everyday practicality. These versatile curtains combine timeless style with easy maintenance ΓÇö perfect for breezy coastal looks or clean modern interiors.",
     description:
       "Transform your room with these timeless New Parday curtains. Crafted from a soft, breathable linen-look weave, they blend classic style with everyday practicality. The natural fiber texture adds visual depth and a refreshing contrast that complements coastal, modern, or classic interiors. Durable and easy to care for, these curtains offer both style and function for any living space.",
     sellingUnit: "Sold as Pair",
@@ -189,7 +184,7 @@ const CURTAINS: CurtainSeed[] = [
     salePrice: 1800,
     discountPercentage: 25,
     shortDescription:
-      "Refined jacquard detail meets soft, everyday elegance. These versatile curtains combine subtle pattern with easy maintenance — perfect for classic or transitional interiors.",
+      "Refined jacquard detail meets soft, everyday elegance. These versatile curtains combine subtle pattern with easy maintenance ΓÇö perfect for classic or transitional interiors.",
     description:
       "Elevate your room with these refined Palachi curtains. Crafted from a jacquard and sheer weave blend, they bring subtle textured elegance with everyday practicality. The intricate pattern detail adds visual depth and a soft, sophisticated finish that complements classic, transitional, or elegant interiors. Durable and easy to care for, these curtains offer both style and function for any living space.",
     sellingUnit: "Sold as Pair",
@@ -211,7 +206,7 @@ const CURTAINS: CurtainSeed[] = [
     salePrice: 1500,
     discountPercentage: 17,
     shortDescription:
-      "Natural linen-look texture meets soft, everyday practicality. These versatile curtains combine understated style with easy maintenance — perfect for bright, airy interiors.",
+      "Natural linen-look texture meets soft, everyday practicality. These versatile curtains combine understated style with easy maintenance ΓÇö perfect for bright, airy interiors.",
     description:
       "Refresh your room with these natural Net curtains. Crafted from a soft, breathable linen-look weave, they blend clean, understated style with everyday practicality. The natural texture adds visual depth and a light, airy contrast that complements coastal, modern, or classic interiors. Durable and easy to care for, these curtains offer both style and function for any living space.",
     sellingUnit: "Sold as Pair",
@@ -224,44 +219,10 @@ const CURTAINS: CurtainSeed[] = [
   },
 ];
 
-function contentType(filename: string) {
-  const ext = path.extname(filename).toLowerCase();
-  if (ext === ".png") return "image/png";
-  if (ext === ".webp") return "image/webp";
-  return "image/jpeg";
-}
-
-async function ensureBucket(supabase: ReturnType<typeof createSupabaseAdminClient>) {
-  const { data: buckets } = await supabase.storage.listBuckets();
-  if (!buckets?.some((b) => b.name === BUCKET)) {
-    const { error } = await supabase.storage.createBucket(BUCKET, { public: true });
-    if (error && !error.message.includes("already exists")) {
-      throw new Error(`Failed to create bucket: ${error.message}`);
-    }
-  }
-}
-
-async function uploadImage(
-  supabase: ReturnType<typeof createSupabaseAdminClient>,
-  localPath: string,
-  storagePath: string
-) {
-  const buffer = fs.readFileSync(localPath);
-  const { error } = await supabase.storage.from(BUCKET).upload(storagePath, buffer, {
-    contentType: contentType(localPath),
-    upsert: true,
-  });
-  if (error) throw new Error(`Upload failed (${storagePath}): ${error.message}`);
-
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
-  return data.publicUrl;
-}
-
 async function main() {
-  console.log("🚀 Seeding Curtains catalog to Supabase...\n");
+  console.log("Seeding Curtains catalog to Supabase...\n");
 
   const supabase = createSupabaseAdminClient();
-  await ensureBucket(supabase);
 
   // Validate local images before any remote writes
   for (const product of CURTAINS) {
@@ -279,32 +240,21 @@ async function main() {
     }
   }
 
-  // Category
-  const { data: category, error: categoryError } = await supabase
-    .from("categories")
-    .upsert(
-      {
-        name: "Curtains",
-        slug: "curtains",
-        description:
-          "Premium machine-made curtains — towel fabric, velvet, sheer, linen-look and jacquard weaves. Sold as pairs with eyelet headers.",
-        is_active: true,
-      },
-      { onConflict: "slug" }
-    )
-    .select("id")
-    .single();
+  const category = await upsertCategory(supabase, {
+    name: "Curtains",
+    slug: "curtains",
+    description:
+      "Premium machine-made curtains — towel fabric, velvet, sheer, linen-look and jacquard weaves. Sold as pairs with eyelet headers.",
+  });
 
-  if (categoryError || !category) {
-    throw new Error(`Category upsert failed: ${categoryError?.message}`);
-  }
-
-  console.log(`✓ Category "curtains" (${category.id})\n`);
+  console.log(`Category "curtains" (${category.id})\n`);
 
   let totalImages = 0;
 
   for (const product of CURTAINS) {
-    console.log(`→ ${product.name}`);
+    console.log(`-> ${product.name}`);
+
+    const prices = buildProductPrices(product.originalPrice, product.salePrice);
 
     const { data: row, error: productError } = await supabase
       .from("products")
@@ -315,9 +265,11 @@ async function main() {
           slug: product.slug,
           short_description: product.shortDescription,
           description: product.description,
-          original_price: product.originalPrice,
-          sale_price: product.salePrice,
-          discount_percentage: product.discountPercentage,
+          original_price: prices.original_price,
+          sale_price: prices.sale_price,
+          discount_percentage: prices.discount_percentage,
+          original_price_minor: prices.original_price_minor,
+          sale_price_minor: prices.sale_price_minor,
           currency: "PKR",
           selling_unit: product.sellingUnit,
           included_items: product.includedItems,
@@ -325,6 +277,8 @@ async function main() {
           fabric: product.fabric,
           design: product.design,
           sku: product.sku,
+          has_variants: false,
+          status: "ACTIVE",
           is_active: true,
           is_featured: true,
         },
@@ -341,28 +295,24 @@ async function main() {
     await supabase.from("product_specifications").delete().eq("product_id", row.id);
     await supabase.from("inventory").delete().eq("product_id", row.id);
 
-    const uploadedImages: Array<{ url: string; alt: string; sortOrder: number }> = [];
+    const localPaths = product.imageFiles.map((file) =>
+      path.join(CURTAINS_ROOT, product.folder, file)
+    );
+    const uploadedImages = await uploadAndInsertProductImages(
+      supabase,
+      row.id,
+      localPaths,
+      product.name
+    );
+    totalImages += uploadedImages.length;
 
-    for (let i = 0; i < product.imageFiles.length; i++) {
-      const file = product.imageFiles[i];
-      const localPath = path.join(CURTAINS_ROOT, product.folder, file);
-      const safeName = file.replace(/[^a-zA-Z0-9._-]/g, "-").toLowerCase();
-      const storagePath = `${product.storageFolder}/${safeName}`;
-
-      const publicUrl = await uploadImage(supabase, localPath, storagePath);
-      uploadedImages.push({ url: publicUrl, alt: product.name, sortOrder: i });
-
-      const { error: imgError } = await supabase.from("product_images").insert({
-        product_id: row.id,
-        image_url: publicUrl,
-        alt_text: `${product.name} — image ${i + 1}`,
-        sort_order: i,
-        is_primary: i === 0,
-      });
-
-      if (imgError) throw new Error(`Image insert failed: ${imgError.message}`);
-      totalImages++;
-    }
+    await upsertDefaultVariant(supabase, row.id, {
+      sku: product.sku,
+      name: product.name,
+      originalPrice: product.originalPrice,
+      salePrice: product.salePrice,
+      discountPercentage: product.discountPercentage,
+    });
 
     const colorCount = product.colors.split(",").length;
     const stockQty = colorCount * product.stockPerColor;
@@ -388,34 +338,15 @@ async function main() {
       });
     }
 
-    // Sync Prisma variant for cart/checkout bridge
-    await syncPrismaVariantForSupabaseProduct({
-      supabaseId: row.id,
-      name: product.name,
-      slug: product.slug,
-      sku: product.sku,
-      shortDescription: product.shortDescription,
-      description: product.description,
-      originalPriceMinor: product.originalPrice * 100,
-      salePriceMinor: product.salePrice * 100,
-      categorySlug: "curtains",
-      primaryImageUrl: uploadedImages[0]?.url ?? null,
-      images: uploadedImages.map((img) => ({
-        url: img.url,
-        alt: img.alt,
-        sortOrder: img.sortOrder,
-      })),
-    });
-
-    console.log(`  ✓ ${uploadedImages.length} images, stock ${stockQty}\n`);
+    console.log(`  ${uploadedImages.length} images, stock ${stockQty}\n`);
   }
 
-  console.log("✅ Seed complete");
+  console.log("Seed complete");
   console.log(`   Products: ${CURTAINS.length}`);
   console.log(`   Images:   ${totalImages}`);
 }
 
 main().catch((err) => {
-  console.error("\n❌ Seed failed:", err.message);
+  console.error("\nSeed failed:", err instanceof Error ? err.message : err);
   process.exit(1);
 });

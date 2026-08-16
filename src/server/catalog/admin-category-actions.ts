@@ -1,21 +1,22 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import type { AdminCategoryFormValues } from "@/types/admin-category";
-import {
-  createPrismaCategory,
-  deletePrismaCategory,
-  updatePrismaCategory,
-} from "@/server/catalog/admin-category-mutations";
-import { AuthorizationError } from "@/server/rbac";
+import { AuthorizationError, requirePermission } from "@/server/rbac";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { slugify } from "@/lib/slug";
+import { deleteCloudinaryImage } from "@/lib/cloudinary";
+import { writeAuditLog } from "@/server/audit";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
   slug: z.string().max(120).optional(),
   description: z.string().max(5000).optional(),
   heroImage: z.string().max(2048).optional(),
+  heroImagePublicId: z.string().max(512).nullable().optional(),
   parentId: z.string().nullable().optional(),
-  sortOrder: z.number().int().min(0).max(9999),
+  sortOrder: z.coerce.number().int().min(0),
   status: z.enum(["ACTIVE", "DRAFT", "ARCHIVED"]),
 });
 
@@ -26,6 +27,7 @@ function parseCategoryValues(values: AdminCategoryFormValues) {
     slug: values.slug?.trim() || undefined,
     description: values.description?.trim() || undefined,
     heroImage: values.heroImage?.trim() || undefined,
+    heroImagePublicId: values.heroImagePublicId?.trim() || undefined,
   });
 }
 
@@ -34,9 +36,86 @@ export async function saveCategoryAction(input: {
   values: AdminCategoryFormValues;
 }) {
   try {
+    const user = await requirePermission("catalog.write");
     const values = parseCategoryValues(input.values);
-    if (input.id) return updatePrismaCategory(input.id, values);
-    return createPrismaCategory(values);
+    const supabase = createSupabaseAdminClient();
+
+    let slug = values.slug;
+    if (!slug) {
+      slug = slugify(values.name);
+    }
+    
+    // Ensure unique slug
+    const { data: existingSlugs } = await supabase.from("categories").select("slug").neq("id", input.id || "00000000-0000-0000-0000-000000000000");
+    const takenSlugs = new Set(existingSlugs?.map((s) => s.slug) ?? []);
+    
+    let finalSlug = slug;
+    let counter = 1;
+    while (takenSlugs.has(finalSlug)) {
+      finalSlug = `${slug}-${counter}`;
+      counter++;
+    }
+
+    const payload = {
+      name: values.name,
+      slug: finalSlug,
+      description: values.description || null,
+      image_url: values.heroImage || null,
+      cloudinary_public_id: values.heroImagePublicId || null,
+      parent_id: values.parentId || null,
+      sort_order: values.sortOrder,
+      is_active: values.status === "ACTIVE",
+    };
+
+    if (input.id) {
+      const { data: existingCategory } = await supabase
+        .from("categories")
+        .select("cloudinary_public_id")
+        .eq("id", input.id)
+        .maybeSingle();
+
+      const { error } = await supabase.from("categories").update(payload).eq("id", input.id);
+      if (error) throw new Error(error.message);
+
+      const oldPublicId = existingCategory?.cloudinary_public_id;
+      if (
+        oldPublicId &&
+        oldPublicId !== values.heroImagePublicId &&
+        !payload.cloudinary_public_id
+      ) {
+        await deleteCloudinaryImage(oldPublicId).catch(() => undefined);
+      } else if (
+        oldPublicId &&
+        values.heroImagePublicId &&
+        oldPublicId !== values.heroImagePublicId
+      ) {
+        await deleteCloudinaryImage(oldPublicId).catch(() => undefined);
+      }
+      
+      await writeAuditLog({
+        actorId: user.id,
+        action: "category.update",
+        entityType: "SupabaseCategory",
+        entityId: input.id,
+        after: payload,
+      });
+    } else {
+      const { data, error } = await supabase.from("categories").insert(payload).select("id").single();
+      if (error) throw new Error(error.message);
+      
+      await writeAuditLog({
+        actorId: user.id,
+        action: "category.create",
+        entityType: "SupabaseCategory",
+        entityId: data.id,
+        after: payload,
+      });
+    }
+
+    revalidatePath("/admin/catalog/categories");
+    revalidatePath("/shop");
+    
+    return { ok: true as const };
   } catch (error) {
     if (error instanceof AuthorizationError) {
       return { ok: false as const, error: error.message };
@@ -53,7 +132,33 @@ export async function saveCategoryAction(input: {
 
 export async function removeCategoryAction(input: { id: string }) {
   try {
-    return deletePrismaCategory(input.id);
+    const user = await requirePermission("catalog.delete");
+    const supabase = createSupabaseAdminClient();
+    
+    const { data: existingCategory } = await supabase
+      .from("categories")
+      .select("cloudinary_public_id")
+      .eq("id", input.id)
+      .maybeSingle();
+
+    const { error } = await supabase.from("categories").delete().eq("id", input.id);
+    if (error) throw new Error(error.message);
+
+    if (existingCategory?.cloudinary_public_id) {
+      await deleteCloudinaryImage(existingCategory.cloudinary_public_id).catch(() => undefined);
+    }
+
+    await writeAuditLog({
+      actorId: user.id,
+      action: "category.delete",
+      entityType: "SupabaseCategory",
+      entityId: input.id,
+    });
+
+    revalidatePath("/admin/catalog/categories");
+    revalidatePath("/shop");
+
+    return { ok: true as const };
   } catch (error) {
     if (error instanceof AuthorizationError) {
       return { ok: false as const, error: error.message };

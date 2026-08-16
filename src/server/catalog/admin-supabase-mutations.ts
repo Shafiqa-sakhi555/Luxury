@@ -1,139 +1,54 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { requirePermission } from "@/server/rbac";
+import { AuthorizationError, requirePermission } from "@/server/rbac";
 import { writeAuditLog } from "@/server/audit";
 import { slugify, uniqueProductSlug } from "@/lib/slug";
-import type { AdminProductFormValues } from "@/types/admin-catalog";
-import { parseImageUrlsFromText } from "@/server/catalog/admin-queries";
-import {
-  syncPrismaCarpetCollection,
-  syncPrismaVariantForSupabaseProduct,
-} from "@/server/catalog/supabase-sync";
-import type { MutationResult } from "@/server/catalog/admin-mutations";
+import type { AdminProductFormValues, MutationResult } from "@/types/admin-catalog";
+import { getCategorySlugById } from "@/server/catalog/cloudinary-upload-context";
+import { persistProductImages } from "@/server/catalog/product-image-sync";
 
 function discountPercent(original: number, sale: number) {
   if (original <= 0 || sale >= original) return 0;
   return Math.round((1 - sale / original) * 100);
 }
 
-function unwrapRelation<T extends Record<string, unknown>>(
-  value: T | T[] | null | undefined
-): T | null {
-  if (!value) return null;
-  return Array.isArray(value) ? (value[0] ?? null) : value;
+function buildProductPrices(input: AdminProductFormValues) {
+  const originalMajor = input.originalPriceMajor;
+  const saleMajor =
+    input.salePriceMajor > 0 && input.salePriceMajor < originalMajor
+      ? input.salePriceMajor
+      : originalMajor;
+
+  return {
+    original_price: originalMajor,
+    sale_price: saleMajor,
+    discount_percentage: discountPercent(originalMajor, saleMajor),
+    original_price_minor: Math.round(originalMajor * 100),
+    sale_price_minor: Math.round(saleMajor * 100),
+  };
 }
 
-async function syncSupabaseProductToPrisma(productId: string) {
+async function createDefaultVariant(
+  productId: string,
+  input: AdminProductFormValues,
+  sku: string
+) {
   const supabase = createSupabaseAdminClient();
-  const { data } = await supabase
-    .from("products")
-    .select(
-      `
-      id,
-      name,
-      slug,
-      short_description,
-      description,
-      original_price,
-      sale_price,
-      sku,
-      has_variants,
-      categories ( slug ),
-      product_images ( image_url, alt_text, sort_order, variant_id ),
-      product_variants (
-        id,
-        sku,
-        name,
-        original_price,
-        sale_price,
-        is_active,
-        product_images ( image_url, alt_text, sort_order )
-      )
-    `
-    )
-    .eq("id", productId)
-    .maybeSingle();
+  const prices = buildProductPrices(input);
 
-  if (!data) return;
-
-  const category = unwrapRelation(data.categories as { slug: string } | { slug: string }[] | null);
-  if (!category?.slug) return;
-
-  const collectionImages = (data.product_images ?? [])
-    .filter((img) => !img.variant_id)
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((img, index) => ({
-      url: img.image_url,
-      alt: img.alt_text,
-      sortOrder: img.sort_order ?? index,
-    }));
-
-  const primaryImage = collectionImages[0]?.url ?? null;
-
-  if (data.has_variants && (data.product_variants?.length ?? 0) > 0) {
-    await syncPrismaCarpetCollection({
-      supabaseProductId: data.id,
-      name: data.name,
-      slug: data.slug,
-      shortDescription: data.short_description,
-      description: data.description,
-      categorySlug: category.slug,
-      primaryImageUrl: primaryImage,
-      variants: (data.product_variants ?? [])
-        .filter((v) => v.is_active)
-        .map((variant) => ({
-          supabaseVariantId: variant.id,
-          sku: variant.sku,
-          name: variant.name ?? data.name,
-          originalPriceMinor: Math.round(Number(variant.original_price) * 100),
-          salePriceMinor: Math.round(Number(variant.sale_price) * 100),
-          images:
-            variant.product_images?.length > 0
-              ? variant.product_images
-                  .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                  .map((img, index) => ({
-                    url: img.image_url,
-                    alt: img.alt_text,
-                    sortOrder: img.sort_order ?? index,
-                  }))
-              : collectionImages,
-        })),
-    });
-    return;
-  }
-
-  const sku = data.sku ?? data.slug.toUpperCase().replace(/-/g, "_");
-  await syncPrismaVariantForSupabaseProduct({
-    supabaseId: data.id,
-    name: data.name,
-    slug: data.slug,
+  await supabase.from("product_variants").insert({
+    product_id: productId,
     sku,
-    shortDescription: data.short_description,
-    description: data.description,
-    originalPriceMinor: Math.round(Number(data.original_price) * 100),
-    salePriceMinor: Math.round(Number(data.sale_price) * 100),
-    categorySlug: category.slug,
-    primaryImageUrl: primaryImage,
-    images: collectionImages,
+    name: input.name.trim(),
+    original_price: prices.original_price,
+    sale_price: prices.sale_price,
+    discount_percentage: prices.discount_percentage,
+    price_minor: prices.original_price_minor,
+    sale_price_minor: prices.sale_price_minor,
+    is_default: true,
+    is_active: input.status === "ACTIVE",
   });
-}
-
-async function replaceSupabaseImages(productId: string, imageUrls: string[], alt: string) {
-  const supabase = createSupabaseAdminClient();
-  await supabase.from("product_images").delete().eq("product_id", productId).is("variant_id", null);
-
-  if (imageUrls.length === 0) return;
-
-  await supabase.from("product_images").insert(
-    imageUrls.map((url, index) => ({
-      product_id: productId,
-      image_url: url,
-      alt_text: alt,
-      sort_order: index,
-      is_primary: index === 0,
-    }))
-  );
 }
 
 async function upsertSupabaseInventory(productId: string, stockQuantity: number) {
@@ -167,7 +82,8 @@ export async function createSupabaseCatalogProduct(
     return { ok: false, error: "Supabase is not configured." };
   }
 
-  const session = await requirePermission("product.write");
+  try {
+  const user = await requirePermission("product.write");
   const supabase = createSupabaseAdminClient();
 
   const { data: category } = await supabase
@@ -184,11 +100,7 @@ export async function createSupabaseCatalogProduct(
   });
 
   const sku = input.sku.trim() || slug.toUpperCase().replace(/-/g, "_");
-  const original = input.originalPriceMajor;
-  const sale =
-    input.salePriceMajor > 0 && input.salePriceMajor < original
-      ? input.salePriceMajor
-      : original;
+  const prices = buildProductPrices(input);
 
   const { data: product, error } = await supabase
     .from("products")
@@ -198,11 +110,10 @@ export async function createSupabaseCatalogProduct(
       slug,
       short_description: input.shortDescription.trim() || null,
       description: input.description.trim() || null,
-      original_price: original,
-      sale_price: sale,
-      discount_percentage: discountPercent(original, sale),
+      ...prices,
       sku,
       selling_unit: input.sellingUnit.trim() || null,
+      status: input.status,
       is_active: input.status === "ACTIVE",
       is_featured: input.isFeatured,
       has_variants: false,
@@ -214,13 +125,27 @@ export async function createSupabaseCatalogProduct(
     return { ok: false, error: error?.message ?? "Failed to create product." };
   }
 
-  const imageUrls = parseImageUrlsFromText(input.imageUrls);
-  await replaceSupabaseImages(product.id, imageUrls, input.name.trim());
+  await createDefaultVariant(product.id, input, sku);
+
+  const categorySlug = await getCategorySlugById(category.id);
+  if (!categorySlug) {
+    return { ok: false, error: "Category not found." };
+  }
+
+  const finalizedImages = await persistProductImages({
+    productId: product.id,
+    categorySlug,
+    images: input.images,
+    draftKey: input.draftKey,
+    alt: input.name.trim(),
+  });
+  if (finalizedImages.length === 0 && input.images.some((image) => image.publicId || image.url)) {
+    return { ok: false, error: "Product images could not be linked. Re-upload and save again." };
+  }
   await upsertSupabaseInventory(product.id, input.stockQuantity);
-  await syncSupabaseProductToPrisma(product.id);
 
   await writeAuditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     action: "product.create",
     entityType: "SupabaseProduct",
     entityId: product.id,
@@ -231,6 +156,12 @@ export async function createSupabaseCatalogProduct(
   revalidatePath("/shop");
 
   return { ok: true, id: product.id };
+  } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return { ok: false, error: error.message };
+    }
+    return { ok: false, error: error instanceof Error ? error.message : "Failed to create product." };
+  }
 }
 
 export async function updateSupabaseCatalogProduct(
@@ -241,7 +172,8 @@ export async function updateSupabaseCatalogProduct(
     return { ok: false, error: "Supabase is not configured." };
   }
 
-  const session = await requirePermission("product.write");
+  try {
+  const user = await requirePermission("product.write");
   const supabase = createSupabaseAdminClient();
 
   const { data: existing } = await supabase
@@ -254,7 +186,7 @@ export async function updateSupabaseCatalogProduct(
 
   const { data: category } = await supabase
     .from("categories")
-    .select("id")
+    .select("id, slug")
     .eq("id", input.categoryId)
     .maybeSingle();
   if (!category) return { ok: false, error: "Category not found." };
@@ -269,11 +201,7 @@ export async function updateSupabaseCatalogProduct(
     return Boolean(data);
   }, existing.slug);
 
-  const original = input.originalPriceMajor;
-  const sale =
-    input.salePriceMajor > 0 && input.salePriceMajor < original
-      ? input.salePriceMajor
-      : original;
+  const prices = buildProductPrices(input);
 
   const updatePayload: Record<string, unknown> = {
     category_id: category.id,
@@ -281,32 +209,41 @@ export async function updateSupabaseCatalogProduct(
     slug,
     short_description: input.shortDescription.trim() || null,
     description: input.description.trim() || null,
+    status: input.status,
     is_active: input.status === "ACTIVE",
     is_featured: input.isFeatured,
     selling_unit: input.sellingUnit.trim() || null,
   };
 
   if (!existing.has_variants) {
-    updatePayload.original_price = original;
-    updatePayload.sale_price = sale;
-    updatePayload.discount_percentage = discountPercent(original, sale);
+    Object.assign(updatePayload, prices);
     if (input.sku.trim()) updatePayload.sku = input.sku.trim();
   } else {
-    updatePayload.original_price = original;
-    updatePayload.sale_price = sale;
-    updatePayload.discount_percentage = discountPercent(original, sale);
+    Object.assign(updatePayload, prices);
   }
 
   const { error } = await supabase.from("products").update(updatePayload).eq("id", id);
   if (error) return { ok: false, error: error.message };
 
-  const imageUrls = parseImageUrlsFromText(input.imageUrls);
-  await replaceSupabaseImages(id, imageUrls, input.name.trim());
+  const categorySlug = await getCategorySlugById(category.id);
+  if (!categorySlug) {
+    return { ok: false, error: "Category not found." };
+  }
+
+  const finalizedImages = await persistProductImages({
+    productId: id,
+    categorySlug,
+    images: input.images,
+    draftKey: input.draftKey,
+    alt: input.name.trim(),
+  });
+  if (finalizedImages.length === 0 && input.images.some((image) => image.publicId || image.url)) {
+    return { ok: false, error: "Product images could not be linked. Re-upload and save again." };
+  }
   await upsertSupabaseInventory(id, input.stockQuantity);
-  await syncSupabaseProductToPrisma(id);
 
   await writeAuditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     action: "product.update",
     entityType: "SupabaseProduct",
     entityId: id,
@@ -318,6 +255,12 @@ export async function updateSupabaseCatalogProduct(
   revalidatePath("/shop");
 
   return { ok: true, id };
+  } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return { ok: false, error: error.message };
+    }
+    return { ok: false, error: error instanceof Error ? error.message : "Failed to update product." };
+  }
 }
 
 export async function archiveSupabaseCatalogProduct(id: string): Promise<MutationResult> {
@@ -325,14 +268,15 @@ export async function archiveSupabaseCatalogProduct(id: string): Promise<Mutatio
     return { ok: false, error: "Supabase is not configured." };
   }
 
-  const session = await requirePermission("product.delete");
+  try {
+  const user = await requirePermission("product.delete");
   const supabase = createSupabaseAdminClient();
 
-  const { error } = await supabase.from("products").update({ is_active: false }).eq("id", id);
+  const { error } = await supabase.from("products").update({ status: "ARCHIVED" }).eq("id", id);
   if (error) return { ok: false, error: error.message };
 
   await writeAuditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     action: "product.archive",
     entityType: "SupabaseProduct",
     entityId: id,
@@ -342,6 +286,12 @@ export async function archiveSupabaseCatalogProduct(id: string): Promise<Mutatio
   revalidatePath("/shop");
 
   return { ok: true, id };
+  } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return { ok: false, error: error.message };
+    }
+    return { ok: false, error: error instanceof Error ? error.message : "Failed to archive product." };
+  }
 }
 
 export async function deleteSupabaseCatalogProduct(id: string): Promise<MutationResult> {

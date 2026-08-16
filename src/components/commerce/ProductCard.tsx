@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Heart, ShoppingCart } from "lucide-react";
 import type { CatalogProduct } from "@/types/catalog";
 import { formatMoney } from "@/lib/money";
+import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -47,6 +48,7 @@ export function ProductCard({
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ variantId: product.variantId, quantity: 1 }),
       });
       const data = await res.json();
@@ -71,7 +73,7 @@ export function ProductCard({
         <div className="relative aspect-square overflow-hidden bg-mist">
           {primaryImage ? (
             <Image
-              src={primaryImage}
+              src={getOptimizedImageUrl(primaryImage, { width: 600, height: 600, crop: "fill" })}
               alt={product.name}
               fill
               className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -106,7 +108,7 @@ export function ProductCard({
               setWishlisted((v) => !v);
               toast.success(wishlisted ? "Removed from wishlist" : "Saved to wishlist");
             }}
-            className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm transition-all hover:scale-110 sm:right-3 sm:top-3 sm:h-9 sm:w-9"
+            className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm transition-all hover:scale-110 sm:right-3 sm:top-3 sm:h-9 sm:w-9"
             aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
           >
             <Heart
@@ -116,21 +118,6 @@ export function ProductCard({
               )}
             />
           </button>
-
-          {product.variantId && !product.hasVariants && (
-            <div className="absolute inset-x-0 bottom-0 translate-y-full bg-white/95 p-3 backdrop-blur-sm transition-transform duration-300 group-hover:translate-y-0 sm:p-4">
-              <Button
-                variant="default"
-                size="sm"
-                className="w-full"
-                disabled={adding}
-                onClick={addToCart}
-              >
-                <ShoppingCart className="h-3.5 w-3.5" />
-                {adding ? "Adding..." : "Add to Cart"}
-              </Button>
-            </div>
-          )}
         </div>
       </Link>
 
@@ -169,6 +156,27 @@ export function ProductCard({
             </span>
           )}
         </div>
+
+        {product.variantId && !product.hasVariants ? (
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            className="mt-3 w-full"
+            disabled={adding}
+            onClick={addToCart}
+          >
+            <ShoppingCart className="h-3.5 w-3.5" />
+            {adding ? "Adding..." : "Add to Cart"}
+          </Button>
+        ) : (
+          <Link
+            href={`/products/${product.slug}`}
+            className="mt-3 block rounded-full border border-navy/10 py-2 text-center text-xs font-medium text-navy transition hover:border-red/30 hover:bg-red/5"
+          >
+            {product.hasVariants ? "Choose options" : "View product"}
+          </Link>
+        )}
       </div>
     </motion.article>
   );

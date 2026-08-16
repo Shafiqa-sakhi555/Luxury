@@ -1,8 +1,9 @@
-export type CatalogSource = "prisma" | "supabase";
+import type { AdminProductImage } from "@/types/media";
+
+export type CatalogSource = "supabase";
 
 export type AdminProductListItem = {
   id: string;
-  source: CatalogSource;
   name: string;
   slug: string;
   categoryName: string;
@@ -20,11 +21,9 @@ export type AdminCategoryOption = {
   id: string;
   name: string;
   slug: string;
-  source: CatalogSource;
 };
 
 export type AdminProductFormValues = {
-  source: CatalogSource;
   categoryId: string;
   name: string;
   slug: string;
@@ -37,7 +36,8 @@ export type AdminProductFormValues = {
   status: "ACTIVE" | "DRAFT" | "ARCHIVED";
   isFeatured: boolean;
   sellingUnit: string;
-  imageUrls: string;
+  images: AdminProductImage[];
+  draftKey?: string;
 };
 
 export type AdminProductDetail = AdminProductFormValues & {
@@ -46,3 +46,5 @@ export type AdminProductDetail = AdminProductFormValues & {
   categoryName: string;
   categorySlug: string;
 };
+
+export type MutationResult = { ok: true; id: string } | { ok: false; error: string };

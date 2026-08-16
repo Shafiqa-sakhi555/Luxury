@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Seed Prayer Mats catalog into Supabase.
  * Usage: npm run supabase:seed-prayer-mats
  */
@@ -7,13 +7,12 @@ import { config } from "dotenv";
 import path from "node:path";
 import fs from "node:fs";
 import { createSupabaseAdminClient } from "../../src/lib/supabase/admin";
-import { syncPrismaVariantForSupabaseProduct } from "../../src/server/catalog/supabase-sync";
 import {
-  BUCKET,
-  ensureBucket,
+  buildProductPrices,
   slugify,
-  uploadImage,
   upsertCategory,
+  uploadAndInsertProductImages,
+  upsertDefaultVariant,
 } from "./lib/seed-utils";
 
 config({ path: path.join(process.cwd(), ".env.local"), override: true });
@@ -91,7 +90,7 @@ const PRAYER_MATS: PrayerMatSeed[] = [
 ];
 
 async function main() {
-  console.log("🚀 Seeding Prayer Mats catalog to Supabase...\n");
+  console.log("Seeding Prayer Mats catalog to Supabase...\n");
 
   for (const product of PRAYER_MATS) {
     for (const file of product.imageFiles) {
@@ -101,7 +100,6 @@ async function main() {
   }
 
   const supabase = createSupabaseAdminClient();
-  await ensureBucket(supabase);
 
   const category = await upsertCategory(supabase, {
     name: "Prayer Mats",
@@ -110,13 +108,15 @@ async function main() {
       "Premium granet prayer mats with classic mihrab designs — soft, durable, and available in elegant colorways.",
   });
 
-  console.log(`✓ Category "prayer-mats" (${category.id})\n`);
+  console.log(`Category "prayer-mats" (${category.id})\n`);
 
   let totalImages = 0;
 
   for (const product of PRAYER_MATS) {
     const slug = slugify(product.name);
-    console.log(`→ ${product.name}`);
+    console.log(`-> ${product.name}`);
+
+    const prices = buildProductPrices(product.originalPrice, product.salePrice);
 
     const { data: row, error: productError } = await supabase
       .from("products")
@@ -127,9 +127,11 @@ async function main() {
           slug,
           short_description: product.shortDescription,
           description: product.description,
-          original_price: product.originalPrice,
-          sale_price: product.salePrice,
-          discount_percentage: product.discountPercentage,
+          original_price: prices.original_price,
+          sale_price: prices.sale_price,
+          discount_percentage: prices.discount_percentage,
+          original_price_minor: prices.original_price_minor,
+          sale_price_minor: prices.sale_price_minor,
           currency: "PKR",
           selling_unit: "Sold individually",
           included_items: "1 prayer mat",
@@ -138,6 +140,7 @@ async function main() {
           design: product.design,
           sku: product.sku,
           has_variants: false,
+          status: "ACTIVE",
           is_active: true,
           is_featured: true,
         },
@@ -154,27 +157,22 @@ async function main() {
     await supabase.from("product_specifications").delete().eq("product_id", row.id);
     await supabase.from("inventory").delete().eq("product_id", row.id);
 
-    const uploadedImages: Array<{ url: string; alt: string; sortOrder: number }> = [];
+    const localPaths = product.imageFiles.map((file) => path.join(ROOT, file));
+    const uploadedImages = await uploadAndInsertProductImages(
+      supabase,
+      row.id,
+      localPaths,
+      product.name
+    );
+    totalImages += uploadedImages.length;
 
-    for (let i = 0; i < product.imageFiles.length; i++) {
-      const file = product.imageFiles[i];
-      const localPath = path.join(ROOT, file);
-      const safeName = file.replace(/[^a-zA-Z0-9._-]/g, "-").toLowerCase();
-      const storagePath = `prayer-mats/${slug}/${safeName}`;
-      const publicUrl = await uploadImage(supabase, localPath, storagePath);
-
-      uploadedImages.push({ url: publicUrl, alt: product.name, sortOrder: i });
-
-      const { error: imgError } = await supabase.from("product_images").insert({
-        product_id: row.id,
-        image_url: publicUrl,
-        alt_text: `${product.name} — image ${i + 1}`,
-        sort_order: i,
-        is_primary: i === 0,
-      });
-      if (imgError) throw new Error(`Image insert failed: ${imgError.message}`);
-      totalImages++;
-    }
+    await upsertDefaultVariant(supabase, row.id, {
+      sku: product.sku,
+      name: product.name,
+      originalPrice: product.originalPrice,
+      salePrice: product.salePrice,
+      discountPercentage: product.discountPercentage,
+    });
 
     await supabase.from("inventory").insert({
       product_id: row.id,
@@ -197,33 +195,15 @@ async function main() {
       });
     }
 
-    await syncPrismaVariantForSupabaseProduct({
-      supabaseId: row.id,
-      name: product.name,
-      slug,
-      sku: product.sku,
-      shortDescription: product.shortDescription,
-      description: product.description,
-      originalPriceMinor: product.originalPrice * 100,
-      salePriceMinor: product.salePrice * 100,
-      categorySlug: "prayer-mats",
-      primaryImageUrl: uploadedImages[0]?.url ?? null,
-      images: uploadedImages.map((img) => ({
-        url: img.url,
-        alt: img.alt,
-        sortOrder: img.sortOrder,
-      })),
-    });
-
-    console.log(`  ✓ ${uploadedImages.length} images, stock ${product.stock}\n`);
+    console.log(`  ${uploadedImages.length} images, stock ${product.stock}\n`);
   }
 
-  console.log("✅ Prayer Mats seed complete");
+  console.log("Prayer Mats seed complete");
   console.log(`   Products: ${PRAYER_MATS.length}`);
   console.log(`   Images:   ${totalImages}`);
 }
 
 main().catch((err) => {
-  console.error("\n❌ Seed failed:", err.message);
+  console.error("\nSeed failed:", err instanceof Error ? err.message : err);
   process.exit(1);
 });
