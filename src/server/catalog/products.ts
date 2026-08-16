@@ -151,19 +151,37 @@ export async function getRelatedProducts(slug: string, categorySlug: string) {
 }
 
 export async function listShopFilterCategories() {
-  if (!isSupabaseConfigured()) return [];
-  const supabase = createSupabaseAdminClient();
-  const { data } = await supabase
-    .from("categories")
-    .select("name, slug, description")
-    .order("sort_order", { ascending: true });
-
-  return (data ?? []).map((cat) => ({
+  const rows = await listActiveShopCategories();
+  return rows.map((cat) => ({
     label: cat.name,
     href: `/shop?category=${encodeURIComponent(cat.slug)}`,
     slug: cat.slug,
     description: cat.description ?? "",
   }));
+}
+
+export async function listShopCategoryCards() {
+  const rows = await listActiveShopCategories();
+  return rows.map((cat) => ({
+    slug: cat.slug,
+    title: cat.name,
+    description: cat.description ?? "",
+    href: `/shop?category=${encodeURIComponent(cat.slug)}`,
+    imageUrl: cat.image_url ?? null,
+  }));
+}
+
+async function listActiveShopCategories() {
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("categories")
+    .select("name, slug, description, image_url")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  return data ?? [];
 }
 
 export async function resolveShopCategorySlug(inputSlug?: string | null) {
