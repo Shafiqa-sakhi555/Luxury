@@ -1,0 +1,111 @@
+{
+  "version": "1.0.0",
+  "scope": "Jalal live catalog — curtains, carpets, prayer-mats only",
+  "rooms": [
+    {
+      "id": "living_room",
+      "name": "Living Room",
+      "preferred_characteristics": ["comfort", "warmth", "balanced colours", "durability for foot traffic"],
+      "recommended_categories": ["carpets", "curtains"],
+      "avoid": ["prayer-mats as floor covering"]
+    },
+    {
+      "id": "bedroom",
+      "name": "Bedroom",
+      "preferred_characteristics": ["soft textures", "light control", "calm colours"],
+      "recommended_categories": ["curtains", "carpets"],
+      "avoid": []
+    },
+    {
+      "id": "prayer_space",
+      "name": "Prayer Space",
+      "preferred_characteristics": ["defined prayer area", "comfortable kneeling surface", "easy maintenance"],
+      "recommended_categories": ["prayer-mats", "carpets"],
+      "avoid": ["sheer curtains without layering"]
+    },
+    {
+      "id": "office",
+      "name": "Office",
+      "preferred_characteristics": ["professional appearance", "low maintenance", "noise reduction"],
+      "recommended_categories": ["carpets", "curtains"],
+      "avoid": []
+    },
+    {
+      "id": "dining_room",
+      "name": "Dining Room",
+      "preferred_characteristics": ["easy-clean surfaces", "elegant window treatment"],
+      "recommended_categories": ["curtains", "carpets"],
+      "avoid": []
+    }
+  ],
+  "styles": [
+    {
+      "id": "modern",
+      "name": "Modern",
+      "preferred_characteristics": ["clean lines", "neutral or balanced colours", "minimal pattern"],
+      "typical_materials": ["machine-made fabrics", "contemporary carpet weaves"],
+      "recommended_categories": ["curtains", "carpets"]
+    },
+    {
+      "id": "traditional",
+      "name": "Traditional",
+      "preferred_characteristics": ["rich patterns", "warmer tones", "classic motifs"],
+      "typical_materials": ["Persian-inspired carpets", "ornate prayer mat designs"],
+      "recommended_categories": ["carpets", "prayer-mats", "curtains"]
+    },
+    {
+      "id": "luxury",
+      "name": "Luxury",
+      "preferred_characteristics": ["premium textures", "deeper colours", "statement pieces"],
+      "typical_materials": ["high-quality weaves", "premium prayer mat collections"],
+      "recommended_categories": ["carpets", "prayer-mats"]
+    },
+    {
+      "id": "minimal",
+      "name": "Minimal",
+      "preferred_characteristics": ["solid colours", "low visual clutter", "simple headers"],
+      "typical_materials": ["plain or subtle-weave curtains", "tonal carpets"],
+      "recommended_categories": ["curtains", "carpets"]
+    },
+    {
+      "id": "cozy",
+      "name": "Cozy",
+      "preferred_characteristics": ["soft plush textures", "warm neutrals"],
+      "typical_materials": ["toweling-weave curtains", "soft wall-to-wall carpets"],
+      "recommended_categories": ["curtains", "carpets"]
+    }
+  ],
+  "color_profiles": [
+    {
+      "id": "light",
+      "name": "Light palette",
+      "characteristics": ["white", "cream", "beige", "soft grey", "pastels"],
+      "filter_hints": { "color_contains": ["white", "cream", "beige", "grey", "light"] }
+    },
+    {
+      "id": "dark",
+      "name": "Dark palette",
+      "characteristics": ["charcoal", "navy", "deep brown", "burgundy", "black"],
+      "filter_hints": { "color_contains": ["black", "navy", "brown", "charcoal", "dark", "burgundy"] }
+    },
+    {
+      "id": "warm",
+      "name": "Warm palette",
+      "characteristics": ["gold", "mustard", "terracotta", "red", "orange"],
+      "filter_hints": { "color_contains": ["gold", "mustard", "red", "orange", "warm"] }
+    },
+    {
+      "id": "cool",
+      "name": "Cool palette",
+      "characteristics": ["blue", "grey", "green", "teal"],
+      "filter_hints": { "color_contains": ["blue", "green", "teal", "cool"] }
+    }
+  ],
+  "materials": [
+    { "id": "toweling_weave", "name": "Toweling weave", "categories": ["curtains"] },
+    { "id": "malai_fabric", "name": "Malai fabric", "categories": ["curtains"] },
+    { "id": "wall_to_wall", "name": "Wall-to-wall carpet", "categories": ["carpets"] },
+    { "id": "machine_prayer_mat", "name": "Machine-made prayer mat", "categories": ["prayer-mats"] }
+  ],
+  "rules_note": "Recommendations must always be validated against live product search — never invent SKUs."
+}

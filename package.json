@@ -17,7 +17,8 @@
     "supabase:seed-carpets": "npx tsx scripts/supabase/seed-carpets.ts",
     "supabase:seed-catalog": "npx tsx scripts/supabase/seed-catalog.ts",
     "supabase:setup": "npm run supabase:migrate && npm run supabase:seed-admins",
-    "supabase:bootstrap": "npm run supabase:migrate && npm run supabase:seed-admins && npm run supabase:seed-catalog"
+    "supabase:bootstrap": "npm run supabase:migrate && npm run supabase:seed-admins && npm run supabase:seed-catalog",
+    "assistant:export-products": "npx tsx scripts/assistant/export-product-knowledge.ts"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.3.0",

@@ -1,0 +1,28 @@
+{
+  "slug": "carpets",
+  "name": "Carpets",
+  "source": "Supabase category + seed-carpets.ts",
+  "verified": true,
+  "description": "Rugs and wall-to-wall carpet collections including Persian-inspired, rustic, modern graphic, and artificial grass turf options. Many collections have multiple colour/design variants.",
+  "typical_applications": [
+    "Wall-to-wall residential flooring",
+    "Area rugs",
+    "Living and bedroom flooring",
+    "Office flooring"
+  ],
+  "suitable_rooms": ["living_room", "bedroom", "office", "dining_room"],
+  "available_materials": ["Wall-to-wall carpet weaves", "Artificial grass turf (EverGreen collection)"],
+  "available_styles": ["modern", "traditional", "luxury", "rustic", "Persian"],
+  "price_range_note": "Prices vary by collection and variant — query live catalog.",
+  "installation_requirements": "Wall-to-wall carpet may require professional installation in selected regions. Confirm with branch.",
+  "maintenance_considerations": "Regular vacuuming. Professional cleaning for heavy soiling. Warranty excludes normal wear — see warranty policy.",
+  "common_customer_questions": [
+    "Do you offer custom sizes?",
+    "Can you install wall-to-wall carpet?",
+    "What colours are in this collection?",
+    "Is this suitable for high traffic?"
+  ],
+  "related_categories": ["curtains"],
+  "collections_note": "Collections include Nagar Rustic, Blossom Soft Bloom, Persian Royal, Magestic Regal, and others — see live catalog for full list.",
+  "spec_fields": ["size", "design", "color", "quality", "sku"]
+}

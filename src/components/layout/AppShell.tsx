@@ -6,6 +6,7 @@ import { LogoIntroOverlay } from "@/components/brand/LogoIntroOverlay";
 import { Navbar } from "@/components/layout/Navbar";
 import { PromoBar } from "@/components/layout/PromoBar";
 import { LogoIntroProvider } from "@/contexts/LogoIntroContext";
+import { JalalAssistanceWidget } from "@/components/assistant/JalalAssistanceWidget";
 
 export type ShopNavCategory = {
   label: string;
@@ -31,6 +32,7 @@ export function AppShell({
             <Navbar shopCategories={shopCategories} />
           </div>
           <main>{children}</main>
+          <JalalAssistanceWidget />
         </SmoothScrollProvider>
       </LayoutGroup>
     </LogoIntroProvider>

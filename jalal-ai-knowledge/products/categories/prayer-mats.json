@@ -1,0 +1,25 @@
+{
+  "slug": "prayer-mats",
+  "name": "Prayer Mats",
+  "source": "Supabase category + seed-prayer-mats.ts",
+  "verified": true,
+  "description": "Machine-made prayer mats in various designs, colours, and quality grades (e.g. NEW GRANET). Each SKU represents a specific design/colour combination.",
+  "typical_applications": [
+    "Personal prayer space",
+    "Home masjid corner",
+    "Travel prayer mat"
+  ],
+  "suitable_rooms": ["prayer_space", "bedroom"],
+  "available_materials": ["Machine-made prayer mat textiles"],
+  "available_styles": ["traditional", "luxury", "arch motif"],
+  "price_range_note": "Prices vary by design and quality — query live catalog.",
+  "installation_requirements": "None — place on floor.",
+  "maintenance_considerations": "Regular cleaning per product care. Keep dry and store flat when not in use.",
+  "common_customer_questions": [
+    "What design options are available?",
+    "What is the quality grade?",
+    "Is this item in stock?"
+  ],
+  "related_categories": ["carpets"],
+  "spec_fields": ["design", "color", "quality", "sku"]
+}
