@@ -5,7 +5,7 @@ import { config } from "dotenv";
 config({ path: path.join(process.cwd(), ".env") });
 config({ path: path.join(process.cwd(), ".env.local"), override: true });
 
-import { CLOUDINARY_FOLDERS } from "../../../src/lib/cloudinary/constants";
+import { CLOUDINARY_ROOT, sanitizeCloudinarySegment } from "../../../src/lib/cloudinary/paths";
 import { uploadImageBuffer } from "../../../src/lib/cloudinary/index";
 import { createSupabaseAdminClient } from "../../../src/lib/supabase/admin";
 
@@ -141,9 +141,15 @@ export function findDesignImages(
 
 export async function uploadLocalImage(localPath: string) {
   const buffer = fs.readFileSync(localPath);
-  const uploaded = await uploadImageBuffer(buffer, CLOUDINARY_FOLDERS.products, {
-    filename: path.basename(localPath),
+  const filename = sanitizeCloudinarySegment(
+    path.basename(localPath, path.extname(localPath))
+  );
+  const publicId = `${CLOUDINARY_ROOT}/seed/${filename || "image"}-${Date.now()}`;
+
+  const uploaded = await uploadImageBuffer(buffer, {
+    publicId,
     mimeType: contentType(localPath),
+    overwrite: true,
   });
 
   return {
