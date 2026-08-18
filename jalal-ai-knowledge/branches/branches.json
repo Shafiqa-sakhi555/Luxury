@@ -1,0 +1,82 @@
+{
+  "source": "src/lib/branches.ts",
+  "verified": true,
+  "total_branches": 5,
+  "regions": ["Gilgit District", "Hunza District", "Skardu District", "Ghizer District"],
+  "branches": [
+    {
+      "branch_id": "gilgit-branch",
+      "name": "Gilgit Branch",
+      "brand": "Jalal's Home Solution",
+      "city": "Gilgit",
+      "region": "Gilgit District",
+      "address": "Shahr-e-Quaid-e-Azam, near Bank Alfalah, near Pizza King, Tehsil Gilgit, 15100, Gilgit-Baltistan, Pakistan",
+      "phone": "+923554948703",
+      "phone_display": "0355 4948703",
+      "contacts": [
+        { "label": "Branch Office", "phone": "+923554948703" },
+        { "label": "HR", "phone": "+923554948708" },
+        { "label": "Management", "phone": "+923135205272" }
+      ],
+      "opening_hours": "Open daily — call for exact hours",
+      "services": ["Full home furnishing range", "Consultation", "Custom orders"],
+      "latitude": 35.9194,
+      "longitude": 74.3178,
+      "is_flagship": true
+    },
+    {
+      "branch_id": "hunza-branch",
+      "name": "Hunza Branch",
+      "brand": "Jalal's Home Solution",
+      "city": "Hunza",
+      "region": "Hunza District",
+      "address": "Hospital Road, Aliabad, Hunza",
+      "phone": "+923554323944",
+      "opening_hours": "Open daily — call for exact hours",
+      "services": ["Full home furnishing range"],
+      "latitude": 36.3075,
+      "longitude": 74.6675,
+      "opened": "2020"
+    },
+    {
+      "branch_id": "skardu-branch",
+      "name": "Skardu Branch",
+      "brand": "Pak Turk Carpets",
+      "city": "Skardu",
+      "region": "Skardu District",
+      "address": "Pak Turk Carpet 2, 7JWR+XXH, Skardu, Gilgit-Baltistan, Pakistan",
+      "phone": "+923554948709",
+      "opening_hours": "Open daily — call for exact hours",
+      "latitude": 35.2971,
+      "longitude": 75.6338,
+      "opened": "2022"
+    },
+    {
+      "branch_id": "gakuch-branch",
+      "name": "Gakuch Branch",
+      "brand": "Pak Turk Carpets",
+      "city": "Gakuch",
+      "region": "Ghizer District",
+      "address": "Near Higher Secondary School, Gakuch, Ghizer, Gilgit-Baltistan, Pakistan",
+      "phone": "+923555404571",
+      "opening_hours": "Open daily — call for exact hours",
+      "latitude": 36.184,
+      "longitude": 73.763,
+      "opened": "2024"
+    },
+    {
+      "branch_id": "kashrot-branch",
+      "name": "Kashrot Branch",
+      "brand": "Jalal Carpets",
+      "city": "Gilgit",
+      "region": "Gilgit District",
+      "address": "Kashrot, Gilgit, Gilgit-Baltistan, Pakistan",
+      "phone": "+923135205272",
+      "latitude": 35.928,
+      "longitude": 74.305,
+      "opened": "2005",
+      "note": "Original store — where Jalal Uddin founded the business."
+    }
+  ],
+  "stock_note": "Branch product availability is LIVE data only — never answer from this file. Query inventory tools."
+}

@@ -1,0 +1,127 @@
+{
+  "source": "src/lib/infoPages.ts + verified company data",
+  "last_updated": "2026-08-17",
+  "faqs": [
+    {
+      "id": "faq-custom-carpet-sizes",
+      "question": "Do you offer custom carpet sizes?",
+      "answer": "Yes. We specialise in made-to-measure carpets and rugs. Share your room dimensions at any branch or through our contact form for a quotation.",
+      "category": "Products",
+      "source": "infoPages.faqs",
+      "verified": true
+    },
+    {
+      "id": "faq-showroom-count",
+      "question": "How many showrooms do you have?",
+      "answer": "Five showrooms across Gilgit-Baltistan: Gilgit, Hunza, Skardu, Gakuch and Kashrot. See the Store Locator for addresses and phone numbers.",
+      "category": "Branches",
+      "source": "infoPages.faqs + branches/branches.json",
+      "verified": true
+    },
+    {
+      "id": "faq-cod",
+      "question": "Can I order online and pay on delivery?",
+      "answer": "Cash on delivery is available for confirmed standard orders in supported areas. Custom and quotation-based orders require confirmation before dispatch.",
+      "category": "Payments",
+      "source": "infoPages.faqs",
+      "verified": true
+    },
+    {
+      "id": "faq-flooring-install",
+      "question": "Do you install flooring?",
+      "answer": "Professional installation is available for flooring and wall-to-wall carpet in selected regions. Ask your branch for availability and pricing.",
+      "category": "Installation",
+      "source": "infoPages.faqs",
+      "verified": true
+    },
+    {
+      "id": "faq-history",
+      "question": "How long has Jalal's been in business?",
+      "answer": "Jalal's has served homeowners across Gilgit-Baltistan since 2005, with nationwide delivery.",
+      "category": "General",
+      "source": "infoPages.faqs + company/company.json",
+      "verified": true
+    },
+    {
+      "id": "faq-who-is-jalal",
+      "question": "Who is Jalal?",
+      "answer": "Jalal's Home Solution is a premium home furnishings retailer in Gilgit-Baltistan, Pakistan, operating since 2005 under brands including Jalal Carpets and Pak Turk Carpets.",
+      "category": "General",
+      "source": "company/overview.md",
+      "verified": true
+    },
+    {
+      "id": "faq-what-we-sell",
+      "question": "What does Jalal sell?",
+      "answer": "Our live online catalog includes curtains, carpets (rugs and wall-to-wall), and prayer mats. For current products and prices, browse the website or ask me to search the catalog.",
+      "category": "Products",
+      "source": "Supabase catalog categories",
+      "verified": true
+    },
+    {
+      "id": "faq-free-delivery",
+      "question": "Do you offer free delivery?",
+      "answer": "Free delivery is available on orders above Rs. 50,000 within supported regions. Smaller orders and remote locations may incur a fee quoted at checkout.",
+      "category": "Delivery",
+      "source": "infoPages.delivery",
+      "verified": true
+    },
+    {
+      "id": "faq-return-period",
+      "question": "What is your return period?",
+      "answer": "Standard ready-made products may be returned within 7 days if unused and in original packaging. Custom and made-to-measure items cannot be returned unless there is a manufacturing defect.",
+      "category": "Returns",
+      "source": "infoPages.returns",
+      "verified": false,
+      "note": "Policy placeholder pending legal review"
+    },
+    {
+      "id": "faq-pricing-live",
+      "question": "Why might the chatbot price differ from the website?",
+      "answer": "Prices and stock change frequently. Jalal Assistance always checks live catalog prices before quoting — if you see a discrepancy, refresh the product page or contact us.",
+      "category": "Pricing",
+      "source": "assistant architecture",
+      "verified": true
+    },
+    {
+      "id": "faq-branch-hours",
+      "question": "What are your opening hours?",
+      "answer": "Branches are open daily. For exact hours, please call your nearest branch — phone numbers are on our Store Locator page.",
+      "category": "Branches",
+      "source": "branches/branches.json",
+      "verified": true
+    },
+    {
+      "id": "faq-visualizer",
+      "question": "Can I visualize products in my room?",
+      "answer": "Room visualization is planned as part of Jalal Assistance. When available, you will upload a room photo, select a product, and preview it on relevant surfaces. Check the website for current availability.",
+      "category": "Visualization",
+      "source": "visualization/overview.md",
+      "verified": true
+    },
+    {
+      "id": "faq-ai-design",
+      "question": "Can Jalal Assistance help me choose products?",
+      "answer": "Yes. Share your room type, preferred style, colours, and budget. I will search our live catalog and explain recommendations — I won't suggest products that aren't in our database.",
+      "category": "AI Design",
+      "source": "design/consultation-rules.json",
+      "verified": true
+    },
+    {
+      "id": "faq-order-status",
+      "question": "How do I track my order?",
+      "answer": "Log in to your account to see order status, or contact us with your order number. Once dispatched, you'll receive phone or email confirmation with an estimated delivery window.",
+      "category": "Orders",
+      "source": "infoPages.delivery + orders/status-definitions.json",
+      "verified": true
+    },
+    {
+      "id": "faq-account",
+      "question": "Do I need an account to shop?",
+      "answer": "You can browse without an account. An account helps track orders and speeds up checkout.",
+      "category": "Account",
+      "source": "site behaviour",
+      "verified": true
+    }
+  ]
+}

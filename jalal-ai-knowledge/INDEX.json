@@ -1,0 +1,84 @@
+{
+  "name": "JALAL_KNOWLEDGE_BASE",
+  "version": "1.0.0",
+  "architecture": {
+    "static_rag": "jalal-ai-knowledge/",
+    "live_systems": [
+      "src/server/catalog/supabase-products.ts",
+      "src/server/orders/index.ts",
+      "src/server/cart/index.ts",
+      "inventory table (Supabase)"
+    ],
+    "llm": "Ollama (Phase 1 — not yet wired)"
+  },
+  "domains": {
+    "Company": {
+      "path": "company/",
+      "files": ["company.json", "overview.md", "history.md", "leadership.md", "mission-vision.md", "contact.md"],
+      "live_data": false
+    },
+    "Products": {
+      "path": "products/",
+      "files": ["categories/*.json", "export/products.json (generated)"],
+      "live_data": "price, stock via product/inventory tools"
+    },
+    "Design Consultation": {
+      "path": "design/",
+      "files": ["design-knowledge.json", "consultation-rules.json", "consultation-questions.json"],
+      "live_data": "product matching via searchProducts"
+    },
+    "Branches": {
+      "path": "branches/",
+      "files": ["branches.json"],
+      "live_data": "branch stock via inventory tools"
+    },
+    "Shopping": {
+      "path": "policies/",
+      "files": ["delivery.md", "payments.md", "installation.md"],
+      "live_data": "cart, checkout, coupons"
+    },
+    "Orders": {
+      "path": "orders/",
+      "files": ["status-definitions.json"],
+      "live_data": "customer order status from orders API"
+    },
+    "Returns & Warranty": {
+      "path": "policies/",
+      "files": ["returns.md", "refunds.md", "warranty.md"],
+      "live_data": false
+    },
+    "Customer Support": {
+      "path": "faq/, support/",
+      "files": ["faq/faq.json", "support/procedures.json"],
+      "live_data": "escalation to human"
+    },
+    "Promotions": {
+      "path": null,
+      "note": "Not implemented — live coupons/promotions only when built",
+      "live_data": true
+    },
+    "Legal": {
+      "path": "policies/",
+      "files": ["terms.md", "privacy.md"],
+      "live_data": false,
+      "verified": "partial — placeholder policies flagged"
+    },
+    "Visualization": {
+      "path": "visualization/",
+      "files": ["overview.md"],
+      "live_data": "feature not production-ready"
+    },
+    "Glossary": {
+      "path": "glossary/",
+      "files": ["jalal-terminology.json"],
+      "live_data": false
+    }
+  },
+  "guardrails": [
+    "Never guess missing company fields (mission, vision, values)",
+    "Never answer price or stock from RAG files",
+    "Never invent products or categories outside Supabase catalog",
+    "Mark placeholder policies as unverified in answers",
+    "Product recommendations must pass through live search tools"
+  ]
+}

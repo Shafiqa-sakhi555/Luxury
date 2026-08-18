@@ -1,0 +1,49 @@
+{
+  "description": "Static order status definitions — customer-specific status always from order database",
+  "statuses": [
+    {
+      "code": "PENDING",
+      "customer_label": "Pending",
+      "meaning": "Order received and awaiting confirmation or payment verification.",
+      "next_steps": "We will confirm your order shortly. You may receive a call for COD verification."
+    },
+    {
+      "code": "CONFIRMED",
+      "customer_label": "Confirmed",
+      "meaning": "Order accepted and queued for fulfilment.",
+      "next_steps": "Your order is in our fulfilment queue."
+    },
+    {
+      "code": "PROCESSING",
+      "customer_label": "Processing",
+      "meaning": "Order is being prepared — picking and packing.",
+      "next_steps": "No action needed unless we contact you."
+    },
+    {
+      "code": "PACKED",
+      "customer_label": "Packed",
+      "meaning": "Order packed and ready for dispatch.",
+      "next_steps": "Await shipping notification."
+    },
+    {
+      "code": "SHIPPED",
+      "customer_label": "Shipped",
+      "meaning": "Order dispatched and in transit.",
+      "next_steps": "Watch for delivery confirmation call or email."
+    },
+    {
+      "code": "DELIVERED",
+      "customer_label": "Delivered",
+      "meaning": "Order delivered to customer.",
+      "next_steps": "Inspect items on arrival. Report damage within 48 hours if needed."
+    },
+    {
+      "code": "CANCELLED",
+      "customer_label": "Cancelled",
+      "meaning": "Order cancelled before completion.",
+      "next_steps": "Contact orders@jalalsgroup.com if you did not request cancellation."
+    }
+  ],
+  "not_in_system_yet": ["RETURNED", "REFUNDED"],
+  "note": "RETURNED and REFUNDED may be added later — do not claim these statuses exist until implemented in orders schema."
+}

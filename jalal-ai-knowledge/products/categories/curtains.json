@@ -1,0 +1,28 @@
+{
+  "slug": "curtains",
+  "name": "Curtains",
+  "source": "Supabase category + seed-curtains.ts",
+  "verified": true,
+  "description": "Machine-made curtains including toweling-weave and malai fabric styles. Sold as pairs with eyelet headers and stainless steel rings.",
+  "typical_applications": [
+    "Living room windows",
+    "Bedroom light control",
+    "Dining room privacy",
+    "Office windows"
+  ],
+  "suitable_rooms": ["living_room", "bedroom", "dining_room", "office"],
+  "available_materials": ["Toweling weave", "Malai fabric"],
+  "available_styles": ["modern", "minimal", "cozy", "traditional"],
+  "price_range_note": "Prices vary by product — query live catalog. Do not cite static ranges.",
+  "installation_requirements": "Standard curtain rod with eyelet header. Customer supplies or purchases rod separately unless branch offers hardware.",
+  "maintenance_considerations": "Follow fabric care label. Toweling and malai fabrics described as durable and easy to care for in product copy.",
+  "common_customer_questions": [
+    "What size are the curtains?",
+    "Are they sold as a pair?",
+    "What colours are available?",
+    "What header type do they use?"
+  ],
+  "related_categories": ["carpets"],
+  "example_products": ["Towel Fabric Curtains", "Malai Curtains"],
+  "spec_fields": ["size", "fabric", "design", "colors", "selling_unit", "included_items"]
+}

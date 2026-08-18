@@ -1,0 +1,63 @@
+{
+  "company_name": "Jalal's Home Solution",
+  "legal_brands": [
+    {
+      "id": "jalals-home",
+      "name": "Jalal's Home Solution",
+      "focus": "Premium home furnishings and surfaces across Gilgit-Baltistan"
+    },
+    {
+      "id": "jalal-carpets",
+      "name": "Jalal Carpets",
+      "focus": "Rugs and wall-to-wall carpets; founded 2005 in Kashrot, Gilgit"
+    },
+    {
+      "id": "pak-turk",
+      "name": "Pak Turk Carpets",
+      "focus": "Premium Turkish rugs; expanded in Jutial and Skardu"
+    }
+  ],
+  "website": "jalalsgroup.com",
+  "description": "Premium home furnishings and surfaces serving homeowners across Gilgit-Baltistan and Pakistan. Specialises in carpets, curtains, prayer mats, custom sizing, and nationwide delivery.",
+  "tagline": "Premium Home Furnishings & Surfaces",
+  "location": "Gilgit-Baltistan, Pakistan",
+  "established": 2005,
+  "history_summary": "Founded by Jalal Uddin in 2005 as Jalal Carpets in Kashrot, Gilgit. Expanded through Pak Turk Carpets and Jalal's Home Solution showrooms across Gilgit-Baltistan.",
+  "mission": "",
+  "vision": "",
+  "values": [],
+  "leadership": [
+    {
+      "name": "Jalal Uddin",
+      "title": "Founder & Visionary",
+      "bio": "From humble beginnings in Murtazabad, Hunza to one of Gilgit-Baltistan's most respected home furnishing entrepreneurs."
+    }
+  ],
+  "milestones": [
+    { "year": "1980", "event": "Jalal Uddin born in Murtazabad, Hunza" },
+    { "year": "2000", "event": "Began learning the carpet trade in Gilgit" },
+    { "year": "2005", "event": "Jalal Carpets founded in Kashrot, Gilgit" },
+    { "year": "2010s", "event": "Pak Turk Carpets opened in Jutial" },
+    { "year": "2020", "event": "Jalal Home Solution presence in Hunza; flagship Gilgit showroom" },
+    { "year": "2022", "event": "Skardu branch opened" },
+    { "year": "2024", "event": "Gakuch branch opened" }
+  ],
+  "services": [
+    "Retail showrooms",
+    "Custom carpet and rug sizing",
+    "Wall-to-wall carpet collections",
+    "Machine-made curtains",
+    "Prayer mats",
+    "Nationwide delivery",
+    "Installation (selected regions — confirm with branch)",
+    "Cash on delivery"
+  ],
+  "contact": {
+    "phone": "+92 313 5205272",
+    "email": "info@jalalshome.pk",
+    "orders_email": "orders@jalalsgroup.com"
+  },
+  "social_links": [],
+  "verified": true,
+  "notes": "mission, vision, values, and social_links require client-supplied official copy before use in answers."
+}

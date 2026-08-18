@@ -1,0 +1,915 @@
+{
+  "verified": true,
+  "source": "Supabase products table (ACTIVE only)",
+  "exported_at": "2026-08-17T16:57:34.870Z",
+  "product_count": 18,
+  "canonical_product_count": 0,
+  "canonical_categories": [
+    "curtains",
+    "prayer-mats",
+    "carpets"
+  ],
+  "categories": [
+    "quilts",
+    "test-1",
+    "test",
+    "BLK-002",
+    "test-2",
+    "Dining, accent and lounge seating",
+    "Browse our carpets collection — premium quality with transparent pricing.",
+    "Coir, rubber and personalised entrance mats.",
+    "Browse our rugs collection — premium quality with transparent pricing."
+  ],
+  "products": [
+    {
+      "product_id": "b97bf885-ce29-49f6-bc2b-b63552f1cabc",
+      "sku": "C_HOTEL_QUILT",
+      "slug": "c-hotel-quilt",
+      "name": "C Hotel Quilt",
+      "category": "Quilts",
+      "category_slug": "quilts",
+      "short_description": "Clean, crisp, and comfortable. A hotel-style quilt designed for a smooth and polished bedroom finish.",
+      "description": "Create a fresh, hotel-inspired look with this sophisticated quilt in a subtle, understated tone. The dobby diamond-weave texture adds visual depth, while vertical channel quilting helps keep the filling evenly distributed for a smooth and tailored drape. Durable and practical, it is well suited for everyday use and frequent washing.",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": null,
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "quilts"
+      ],
+      "search_keywords": [
+        "hotel",
+        "quilt",
+        "c_hotel_quilt"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786947908/jalals-home-solution/products/quilts/draft-07493129-0a43-4183-b535-28fca34ad0b6/main.jpg"
+      ],
+      "variants": [],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-17T06:26:52.956438+00:00",
+      "updated_at": "2026-08-17T06:29:36.817323+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "72fb5ccf-2e84-4c1d-b0d9-afaec60493f1",
+      "sku": "C_NEW_QUILT",
+      "slug": "c-new-quilt",
+      "name": "C New Quilt",
+      "category": "Quilts",
+      "category_slug": "quilts",
+      "short_description": "Classic comfort with timeless diamond quilting. A lightweight, versatile quilt made for everyday use.",
+      "description": "Refresh your bedroom with this classic everyday quilt in soft white and off-white tones. Its traditional diamond-stitch quilting keeps the filling evenly distributed while giving the quilt a neat, structured appearance. Lightweight yet comfortably warm, it is suitable for year-round use and blends effortlessly with any bedroom décor.",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": null,
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "quilts"
+      ],
+      "search_keywords": [
+        "new",
+        "quilt",
+        "c_new_quilt"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786900872/jalals-home-solution/products/quilts/product-72fb5ccf-2e84-4c1d-b0d9-afaec60493f1/main.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "9baf15f8-8373-4c18-9577-ea95ab91499e",
+          "sku": "C_NEW_QUILT",
+          "name": "C New Quilt",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-16T17:22:24.163393+00:00",
+      "updated_at": "2026-08-16T17:22:24.163393+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "e7618dea-0978-4075-befe-cb0a7f043ee8",
+      "sku": "C_SILK_QUILT",
+      "slug": "c-silk-quilt",
+      "name": "C Silk Quilt",
+      "category": "Quilts",
+      "category_slug": "quilts",
+      "short_description": "Elegant waffle texture with delicate detailing. A soft, refined quilt that adds warmth and style to your bedroom.",
+      "description": "Add a touch of elegance to your bedroom with this soft blush-pink and cream quilt featuring a beautiful waffle-weave texture. The scalloped quilted border and subtle floral quatrefoil stitching create a refined finish, while the soft feel makes it comfortable for everyday use. Its zippered closure also makes seasonal storage simple and convenient.",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": null,
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "quilts"
+      ],
+      "search_keywords": [
+        "silk",
+        "quilt",
+        "c_silk_quilt"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786946819/jalals-home-solution/products/quilts/draft-9daf2826-01c0-4c65-a2bd-e14cd762aa88/main.png"
+      ],
+      "variants": [
+        {
+          "variant_id": "b3da545e-0073-470b-8f6b-b8617ad2500d",
+          "sku": "C_SILK_QUILT",
+          "name": "C Silk Quilt",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-17T06:08:51.806322+00:00",
+      "updated_at": "2026-08-17T06:08:51.806322+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "b31c494a-1f41-4eb4-9269-62af3cb2364d",
+      "sku": "C_BLANKET_BLUE_MIST_WATERCOLOR_FLORAL",
+      "slug": "c-blanket-blue-mist-watercolor-floral",
+      "name": "C-Blanket Blue Mist Watercolor Floral",
+      "category": "Aliyas",
+      "category_slug": "test-1",
+      "short_description": "C-Blanket Blue Mist Watercolor Floral",
+      "description": "C-Blanket Blue Mist Watercolor Floral",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "6kg",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "test-1"
+      ],
+      "search_keywords": [
+        "c-blanket",
+        "blue",
+        "mist",
+        "watercolor",
+        "floral",
+        "c_blanket_blue_mist_watercolor_floral"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786824319/jalals-home-solution/products/test-1/product-b31c494a-1f41-4eb4-9269-62af3cb2364d/main.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "d4f1cd8d-3879-43fc-8e11-9a8b886615d7",
+          "sku": "C_BLANKET_BLUE_MIST_WATERCOLOR_FLORAL",
+          "name": "C-Blanket Blue Mist Watercolor Floral",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-15T20:05:24.326539+00:00",
+      "updated_at": "2026-08-15T20:05:24.326539+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "c13fdbe8-e360-4f43-a235-4e2b872ec1f4",
+      "sku": "C_BLANKET_BRONZE_ROSE_DIAMOND",
+      "slug": "c-blanket-bronze-rose-diamond",
+      "name": "C-Blanket Bronze Rose Diamond",
+      "category": "Shafiqa",
+      "category_slug": "test",
+      "short_description": "C-Blanket Bronze Rose Diamond",
+      "description": "C-Blanket Bronze Rose Diamond",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "5kg",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "test"
+      ],
+      "search_keywords": [
+        "c-blanket",
+        "bronze",
+        "rose",
+        "diamond",
+        "c_blanket_bronze_rose_diamond"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786824102/jalals-home-solution/products/test/product-c13fdbe8-e360-4f43-a235-4e2b872ec1f4/main.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "53d96632-7994-4119-a4cb-81dc90e5d4c5",
+          "sku": "C_BLANKET_BRONZE_ROSE_DIAMOND",
+          "name": "C-Blanket Bronze Rose Diamond",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-15T19:39:22.065078+00:00",
+      "updated_at": "2026-08-15T20:01:48.507643+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "a93b1d8c-2609-49b2-8380-d1d84bd72e25",
+      "sku": "BLK-008",
+      "slug": "c-blanket-cream-peach-floral",
+      "name": "C-Blanket Cream Peach Floral",
+      "category": "Blanket",
+      "category_slug": "BLK-002",
+      "short_description": "C-Blanket 5kg to 6kg Collection is machine-woven with silk thread for a heavy, densely plush pile built for peak winter warmth. Each design is printed with a finished satin-bound edge, combining a substantial, luxurious weight with rich, deeply saturated print detail.",
+      "description": "C-Blanket 5kg to 6kg Collection is machine-woven with silk thread for a heavy, densely plush pile built for peak winter warmth. Each design is printed with a finished satin-bound edge, combining a substantial, luxurious weight with rich, deeply saturated print detail.",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "6kg",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "BLK-002"
+      ],
+      "search_keywords": [
+        "c-blanket",
+        "cream",
+        "peach",
+        "floral",
+        "blk-008"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786825753/jalals-home-solution/products/blk-002/product-a93b1d8c-2609-49b2-8380-d1d84bd72e25/main.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "0d76e167-39f4-49b9-8b74-4aa385482f51",
+          "sku": "BLK-008",
+          "name": "C-Blanket Cream Peach Floral",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-15T20:29:18.834723+00:00",
+      "updated_at": "2026-08-15T20:29:18.834723+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "933085c7-9d78-4778-ba3d-034fd1bdbf76",
+      "sku": "BLK-007",
+      "slug": "c-blanket-grey-gold-peony",
+      "name": "C-Blanket Grey Gold Peony",
+      "category": "Gulbaz",
+      "category_slug": "test-2",
+      "short_description": "C-Blanket 5kg to 6kg Collection is machine-woven with silk thread for a heavy, densely plush pile built for peak winter warmth. Each design is printed with a finished satin-bound edge, combining a substantial, luxurious weight with rich, deeply saturated print detail.",
+      "description": "C-Blanket 5kg to 6kg Collection is machine-woven with silk thread for a heavy, densely plush pile built for peak winter warmth. Each design is printed with a finished satin-bound edge, combining a substantial, luxurious weight with rich, deeply saturated print detail.",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "6kg",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "test-2"
+      ],
+      "search_keywords": [
+        "c-blanket",
+        "grey",
+        "gold",
+        "peony",
+        "blk-007"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786825888/jalals-home-solution/products/test-2/product-933085c7-9d78-4778-ba3d-034fd1bdbf76/main.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "d8b91f8a-4a4f-4513-afe4-802ae8a7f0cd",
+          "sku": "BLK-007",
+          "name": "C-Blanket Grey Gold Peony",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-15T20:31:33.091291+00:00",
+      "updated_at": "2026-08-15T20:31:33.091291+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "16604ce3-7fb7-4268-a328-c7fd72270be4",
+      "sku": "BLK-001",
+      "slug": "c-blanket-maroon-medallion-rose",
+      "name": "C-Blanket Maroon Medallion Rose",
+      "category": "Chair",
+      "category_slug": "Dining, accent and lounge seating",
+      "short_description": "C-Blanket 3kg to 4kg Collection is machine-woven with silk thread for a soft, lightweight plush pile suited to mild winter warmth. Each design is printed with a finished satin-bound edge, offering rich color depth and a smooth, comfortable handfeel for everyday bedroom use.",
+      "description": "C-Blanket 3kg to 4kg Collection is machine-woven with silk thread for a soft, lightweight plush pile suited to mild winter warmth. Each design is printed with a finished satin-bound edge, offering rich color depth and a smooth, comfortable handfeel for everyday bedroom use.",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "kg",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "Dining, accent and lounge seating"
+      ],
+      "search_keywords": [
+        "c-blanket",
+        "maroon",
+        "medallion",
+        "rose",
+        "blk-001"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786646583/jalals-home-solution/products/dining-accent-and-lounge-seating/product-16604ce3-7fb7-4268-a328-c7fd72270be4/main.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "fdcbdedb-57e1-4343-884c-8bf33288c53c",
+          "sku": "BLK-001",
+          "name": "C-Blanket Maroon Medallion Rose",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-13T18:44:03.263796+00:00",
+      "updated_at": "2026-08-13T18:44:03.263796+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "1c541a69-2bf0-46fc-bb62-6d5f70334685",
+      "sku": "C_BLANKET_OSAKA_RED_ROSE_LEOPARD",
+      "slug": "c-blanket-osaka-red-rose-leopard",
+      "name": "C-Blanket Osaka Red Rose Leopard",
+      "category": "Shafiqa",
+      "category_slug": "test",
+      "short_description": "C-Blanket Osaka Red Rose Leopard",
+      "description": "C-Blanket Osaka Red Rose Leopard",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "5kg",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "test"
+      ],
+      "search_keywords": [
+        "c-blanket",
+        "osaka",
+        "red",
+        "rose",
+        "leopard",
+        "c_blanket_osaka_red_rose_leopard"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786823999/jalals-home-solution/products/test/product-1c541a69-2bf0-46fc-bb62-6d5f70334685/main.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "145cbfe5-f35e-4cff-b3ba-ef5028319cca",
+          "sku": "C_BLANKET_OSAKA_RED_ROSE_LEOPARD",
+          "name": "C-Blanket Osaka Red Rose Leopard",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-15T19:21:04.856234+00:00",
+      "updated_at": "2026-08-15T20:00:07.73117+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "c4d1ddb2-e7e8-4449-9a29-5497340fd86b",
+      "sku": "BLK-002",
+      "slug": "c-blanket-red-heritage-motif",
+      "name": "C-Blanket Red Heritage Motif",
+      "category": "Blanket",
+      "category_slug": "BLK-002",
+      "short_description": "C-Blanket 3kg to 4kg Collection is machine-woven with silk thread for a soft, lightweight plush pile suited to mild winter warmth. Each design is printed with a finished satin-bound edge, offering rich color depth and a smooth, comfortable handfeel for everyday bedroom use.",
+      "description": "C-Blanket 3kg to 4kg Collection is machine-woven with silk thread for a soft, lightweight plush pile suited to mild winter warmth. Each design is printed with a finished satin-bound edge, offering rich color depth and a smooth, comfortable handfeel for everyday bedroom use.",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "kg",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "BLK-002"
+      ],
+      "search_keywords": [
+        "c-blanket",
+        "red",
+        "heritage",
+        "motif",
+        "blk-002"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786646801/jalals-home-solution/products/blk-002/product-c4d1ddb2-e7e8-4449-9a29-5497340fd86b/main.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "58649738-8ac4-476f-a159-fe91122ecc98",
+          "sku": "BLK-002",
+          "name": "C-Blanket Red Heritage Motif",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-13T18:47:12.493986+00:00",
+      "updated_at": "2026-08-13T18:47:12.493986+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "15a54540-f8d8-4b35-a3f6-7de012df6129",
+      "sku": "C_BLANKET_ROYAL_BLUE_ROSE_LATTICE",
+      "slug": "c-blanket-royal-blue-rose-lattice",
+      "name": "C-Blanket Royal Blue Rose Lattice",
+      "category": "Shafiqa",
+      "category_slug": "test",
+      "short_description": "C-Blanket Royal Blue Rose Lattice",
+      "description": "C-Blanket Royal Blue Rose Lattice",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "6kg",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "test"
+      ],
+      "search_keywords": [
+        "c-blanket",
+        "royal",
+        "blue",
+        "rose",
+        "lattice",
+        "c_blanket_royal_blue_rose_lattice"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786823939/jalals-home-solution/products/test/product-15a54540-f8d8-4b35-a3f6-7de012df6129/main.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "699af7c1-7b52-4f71-b0ab-bf8df9036cb7",
+          "sku": "C_BLANKET_ROYAL_BLUE_ROSE_LATTICE",
+          "name": "C-Blanket Royal Blue Rose Lattice",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-15T19:22:34.901871+00:00",
+      "updated_at": "2026-08-15T19:59:05.960415+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "25340a56-d76d-423a-ae05-bcaa77ba5c62",
+      "sku": "C_BLANKET_TEAL_ROSE_GARDEN",
+      "slug": "c-blanket-teal-rose-garden",
+      "name": "C-Blanket Teal Rose Garden",
+      "category": "Blanket",
+      "category_slug": "BLK-002",
+      "short_description": "C-Blanket 3kg to 4kg Collection is machine-woven with silk thread for a soft, lightweight plush pile suited to mild winter warmth. Each design is printed with a finished satin-bound edge, offering rich color depth and a smooth, comfortable handfeel for everyday bedroom use.",
+      "description": "C-Blanket 3kg to 4kg Collection is machine-woven with silk thread for a soft, lightweight plush pile suited to mild winter warmth. Each design is printed with a finished satin-bound edge, offering rich color depth and a smooth, comfortable handfeel for everyday bedroom use.",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "Kg",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "BLK-002"
+      ],
+      "search_keywords": [
+        "c-blanket",
+        "teal",
+        "rose",
+        "garden",
+        "c_blanket_teal_rose_garden"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786730392/jalals-home-solution/products/blk-002/product-25340a56-d76d-423a-ae05-bcaa77ba5c62/main.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "ec2dfcf8-6e96-4858-96f5-976f319d8bca",
+          "sku": "C_BLANKET_TEAL_ROSE_GARDEN",
+          "name": "C-Blanket Teal Rose Garden",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-14T17:45:32.089245+00:00",
+      "updated_at": "2026-08-14T18:00:01.25087+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "38cdd3f0-dc45-4042-b63e-3ba531dd1879",
+      "sku": "TEST",
+      "slug": "test",
+      "name": "Carpets",
+      "category": "Carpets",
+      "category_slug": "Browse our carpets collection — premium quality with transparent pricing.",
+      "short_description": "test",
+      "description": "Browse our carpets collection — premium quality with transparent pricing.",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "spf",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "Browse our carpets collection — premium quality with transparent pricing."
+      ],
+      "search_keywords": [
+        "carpets",
+        "test"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786612736/jalals/products/ay2kvvzilckhbfp8hqvk.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "e0be0eee-a732-4910-8629-382506d6008f",
+          "sku": "TEST",
+          "name": "Carpets",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-13T08:12:15.758658+00:00",
+      "updated_at": "2026-08-13T09:19:03.332657+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "8d2f40e3-9133-4213-aaaa-3a33b72a7402",
+      "sku": "TEST_3",
+      "slug": "test-3",
+      "name": "Carpets",
+      "category": "Blanket",
+      "category_slug": "BLK-002",
+      "short_description": "teset",
+      "description": "test",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "sq",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "BLK-002"
+      ],
+      "search_keywords": [
+        "carpets",
+        "test_3"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786730310/jalals-home-solution/products/blk-002/product-8d2f40e3-9133-4213-aaaa-3a33b72a7402/main.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "8f9f6ce5-3f00-4677-a924-6f66321ecbdf",
+          "sku": "TEST_3",
+          "name": "Carpets",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-14T17:59:12.799461+00:00",
+      "updated_at": "2026-08-14T17:59:12.799461+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "25d1f315-0c13-4d2b-afb8-4ef224340b75",
+      "sku": "COTTON_SUMMER_QUILT",
+      "slug": "cotton-summer-quilt",
+      "name": "Cotton Summer Quilt",
+      "category": "Quilts",
+      "category_slug": "quilts",
+      "short_description": "Lightweight comfort with a satin finish. A stylish summer quilt designed for breathable, easy sleeping.",
+      "description": "Bring effortless style and comfort to warmer nights with this lightweight summer quilt in a rich teal satin finish. Its scalloped lace-inspired embroidered border, tufted button quilting, delicate floral detailing, and contrasting maroon piping create a polished boutique look. Perfect for use as a summer quilt, bedspread, or decorative layer.",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": null,
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "quilts"
+      ],
+      "search_keywords": [
+        "cotton",
+        "summer",
+        "quilt",
+        "cotton_summer_quilt"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786947029/jalals-home-solution/products/quilts/draft-fe3e26cc-01d6-4e59-a50c-73d5f5105974/main.png"
+      ],
+      "variants": [
+        {
+          "variant_id": "2fbcb20c-e394-47cc-92ee-202f585155a6",
+          "sku": "COTTON_SUMMER_QUILT",
+          "name": "Cotton Summer Quilt",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-17T06:12:58.988436+00:00",
+      "updated_at": "2026-08-17T06:12:58.988436+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "1818c90f-baba-40a4-ac7b-2360671df200",
+      "sku": "JOHN_SNOW",
+      "slug": "john-snow",
+      "name": "John SNow",
+      "category": "Carpets",
+      "category_slug": "Browse our carpets collection — premium quality with transparent pricing.",
+      "short_description": "test",
+      "description": "tsts",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "Kg",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "Browse our carpets collection — premium quality with transparent pricing."
+      ],
+      "search_keywords": [
+        "john",
+        "snow",
+        "john_snow"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786612611/jalals/products/gtt27mjujg2tphbb5zo3.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "6b4bc58f-d420-4914-ad56-c44689cfbe0e",
+          "sku": "JOHN_SNOW",
+          "name": "John SNow",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-13T09:16:58.759633+00:00",
+      "updated_at": "2026-08-13T09:16:58.759633+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "7812a0fe-2cc1-41b6-8a3b-ee809a68f035",
+      "sku": "tes",
+      "slug": "sugar",
+      "name": "Sugar",
+      "category": "Door Mats",
+      "category_slug": "Coir, rubber and personalised entrance mats.",
+      "short_description": "tests",
+      "description": "test",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "sq",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "Coir, rubber and personalised entrance mats."
+      ],
+      "search_keywords": [
+        "sugar",
+        "tes"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786612769/jalals/products/h2yiorlopo0fv7f9ovgi.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "8363bd96-c40f-4303-b799-d247fad70e17",
+          "sku": "tes",
+          "name": "Sugar",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-13T08:04:24.249688+00:00",
+      "updated_at": "2026-08-13T09:19:36.288713+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    },
+    {
+      "product_id": "0af4d294-6093-44f8-88c7-3dc412326351",
+      "sku": "TEST_2",
+      "slug": "test-2",
+      "name": "testtt",
+      "category": "Rugs",
+      "category_slug": "Browse our rugs collection — premium quality with transparent pricing.",
+      "short_description": "Browse our rugs collection — premium quality with transparent pricing.",
+      "description": "Browse our rugs collection — premium quality with transparent pricing.",
+      "material": null,
+      "fabric": null,
+      "design": null,
+      "size": null,
+      "selling_unit": "sq",
+      "included_items": null,
+      "styles": [],
+      "rooms": [],
+      "indoor_outdoor": "indoor",
+      "tags": [
+        "Browse our rugs collection — premium quality with transparent pricing."
+      ],
+      "search_keywords": [
+        "testtt",
+        "test_2"
+      ],
+      "images": [
+        "https://res.cloudinary.com/kllwjvle/image/upload/v1786612701/jalals/products/idss9xge18qnkc1ojgcf.jpg"
+      ],
+      "variants": [
+        {
+          "variant_id": "21830a37-7dc5-4533-ab93-1c66d9f748f4",
+          "sku": "TEST_2",
+          "name": "testtt",
+          "color": null,
+          "design": null,
+          "size": null,
+          "quality": null
+        }
+      ],
+      "specifications": [],
+      "related_products": [],
+      "complementary_products": [],
+      "alternative_products": [],
+      "created_at": "2026-08-13T08:16:16.139526+00:00",
+      "updated_at": "2026-08-13T09:18:30.335819+00:00",
+      "pricing_source": "live_database",
+      "is_canonical_category": false
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "version": "1.0.0",
+  "source": "Derived from policies + support best practices",
+  "procedures": [
+    {
+      "id": "damaged-product",
+      "problem": "Product arrived damaged",
+      "required_information": ["order number", "photos of damage", "delivery date"],
+      "eligibility": "Report within 48 hours of delivery",
+      "recommended_action": "Email orders@jalalsgroup.com or visit branch with invoice and photos. Arrange repair, replacement, or refund.",
+      "escalation": "No response within 5 business days — call main line +92 313 5205272"
+    },
+    {
+      "id": "wrong-product",
+      "problem": "Received wrong product",
+      "required_information": ["order number", "photos of item received vs ordered"],
+      "eligibility": "Report promptly on delivery",
+      "recommended_action": "Contact branch or orders@jalalsgroup.com for exchange.",
+      "escalation": "Urgent if custom order — escalate to branch manager phone"
+    },
+    {
+      "id": "missing-product",
+      "problem": "Missing item from order",
+      "required_information": ["order number", "packing slip details"],
+      "eligibility": "Report on delivery day",
+      "recommended_action": "Contact orders team to dispatch missing item.",
+      "escalation": "Partial delivery unresolved after 3 days"
+    },
+    {
+      "id": "late-delivery",
+      "problem": "Delivery is late",
+      "required_information": ["order number", "expected delivery date"],
+      "eligibility": "After estimated window passed",
+      "recommended_action": "Contact orders@jalalsgroup.com for updated ETA.",
+      "escalation": "More than 7 days overdue without communication"
+    },
+    {
+      "id": "payment-failure",
+      "problem": "Payment failed or COD rejected",
+      "required_information": ["order number", "payment method attempted"],
+      "eligibility": "Any failed checkout or COD attempt",
+      "recommended_action": "Retry checkout or contact orders team for bank transfer instructions.",
+      "escalation": "Duplicate charges — immediate human escalation"
+    },
+    {
+      "id": "return-request",
+      "problem": "Customer wants to return a product",
+      "required_information": ["order number", "product condition", "reason", "purchase date"],
+      "eligibility": "See policies/returns.md — 7 days for standard products",
+      "recommended_action": "Initiate via branch or orders@jalalsgroup.com.",
+      "escalation": "Custom order dispute — branch manager"
+    },
+    {
+      "id": "warranty-claim",
+      "problem": "Manufacturing defect after purchase",
+      "required_information": ["invoice", "order number", "photos", "defect description"],
+      "eligibility": "Within warranty period on invoice",
+      "recommended_action": "Branch visit or email orders@jalalsgroup.com.",
+      "escalation": "Claim denied — request review by management via +92 313 5205272"
+    },
+    {
+      "id": "installation-issue",
+      "problem": "Problem with Jalal-provided installation",
+      "required_information": ["order number", "installation date", "photos", "issue description"],
+      "eligibility": "Within 12-month workmanship warranty",
+      "recommended_action": "Contact branch that performed installation.",
+      "escalation": "Safety concern — immediate phone escalation"
+    },
+    {
+      "id": "complaint",
+      "problem": "General complaint about service",
+      "required_information": ["name", "phone", "branch visited if any", "detailed description"],
+      "eligibility": "Any customer",
+      "recommended_action": "Log via info@jalalshome.pk. Offer branch callback.",
+      "escalation": "Customer requests manager — provide branch management line from branches.json"
+    },
+    {
+      "id": "product-availability",
+      "problem": "Is this product in stock?",
+      "required_information": ["product name or SKU", "preferred branch if any"],
+      "eligibility": "Any shopper",
+      "recommended_action": "Query live inventory tool — never answer from static knowledge.",
+      "escalation": "Stock shows available but branch cannot locate — branch inventory check"
+    }
+  ]
+}
