@@ -17,3 +17,5 @@ export function getAssistantMaxHistory() {
 export function getAssistantRateLimitPerMinute() {
   return Math.max(10, Number(process.env.ASSISTANT_RATE_LIMIT ?? 30));
 }
+
+export { getOllamaEmbedModel, getAssistantRagTopK, isAssistantRagEnabled } from "./rag/config";
