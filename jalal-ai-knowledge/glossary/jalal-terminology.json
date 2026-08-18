@@ -1,0 +1,67 @@
+{
+  "version": "1.0.0",
+  "verified": true,
+  "terms": [
+    {
+      "term": "CIS",
+      "meaning": "Central inventory and order management system (planned integration name in project docs)",
+      "internal_name": "CIS",
+      "customer_facing_name": "Not customer-facing — say 'our inventory system'",
+      "note": "Not yet integrated in codebase — inventory currently in Supabase inventory table"
+    },
+    {
+      "term": "Branch",
+      "meaning": "Physical Jalal retail showroom",
+      "internal_name": "branch / store",
+      "customer_facing_name": "Showroom or branch"
+    },
+    {
+      "term": "Warehouse",
+      "meaning": "Central inventory location (Supabase inventory table — not branch-specific yet)",
+      "internal_name": "inventory",
+      "customer_facing_name": "Our warehouse stock"
+    },
+    {
+      "term": "COD",
+      "meaning": "Cash on delivery payment method",
+      "internal_name": "COD",
+      "customer_facing_name": "Cash on delivery"
+    },
+    {
+      "term": "Wall-to-wall",
+      "meaning": "Carpet installed to cover entire floor area",
+      "internal_name": "wall-to-wall carpet",
+      "customer_facing_name": "Wall-to-wall carpet"
+    },
+    {
+      "term": "Made-to-measure",
+      "meaning": "Custom-sized product cut to customer dimensions",
+      "internal_name": "custom order",
+      "customer_facing_name": "Custom sizing"
+    },
+    {
+      "term": "Variant",
+      "meaning": "SKU-level option within a product (colour, design, size)",
+      "internal_name": "product_variant",
+      "customer_facing_name": "Option or colour"
+    },
+    {
+      "term": "GB",
+      "meaning": "Gilgit-Baltistan region of Pakistan",
+      "internal_name": "GB",
+      "customer_facing_name": "Gilgit-Baltistan"
+    },
+    {
+      "term": "Jalal Assistance",
+      "meaning": "AI shopping and design consultant powered by local LLM (Ollama) + RAG + live tools",
+      "internal_name": "assistant",
+      "customer_facing_name": "Jalal Assistance"
+    },
+    {
+      "term": "Store Locator",
+      "meaning": "Website page listing branch addresses and phones",
+      "internal_name": "branches page",
+      "customer_facing_name": "Store Locator"
+    }
+  ]
+}

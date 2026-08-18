@@ -1,0 +1,18 @@
+{
+  "description": "Information useful for design recommendations — ask dynamically, not all at once",
+  "fields": [
+    { "id": "room", "priority": 1, "question": "Which room are you furnishing?", "required_for_recommendation": true },
+    { "id": "room_dimensions", "priority": 2, "question": "What are the room dimensions?", "required_for_recommendation": false, "needed_for": ["carpets", "custom sizing"] },
+    { "id": "preferred_style", "priority": 1, "question": "What style do you prefer (modern, traditional, luxury, minimal)?", "required_for_recommendation": true },
+    { "id": "preferred_colors", "priority": 2, "question": "Do you prefer light, dark, warm, or cool colours?", "required_for_recommendation": false },
+    { "id": "current_wall_color", "priority": 3, "question": "What colour are your walls?", "required_for_recommendation": false },
+    { "id": "existing_furniture", "priority": 3, "question": "What furniture or flooring do you already have?", "required_for_recommendation": false },
+    { "id": "material_preference", "priority": 3, "question": "Any material preferences or allergies?", "required_for_recommendation": false },
+    { "id": "maintenance_preference", "priority": 3, "question": "Do you prefer easy-care/low-maintenance products?", "required_for_recommendation": false },
+    { "id": "durability_requirements", "priority": 3, "question": "How much foot traffic does the space get?", "required_for_recommendation": false },
+    { "id": "budget", "priority": 2, "question": "What is your approximate budget?", "required_for_recommendation": false, "live_price_filter": true },
+    { "id": "location", "priority": 2, "question": "Which city are you in?", "required_for_recommendation": false, "needed_for": ["delivery", "branch", "installation"] },
+    { "id": "timeline", "priority": 4, "question": "When do you need the products?", "required_for_recommendation": false }
+  ],
+  "strategy": "Ask priority-1 fields first if missing. Ask priority-2 before searching when budget or location affects outcome. Skip priority-3+ unless relevant to the category."
+}

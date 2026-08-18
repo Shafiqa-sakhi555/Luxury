@@ -1,0 +1,80 @@
+{
+  "version": "1.0.0",
+  "description": "Explicit rules for product retrieval before LLM explanation",
+  "pipeline": [
+    "parse customer intent (room, style, color, material, budget)",
+    "identify missing consultation fields",
+    "build search filters from matching rules",
+    "call searchProducts tool with filters + availability",
+    "LLM explains results using returned product data only"
+  ],
+  "rules": [
+    {
+      "id": "modern-light-living",
+      "when": { "room": "living_room", "style": "modern", "color": "light" },
+      "search": {
+        "categories": ["curtains", "carpets"],
+        "color_hints": ["white", "cream", "grey", "beige"],
+        "style_hints": ["modern", "minimal", "plain"],
+        "require_availability": true
+      },
+      "explain": "Prioritise clean-lined curtains and neutral-toned carpets suitable for a modern living room."
+    },
+    {
+      "id": "luxury-dark-bedroom",
+      "when": { "room": "bedroom", "style": "luxury", "color": "dark" },
+      "search": {
+        "categories": ["curtains", "carpets"],
+        "color_hints": ["navy", "charcoal", "brown", "burgundy", "dark"],
+        "style_hints": ["luxury", "Persian", "regal"],
+        "require_availability": true
+      },
+      "explain": "Look for richer textures and deeper colours in curtains and carpets."
+    },
+    {
+      "id": "prayer-space-traditional",
+      "when": { "room": "prayer_space", "style": "traditional" },
+      "search": {
+        "categories": ["prayer-mats"],
+        "style_hints": ["traditional", "arch", "classic"],
+        "require_availability": true
+      },
+      "explain": "Focus on prayer mats with traditional motifs and comfortable kneeling surfaces."
+    },
+    {
+      "id": "cozy-bedroom",
+      "when": { "room": "bedroom", "style": "cozy" },
+      "search": {
+        "categories": ["curtains", "carpets"],
+        "material_hints": ["toweling", "soft", "plush", "malai"],
+        "require_availability": true
+      },
+      "explain": "Recommend soft fabrics and warm textures such as toweling-weave curtains."
+    },
+    {
+      "id": "office-minimal",
+      "when": { "room": "office", "style": "minimal" },
+      "search": {
+        "categories": ["curtains", "carpets"],
+        "color_hints": ["grey", "beige", "neutral"],
+        "style_hints": ["minimal", "plain"],
+        "require_availability": true
+      },
+      "explain": "Neutral tones and low-pattern products for a professional office."
+    },
+    {
+      "id": "budget-constrained",
+      "when": { "budget_max": true },
+      "search": {
+        "sort_by": "price_asc",
+        "require_availability": true
+      },
+      "explain": "Filter by live sale price within customer budget — never use RAG price data."
+    }
+  ],
+  "comparison_rule": {
+    "description": "Product A vs B — fetch both via getProduct, compare fields from live data",
+    "fields": ["price", "material", "size", "finish", "fabric", "design", "rooms", "availability", "warranty", "maintenance"],
+    "never_compare_from_rag_prices": true
+  }
+}

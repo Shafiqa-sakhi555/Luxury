@@ -1,0 +1,6 @@
+{
+  "description": "Product exports are generated — do not edit manually",
+  "generated_by": "npm run assistant:export-products",
+  "live_fields_excluded": ["price", "sale_price", "discount", "availability", "branch_stock", "warehouse_stock"],
+  "note": "Run export script after catalog changes to refresh static product descriptions for RAG."
+}
