@@ -16,7 +16,11 @@ export function CatalogFilterPills({
   activeSlug?: string;
 }) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar sm:flex-wrap sm:gap-3">
+    <div
+      role="group"
+      aria-label="Category filters"
+      className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar sm:flex-wrap sm:gap-3"
+    >
       {items.map((item) => {
         const isActive =
           item.slug === undefined
@@ -27,6 +31,7 @@ export function CatalogFilterPills({
           <Link
             key={item.href}
             href={item.href}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
               "shrink-0 rounded-full px-4 py-2 text-xs transition-all duration-300 sm:px-5 sm:text-sm",
               isActive

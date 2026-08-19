@@ -4,7 +4,16 @@ import { adminGetOrderById } from "@/server/orders";
 import { requireAdminPageAccess } from "@/server/admin/page-access";
 import { canWriteOrders } from "@/server/rbac";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
-import { AdminBadge } from "@/components/admin/ui";
+import {
+  AdminTable,
+  AdminTableHeader,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableHead,
+  AdminTableCell,
+  OrderStatusBadge,
+} from "@/components/admin/ui";
+import { formatStatusLabel } from "@/lib/admin/status-badges";
 import { OrderStatusForm } from "@/components/admin/orders/OrderStatusForm";
 import { formatMoney } from "@/lib/money";
 
@@ -55,16 +64,16 @@ export default async function AdminOrderDetailPage({
             <div className="border-b border-navy/10 px-5 py-4">
               <h2 className="text-sm font-semibold text-navy">Line items</h2>
             </div>
-            <table className="min-w-full text-sm">
-              <thead className="border-b border-navy/10 bg-[#FAFBFD] text-left text-xs uppercase tracking-wide text-muted">
+            <AdminTable>
+              <AdminTableHeader>
                 <tr>
-                  <th className="px-4 py-3">Product</th>
-                  <th className="px-4 py-3">SKU</th>
-                  <th className="px-4 py-3">Qty</th>
-                  <th className="px-4 py-3 text-right">Total</th>
+                  <AdminTableHead>Product</AdminTableHead>
+                  <AdminTableHead>SKU</AdminTableHead>
+                  <AdminTableHead>Qty</AdminTableHead>
+                  <AdminTableHead align="right">Total</AdminTableHead>
                 </tr>
-              </thead>
-              <tbody>
+              </AdminTableHeader>
+              <AdminTableBody>
                 {(order.order_items ?? []).map((item: {
                   id: string;
                   product_name: string;
@@ -72,17 +81,17 @@ export default async function AdminOrderDetailPage({
                   quantity: number;
                   line_total_minor: number;
                 }) => (
-                  <tr key={item.id} className="border-b border-navy/5">
-                    <td className="px-4 py-3">{item.product_name}</td>
-                    <td className="px-4 py-3 text-muted">{item.variant_sku}</td>
-                    <td className="px-4 py-3 tabular-nums">{item.quantity}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">
+                  <AdminTableRow key={item.id}>
+                    <AdminTableCell>{item.product_name}</AdminTableCell>
+                    <AdminTableCell className="text-muted">{item.variant_sku}</AdminTableCell>
+                    <AdminTableCell className="tabular-nums">{item.quantity}</AdminTableCell>
+                    <AdminTableCell align="right" className="tabular-nums">
                       {formatMoney(item.line_total_minor)}
-                    </td>
-                  </tr>
+                    </AdminTableCell>
+                  </AdminTableRow>
                 ))}
-              </tbody>
-            </table>
+              </AdminTableBody>
+            </AdminTable>
           </AdminCard>
 
           <AdminCard className="p-5">
@@ -101,7 +110,9 @@ export default async function AdminOrderDetailPage({
                   <li key={entry.id} className="rounded-lg border border-navy/10 px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
                       <span className="font-medium text-navy">
-                        {entry.from_status ? `${entry.from_status} → ${entry.to_status}` : entry.to_status}
+                        {entry.from_status
+                          ? `${formatStatusLabel(entry.from_status)} → ${formatStatusLabel(entry.to_status)}`
+                          : formatStatusLabel(entry.to_status)}
                       </span>
                       <span className="text-xs text-muted">
                         {new Date(entry.created_at).toLocaleString()}
@@ -119,9 +130,7 @@ export default async function AdminOrderDetailPage({
           <AdminCard className="p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-navy">Order status</h2>
-              <AdminBadge tone={order.status === "PENDING" ? "warning" : "default"}>
-                {order.status}
-              </AdminBadge>
+              <OrderStatusBadge status={order.status} />
             </div>
             <div className="mt-4">
               <OrderStatusForm

@@ -19,8 +19,8 @@ export function FeaturedCategoriesSection({ categories }: { categories: ShopCate
   if (categories.length === 0) return null;
 
   return (
-    <section id="categories" className="relative bg-white py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section id="categories" className="relative bg-white section-spacing-md">
+      <div className="page-container">
         <SectionHeading
           eyebrow="Collections"
           title="Shop by Category"

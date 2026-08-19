@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   LayoutDashboard,
   Package,
@@ -10,6 +10,7 @@ import {
   Users,
   Warehouse,
   Settings,
+  MessageCircle,
   Menu,
   X,
   ChevronLeft,
@@ -17,6 +18,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SkipLink } from "@/components/layout/SkipLink";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ADMIN_NAV } from "@/lib/auth/admin-access";
 
@@ -27,6 +30,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/admin/orders": ShoppingCart,
   "/admin/inventory": Warehouse,
   "/admin/customers": Users,
+  "/admin/assistant": MessageCircle,
   "/admin/settings": Settings,
 };
 
@@ -41,6 +45,9 @@ export function AdminShell({ children, allowedHrefs, roleLabel }: AdminShellProp
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileNavRef = useRef<HTMLElement>(null);
+
+  useFocusTrap(mobileNavRef, mobileOpen, () => setMobileOpen(false));
 
   const supabase = createSupabaseBrowserClient();
   const allowed = new Set(allowedHrefs);
@@ -78,7 +85,7 @@ export function AdminShell({ children, allowedHrefs, roleLabel }: AdminShellProp
           <X className="h-5 w-5" />
         </button>
       </div>
-      <nav className="flex-1 space-y-1 p-3">
+      <nav className="flex-1 space-y-1 p-3" aria-label="Admin">
         {nav.map(({ href, label }) => {
           const Icon = ICONS[href] ?? LayoutDashboard;
           const active = pathname === href || (href !== "/admin" && pathname.startsWith(href));
@@ -87,6 +94,7 @@ export function AdminShell({ children, allowedHrefs, roleLabel }: AdminShellProp
               key={href}
               href={href}
               onClick={() => setMobileOpen(false)}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
                 active
@@ -121,9 +129,11 @@ export function AdminShell({ children, allowedHrefs, roleLabel }: AdminShellProp
 
   return (
     <div className="min-h-screen bg-[#F7F9FC] text-ink">
+      <SkipLink />
       <div className="brand-accent-bar" />
       <div className="flex min-h-[calc(100vh-4px)]">
         <aside
+          ref={mobileNavRef}
           className={cn(
             "fixed inset-y-0 left-0 z-40 hidden border-r border-navy/10 bg-white transition-all lg:static lg:block",
             collapsed ? "w-[72px]" : "w-[260px]",
@@ -153,7 +163,9 @@ export function AdminShell({ children, allowedHrefs, roleLabel }: AdminShellProp
             <div className="text-sm text-muted">Operations dashboard</div>
             <div className="text-sm font-medium text-navy">{roleLabel}</div>
           </header>
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+          <main id="main-content" tabIndex={-1} className="flex-1 p-4 sm:p-6 lg:p-8">
+            {children}
+          </main>
         </div>
       </div>
     </div>

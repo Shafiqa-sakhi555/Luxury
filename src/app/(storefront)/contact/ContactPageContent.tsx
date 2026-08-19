@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin } from "lucide-react";
-import { Footer } from "@/components/layout/Footer";
 import { ContactForm } from "@/components/sections/ContactForm";
 import { BranchesSection } from "@/components/sections/BranchesSection";
 import { company } from "@/lib/content";
@@ -162,7 +161,6 @@ export function ContactPageContent() {
       </div>
 
       <BranchesSection />
-      <Footer />
     </>
   );
 }

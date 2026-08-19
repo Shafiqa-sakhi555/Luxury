@@ -1,14 +1,15 @@
-import Link from "next/link";
 import Image from "next/image";
-import type { Metadata } from "next";
+import type { Metadata } from "next";import { Package } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { listProducts, getCategoryBySlug } from "@/server/catalog/products";
 import { ProductCard } from "@/components/commerce/ProductCard";
+import { Breadcrumbs } from "@/components/commerce/Breadcrumbs";
+import { CatalogPagination } from "@/components/commerce/CatalogPagination";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { Footer } from "@/components/layout/Footer";
+import { PageContainer } from "@/components/ui/page-container";
+import { EmptyState } from "@/components/ui/empty-state";
 import { normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
 import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
-
 export const revalidate = 60;
 
 export async function generateMetadata({
@@ -87,21 +88,17 @@ export default async function CategoryPage({
         )}
         {!heroImage && <div className="blob-red right-0 top-10 h-72 w-72 opacity-40" />}
 
-        <div className="relative mx-auto max-w-7xl px-4 pb-12 sm:px-6 sm:pb-16 lg:px-8">
-          <nav className="mb-6 text-sm text-muted">
-            <Link href="/" className="transition hover:text-red">
-              Home
-            </Link>
-            <span className="mx-2">/</span>
-            <Link href="/shop" className="transition hover:text-red">
-              Shop
-            </Link>
-            <span className="mx-2">/</span>
-            <span className="text-navy">{category.name}</span>
-          </nav>
+        <PageContainer className="relative pb-12 sm:pb-16">
+          <Breadcrumbs
+            className="mb-6"
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Shop", href: "/shop" },
+              { label: category.name },
+            ]}
+          />
 
-          <SectionHeading
-            eyebrow="Collection"
+          <SectionHeading            eyebrow="Collection"
             title={category.name}
             description={
               category.description ??
@@ -116,23 +113,18 @@ export default async function CategoryPage({
               {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
             </p>
           )}
-        </div>
+        </PageContainer>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+      <PageContainer className="py-10 sm:py-12">
         {items.length === 0 ? (
-          <div className="rounded-2xl border border-navy/10 bg-white p-12 text-center shadow-sm ring-1 ring-navy/5">
-            <p className="font-display text-xl text-navy">Coming soon</p>
-            <p className="mt-2 text-muted">
-              We&apos;re adding new products to this collection. Check back soon.
-            </p>
-            <Link
-              href="/shop"
-              className="mt-6 inline-flex rounded-full bg-red px-6 py-2.5 text-sm font-medium text-white transition hover:bg-red/90"
-            >
-              Browse all products
-            </Link>
-          </div>
+          <EmptyState
+            className="surface-card"
+            icon={<Package className="h-6 w-6" />}
+            title="Coming soon"
+            description="We're adding new products to this collection. Browse the full catalog or ask Jalal Assistance for recommendations."
+            action={{ label: "Browse all products", href: "/shop" }}
+          />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
             {items.map((product, i) => (
@@ -146,25 +138,13 @@ export default async function CategoryPage({
           </div>
         )}
 
-        {totalPages > 1 && (
-          <div className="mt-12 flex flex-wrap justify-center gap-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <Link
-                key={p}
-                href={`/categories/${normalizedSlug}?page=${p}`}
-                className={`rounded-full px-4 py-2 text-sm transition ${
-                  p === page
-                    ? "bg-red font-medium text-white shadow-md shadow-red/20"
-                    : "border border-navy/10 bg-white text-navy/70 hover:border-red/30 hover:bg-red/5"
-                }`}
-              >
-                {p}
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-      <Footer />
+        <CatalogPagination
+          className="mt-12"
+          page={page}
+          totalPages={totalPages}
+          buildHref={(p) => `/categories/${normalizedSlug}?page=${p}`}
+        />
+      </PageContainer>
     </div>
   );
 }

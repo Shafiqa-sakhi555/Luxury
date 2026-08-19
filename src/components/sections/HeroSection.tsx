@@ -15,6 +15,7 @@ import {
   Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { OpenAssistantButton } from "@/components/assistant/OpenAssistantButton";
 import { MagneticButton } from "@/components/shared/MagneticButton";
 import { TextReveal } from "@/components/shared/TextReveal";
 import { categories } from "@/lib/categories";
@@ -104,14 +105,14 @@ export function HeroSection() {
                 </Link>
               </Button>
             </MagneticButton>
-            <Button
-              asChild
+            <OpenAssistantButton
               variant="outline"
               size="lg"
+              prompt={heroContent.secondaryCta.prompt}
               className="min-w-[200px] border-white/80 bg-white/95 font-medium text-ink shadow-lg transition-all hover:scale-[1.02] hover:border-white hover:bg-white hover:text-ink"
             >
-              <Link href={heroContent.secondaryCta.href}>{heroContent.secondaryCta.label}</Link>
-            </Button>
+              {heroContent.secondaryCta.label}
+            </OpenAssistantButton>
           </motion.div>
 
           <motion.ul

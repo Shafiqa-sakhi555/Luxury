@@ -15,12 +15,12 @@ export function TestimonialsSection() {
     setCurrent((c) => (c - 1 + testimonials.length) % testimonials.length);
 
   return (
-    <section className="relative overflow-hidden section-brand-alt py-20 sm:py-32">
+    <section className="relative overflow-hidden section-brand-alt section-spacing-lg">
       <div className="brand-accent-bar absolute inset-x-0 top-0" />
       <div className="blob-red right-0 top-1/4 h-64 w-64" />
       <div className="blob-blue -left-16 bottom-0 h-72 w-72" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="relative page-container">
         <SectionHeading
           eyebrow="Reviews"
           title="What Our Customers Say"

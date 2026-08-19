@@ -23,8 +23,8 @@ const icons = {
 
 export function WhyChooseUsSection() {
   return (
-    <section className="relative bg-white py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="relative bg-white section-spacing-md">
+      <div className="page-container">
         <SectionHeading
           eyebrow="The Jalals Difference"
           title="Why Choose Jalal's Home Solution?"

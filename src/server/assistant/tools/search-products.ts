@@ -74,6 +74,7 @@ export async function runSearchProducts(ctx: ToolContext): Promise<ToolResult | 
     price: formatMoney(p.salePriceMinor),
     priceMinor: p.salePriceMinor,
     url: `/products/${p.slug}`,
+    imageUrl: p.images.find((img) => img.isPrimary)?.url ?? p.images[0]?.url ?? null,
     inStock: p.stockStatus !== "out_of_stock",
   }));
 

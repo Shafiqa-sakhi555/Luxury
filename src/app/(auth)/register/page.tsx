@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { RegisterForm } from "./RegisterForm";
+import { AuthFormSkeleton } from "@/components/ui/page-skeletons";
 
 export default function RegisterPage() {
   return (
@@ -12,7 +13,7 @@ export default function RegisterPage() {
           </Link>
           <p className="mt-2 text-sm text-muted">Create your customer account</p>
         </div>
-        <Suspense fallback={<div className="h-64" />}>
+        <Suspense fallback={<AuthFormSkeleton />}>
           <RegisterForm />
         </Suspense>
       </div>

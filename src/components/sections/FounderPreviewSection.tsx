@@ -10,12 +10,12 @@ import { founder } from "@/lib/content";
 
 export function FounderPreviewSection() {
   return (
-    <section className="relative overflow-hidden section-brand-light py-20 sm:py-32">
+    <section className="relative overflow-hidden section-brand-light section-spacing-lg">
       <div className="brand-accent-bar absolute inset-x-0 top-0" />
       <div className="blob-blue -right-20 top-1/4 h-72 w-72 opacity-30" />
       <div className="blob-red -left-10 bottom-10 h-56 w-56 opacity-25" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="relative page-container">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
           <motion.div
             initial={{ opacity: 0, x: -30 }}

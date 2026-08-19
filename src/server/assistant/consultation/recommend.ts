@@ -3,6 +3,7 @@ import { SUPABASE_CATALOG_SLUGS } from "@/lib/supabase/catalog-categories";
 import { formatMoney } from "@/lib/money";
 import type { MatchedConsultationRule } from "./rules";
 import type { ConsultationProfile } from "./profile";
+import type { CatalogProductImage } from "@/types/catalog";
 
 export type ConsultationRecommendation = {
   id: string;
@@ -14,10 +15,15 @@ export type ConsultationRecommendation = {
   priceMinor: number;
   url: string;
   shortDescription: string | null;
+  imageUrl: string | null;
   reason: string;
   score: number;
   inStock: boolean;
 };
+
+function primaryImageUrl(images: CatalogProductImage[]): string | null {
+  return images.find((img) => img.isPrimary)?.url ?? images[0]?.url ?? null;
+}
 
 const COLOR_HINT_MAP: Record<string, string[]> = {
   light: ["white", "cream", "beige", "grey", "gray", "light", "ivory"],
@@ -119,6 +125,7 @@ export async function recommendConsultationProducts(input: {
         priceMinor: product.salePriceMinor,
         url: `/products/${product.slug}`,
         shortDescription: product.shortDescription,
+        imageUrl: primaryImageUrl(product.images),
         reason: topRule.explain,
         score: score + topRule.score,
         inStock: product.stockStatus !== "out_of_stock",
@@ -144,6 +151,7 @@ export async function recommendConsultationProducts(input: {
           priceMinor: product.salePriceMinor,
           url: `/products/${product.slug}`,
           shortDescription: product.shortDescription,
+          imageUrl: primaryImageUrl(product.images),
           reason: topRule.explain,
           score: 1,
           inStock: product.stockStatus !== "out_of_stock",

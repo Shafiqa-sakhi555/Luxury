@@ -4,6 +4,9 @@ import { getOrCreateCart, cartTotals, resolveCustomerCart } from "@/server/cart"
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { CartActions } from "@/components/commerce/CartActions";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Card } from "@/components/ui/card";
+import { ShoppingBag } from "lucide-react";
 
 export default async function CartPage() {
   const supabase = await createSupabaseServerClient();
@@ -21,29 +24,29 @@ export default async function CartPage() {
 
   return (
     <div>
-      <div className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="font-display text-3xl text-navy">Your cart</h1>
-        {!user && cart?.cart_items?.length ? (
-          <p className="mt-2 text-sm text-muted">
-            <Link href="/login?callbackUrl=/checkout" className="text-navy hover:underline">
-              Sign in
-            </Link>{" "}
-            or{" "}
-            <Link href="/register?callbackUrl=/checkout" className="text-navy hover:underline">
-              create an account
-            </Link>{" "}
-            to save your cart and checkout.
-          </p>
-        ) : null}
-        {!cart?.cart_items?.length ? (
-          <div className="mt-10 rounded-2xl border border-navy/10 bg-white p-12 text-center">
-            <p className="text-muted">Your cart is empty.</p>
-            <Link href="/shop" className="mt-4 inline-block text-navy hover:underline">
-              Continue shopping
-            </Link>
-          </div>
-        ) : (
-          <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
+      <h1 className="font-display text-3xl text-navy">Your cart</h1>
+      {!user && cart?.cart_items?.length ? (
+        <p className="mt-2 text-sm text-muted">
+          <Link href="/login?callbackUrl=/checkout" className="text-navy hover:underline">
+            Sign in
+          </Link>{" "}
+          or{" "}
+          <Link href="/register?callbackUrl=/checkout" className="text-navy hover:underline">
+            create an account
+          </Link>{" "}
+          to save your cart and checkout.
+        </p>
+      ) : null}
+      {!cart?.cart_items?.length ? (
+        <EmptyState
+          className="mt-10 surface-card"
+          icon={<ShoppingBag className="h-6 w-6" />}
+          title="Your cart is empty"
+          description="Browse our collections and add items you love."
+          action={{ label: "Continue shopping", href: "/shop" }}
+        />
+      ) : (
+        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
             <ul className="space-y-4">
               {cart.cart_items.map((item: any) => {
                 const product = item.product_variants?.products;
@@ -78,8 +81,9 @@ export default async function CartPage() {
                 );
               })}
             </ul>
-            <aside className="h-fit rounded-xl border border-navy/10 bg-white p-6">
-              <h2 className="font-medium text-navy">Order summary</h2>
+            <aside className="h-fit">
+              <Card padding="md">
+                <h2 className="font-medium text-navy">Order summary</h2>
               <dl className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted">Subtotal</dt>
@@ -100,10 +104,10 @@ export default async function CartPage() {
               >
                 Proceed to checkout
               </Link>
+              </Card>
             </aside>
           </div>
         )}
-      </div>
     </div>
   );
 }

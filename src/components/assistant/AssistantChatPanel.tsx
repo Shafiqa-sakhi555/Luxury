@@ -1,25 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bot, LogIn, Send, Sparkles } from "lucide-react";
+import { Bot, LogIn, Phone, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AssistantRecommendationCard } from "@/components/assistant/AssistantRecommendationCard";
+import type { AssistantProductRecommendation } from "@/types/assistant";
 
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
-};
-
-export type ConsultationRecommendation = {
-  id: string;
-  name: string;
-  slug: string;
-  category: string;
-  price: string;
-  url: string;
-  shortDescription: string | null;
-  reason?: string;
 };
 
 type AssistantApiResponse = {
@@ -30,13 +21,13 @@ type AssistantApiResponse = {
     mode: "gather_info" | "recommend" | "not_consultation";
     profileSummary?: string;
     nextQuestion?: string;
-    recommendations?: ConsultationRecommendation[];
+    recommendations?: AssistantProductRecommendation[];
     suggestedReplies?: string[];
   };
 };
 
 type RichMessage = ChatMessage & {
-  recommendations?: ConsultationRecommendation[];
+  recommendations?: AssistantProductRecommendation[];
   streaming?: boolean;
 };
 
@@ -53,6 +44,9 @@ const SUGGESTIONS = [
 type AssistantChatPanelProps = {
   className?: string;
   compact?: boolean;
+  titleId?: string;
+  pendingPrompt?: string | null;
+  onPendingPromptConsumed?: () => void;
   onSend?: (messages: ChatMessage[]) => Promise<string>;
 };
 
@@ -122,6 +116,9 @@ async function consumeAssistantStream(
 export function AssistantChatPanel({
   className = "",
   compact = false,
+  titleId = "assistant-title",
+  pendingPrompt = null,
+  onPendingPromptConsumed,
   onSend,
 }: AssistantChatPanelProps) {
   const [messages, setMessages] = useState<RichMessage[]>([
@@ -130,25 +127,36 @@ export function AssistantChatPanel({
   const [suggestedReplies, setSuggestedReplies] = useState<string[]>(SUGGESTIONS);
   const [consultationMode, setConsultationMode] = useState<string | null>(null);
   const [requiresLogin, setRequiresLogin] = useState(false);
+  const [handoffCreated, setHandoffCreated] = useState(false);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pendingHandledRef = useRef<string | null>(null);
+  const messagesRef = useRef<RichMessage[]>(messages);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const sendMessage = async (text: string) => {
+  const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isTyping) return;
 
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: trimmed }];
+    const nextMessages: ChatMessage[] = [
+      ...messagesRef.current,
+      { role: "user", content: trimmed },
+    ];
     setMessages(nextMessages);
     setInput("");
     setIsTyping(true);
     setError(null);
     setRequiresLogin(false);
+    setHandoffCreated(false);
 
     try {
       if (onSend) {
@@ -170,8 +178,21 @@ export function AssistantChatPanel({
         (meta) => {
           setConsultationMode(meta.consultation?.mode ?? null);
           setRequiresLogin(Boolean(meta.requiresLogin));
+          if (meta.handoffCreated) setHandoffCreated(true);
           if (meta.consultation?.suggestedReplies?.length) {
             setSuggestedReplies(meta.consultation.suggestedReplies);
+          }
+          if (meta.consultation?.recommendations?.length) {
+            setMessages((prev) => {
+              const copy = [...prev];
+              if (copy[assistantIndex]) {
+                copy[assistantIndex] = {
+                  ...copy[assistantIndex],
+                  recommendations: meta.consultation?.recommendations,
+                };
+              }
+              return copy;
+            });
           }
         },
         (token) => {
@@ -179,6 +200,7 @@ export function AssistantChatPanel({
           setMessages((prev) => {
             const copy = [...prev];
             copy[assistantIndex] = {
+              ...copy[assistantIndex],
               role: "assistant",
               content: streamed,
               streaming: true,
@@ -190,6 +212,7 @@ export function AssistantChatPanel({
 
       setConsultationMode(data.consultation?.mode ?? null);
       setRequiresLogin(Boolean(data.requiresLogin));
+      if (data.handoffCreated) setHandoffCreated(true);
       if (data.consultation?.suggestedReplies?.length) {
         setSuggestedReplies(data.consultation.suggestedReplies);
       }
@@ -221,35 +244,70 @@ export function AssistantChatPanel({
     } finally {
       setIsTyping(false);
     }
-  };
+  }, [isTyping, onSend]);
+
+  useEffect(() => {
+    if (!pendingPrompt) {
+      pendingHandledRef.current = null;
+      return;
+    }
+    if (isTyping) return;
+    if (pendingHandledRef.current === pendingPrompt) return;
+
+    pendingHandledRef.current = pendingPrompt;
+    void sendMessage(pendingPrompt);
+    onPendingPromptConsumed?.();
+  }, [pendingPrompt, isTyping, onPendingPromptConsumed, sendMessage]);
 
   return (
-    <div className={`flex flex-col overflow-hidden ${className}`}>
-      <div className="relative shrink-0 overflow-hidden border-b border-glass-border bg-midnight/40 px-4 py-3 sm:px-5">
+    <div className={`assistant-shell flex flex-col overflow-hidden ${className}`}>
+      <div className="assistant-header relative shrink-0 px-4 py-3.5 sm:px-5">
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-red to-transparent" />
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet/30 backdrop-blur-sm">
-            <Bot className="h-4 w-4 text-violet" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red/20 ring-1 ring-red/30">
+            <Bot className="h-4 w-4 text-red" />
           </div>
           <div>
-            <p className="text-sm font-medium text-ivory">Jalal Assistance</p>
-            <p className="text-[11px] text-ivory/50">
+            <p id={titleId} className="font-display text-base font-medium text-white">
+              Jalal Assistance
+            </p>
+            <p className="text-[11px] text-white/55">
               {consultationMode === "gather_info"
                 ? "Design consultation · gathering preferences"
                 : consultationMode === "recommend"
                   ? "Design consultation · recommendations"
-                  : "AI consultant · orders · design · support"}
+                  : "Design · products · orders · support"}
             </p>
           </div>
-          <Sparkles className="ml-auto h-4 w-4 animate-pulse text-gold" />
+          <span className="ml-auto rounded-full bg-emerald/15 px-2 py-0.5 text-[10px] font-medium text-emerald">
+            Online
+          </span>
         </div>
       </div>
 
+      {handoffCreated && (
+        <div className="flex items-start gap-2 border-b border-white/10 bg-emerald/10 px-4 py-2.5 text-[11px] text-white/90 sm:px-5 sm:text-xs">
+          <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald" />
+          <span>
+            A team member will follow up on your request. Call{" "}
+            <a href="tel:+923135205272" className="font-medium text-cyan underline underline-offset-2">
+              +92 313 5205272
+            </a>{" "}
+            or email{" "}
+            <a href="mailto:info@jalalshome.pk" className="font-medium text-cyan underline underline-offset-2">
+              info@jalalshome.pk
+            </a>
+            .
+          </span>
+        </div>
+      )}
+
       {requiresLogin && (
-        <div className="flex items-center gap-2 border-b border-glass-border bg-royal/20 px-4 py-2 text-[11px] text-ivory/80 sm:px-5 sm:text-xs">
-          <LogIn className="h-3.5 w-3.5 shrink-0" />
+        <div className="flex items-center gap-2 border-b border-white/10 bg-red/10 px-4 py-2 text-[11px] text-white/85 sm:px-5 sm:text-xs">
+          <LogIn className="h-3.5 w-3.5 shrink-0 text-red" />
           <span>
             Log in to view orders —{" "}
-            <Link href="/login" className="text-gold underline underline-offset-2">
+            <Link href="/login" className="font-medium text-cyan underline underline-offset-2">
               Sign in
             </Link>
           </span>
@@ -258,7 +316,12 @@ export function AssistantChatPanel({
 
       <div
         ref={scrollRef}
-        className={`flex flex-1 flex-col gap-3 overflow-y-auto p-4 hide-scrollbar sm:gap-4 sm:p-5 ${
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-busy={isTyping}
+        aria-label="Chat messages"
+        className={`flex flex-1 flex-col gap-3 overflow-y-auto bg-surface-dark p-4 hide-scrollbar sm:gap-4 sm:p-5 ${
           compact ? "min-h-[240px] max-h-[320px]" : "min-h-[280px] max-h-[380px] sm:max-h-[420px]"
         }`}
       >
@@ -272,36 +335,22 @@ export function AssistantChatPanel({
             >
               <div
                 className={`max-w-[92%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed sm:max-w-[85%] sm:px-4 sm:py-3 sm:text-sm ${
-                  msg.role === "user" ? "bg-royal text-ivory" : "glass text-ivory/85"
+                  msg.role === "user" ? "assistant-bubble-user" : "assistant-bubble-bot"
                 }`}
               >
                 {msg.content}
                 {msg.streaming && (
-                  <span className="ml-0.5 inline-block h-3 w-1 animate-pulse bg-violet/70" />
+                  <span className="ml-0.5 inline-block h-3 w-1 animate-pulse bg-cyan/70" />
                 )}
               </div>
 
               {msg.recommendations && msg.recommendations.length > 0 && (
                 <div className="flex w-full max-w-[92%] flex-col gap-2 sm:max-w-[85%]">
+                  <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
+                    Recommended for you
+                  </p>
                   {msg.recommendations.map((product) => (
-                    <Link
-                      key={product.id}
-                      href={product.url}
-                      className="glass block rounded-xl border border-glass-border p-3 transition-colors hover:border-violet/30"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-xs font-medium text-ivory sm:text-sm">{product.name}</p>
-                          <p className="mt-0.5 text-[11px] text-ivory/50">{product.category}</p>
-                        </div>
-                        <span className="shrink-0 text-xs font-medium text-gold">{product.price}</span>
-                      </div>
-                      {product.shortDescription && (
-                        <p className="mt-2 line-clamp-2 text-[11px] text-ivory/65">
-                          {product.shortDescription}
-                        </p>
-                      )}
-                    </Link>
+                    <AssistantRecommendationCard key={product.id} product={product} />
                   ))}
                 </div>
               )}
@@ -310,28 +359,36 @@ export function AssistantChatPanel({
         </AnimatePresence>
 
         {isTyping && messages[messages.length - 1]?.streaming !== true && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-1 px-1">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex gap-1 px-1"
+            aria-hidden
+          >
             {[0, 1, 2].map((i) => (
               <motion.div
                 key={i}
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
-                className="h-2 w-2 rounded-full bg-violet/60"
+                className="h-2 w-2 rounded-full bg-red/60"
               />
             ))}
           </motion.div>
         )}
+        <span className="sr-only" aria-live="polite">
+          {isTyping ? "Jalal Assistance is typing" : ""}
+        </span>
       </div>
 
       {suggestedReplies.length > 0 && (
-        <div className="flex flex-wrap gap-2 px-4 pb-2 sm:px-5">
+        <div className="flex flex-wrap gap-2 border-t border-white/8 bg-surface-dark/95 px-4 py-2.5 sm:px-5">
           {suggestedReplies.slice(0, 4).map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => sendMessage(s)}
               disabled={isTyping}
-              className="glass rounded-full px-3 py-1.5 text-[11px] text-ivory/65 transition-all hover:border-violet/30 hover:text-ivory sm:text-xs"
+              className="assistant-chip px-3 py-1.5 text-[11px] sm:text-xs"
             >
               {s}
             </button>
@@ -339,24 +396,31 @@ export function AssistantChatPanel({
         </div>
       )}
 
-      {error && <p className="px-4 pb-1 text-[11px] text-red-300/80 sm:px-5">{error}</p>}
+      {error && (
+        <p className="bg-surface-dark px-4 pb-1 text-[11px] text-red-300 sm:px-5">{error}</p>
+      )}
 
-      <div className="shrink-0 border-t border-glass-border p-3 sm:p-4">
+      <div className="shrink-0 border-t border-white/10 bg-surface-elevated/80 p-3 sm:p-4">
         <div className="flex gap-2">
+          <label htmlFor="assistant-message-input" className="sr-only">
+            Message Jalal Assistance
+          </label>
           <input
+            id="assistant-message-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
             placeholder="Design advice, products, orders, cart…"
             disabled={isTyping}
-            className="flex-1 rounded-xl bg-glass px-3 py-2.5 text-xs text-ivory placeholder:text-ivory/30 outline-none disabled:opacity-60 sm:px-4 sm:py-3 sm:text-sm"
+            className="assistant-input flex-1 px-3 py-2.5 text-xs disabled:opacity-60 sm:px-4 sm:py-3 sm:text-sm"
           />
           <Button
-            variant="gold"
+            variant="default"
             size="icon"
             onClick={() => sendMessage(input)}
             disabled={isTyping || !input.trim()}
-            className="shrink-0"
+            aria-label="Send message"
+            className="shrink-0 shadow-md shadow-red/25"
           >
             <Send className="h-4 w-4" />
           </Button>
@@ -365,3 +429,6 @@ export function AssistantChatPanel({
     </div>
   );
 }
+
+// Re-export for consumers that imported from this module
+export type { AssistantProductRecommendation as ConsultationRecommendation };

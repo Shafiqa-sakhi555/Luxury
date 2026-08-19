@@ -10,7 +10,10 @@ export const heroContent = {
   categoryLabel: "Browse Categories",
   searchButton: "Find Products",
   primaryCta: { label: "Explore Collection", href: "/shop" },
-  secondaryCta: { label: "Book Free Consultation", href: "/contact" },
+  secondaryCta: {
+    label: "Book Free Consultation",
+    prompt: "I'd like a free design consultation for my home",
+  },
 };
 
 export const heroTrustBadges = [

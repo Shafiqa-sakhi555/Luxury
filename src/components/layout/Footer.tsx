@@ -6,16 +6,15 @@ import { Instagram, Facebook, Phone, MapPin, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { PageContainer } from "@/components/ui/page-container";
 import { company } from "@/lib/content";
 
 const footerColumns = {
   Shop: [
     { label: "All Collections", href: "/shop" },
-    { label: "Luxury Carpets", href: "/shop?category=carpets" },
-    { label: "Modern Rugs", href: "/shop?category=rugs" },
-    { label: "Furniture", href: "/shop?category=furniture" },
-    { label: "Flooring", href: "/shop?category=flooring" },
-    { label: "Home Decor", href: "/shop?category=decor" },
+    { label: "Carpets", href: "/shop?category=carpets" },
+    { label: "Curtains", href: "/shop?category=curtains" },
+    { label: "Prayer Mats", href: "/shop?category=prayer-mats" },
   ],
   Services: [
     { label: "Store Locator", href: "/stores" },
@@ -43,7 +42,7 @@ export function Footer() {
     <footer className="relative border-t border-navy/10 bg-navy pt-16 pb-6 text-white sm:pt-24 sm:pb-8">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red/50 to-transparent" />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <PageContainer className="relative">
         <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-4">
             <motion.div
@@ -136,7 +135,7 @@ export function Footer() {
             ))}
           </div>
         </div>
-      </div>
+      </PageContainer>
     </footer>
   );
 }

@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Footer } from "@/components/layout/Footer";
 
 export default async function ContentPage({
   params,
@@ -24,7 +23,6 @@ export default async function ContentPage({
         <h1 className="font-display text-4xl text-navy">Page</h1>
         <div className="prose prose-navy mt-8 max-w-none whitespace-pre-line text-muted">Content</div>
       </div>
-      <Footer />
     </div>
   );
 }

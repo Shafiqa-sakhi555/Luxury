@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { LoginForm } from "./LoginForm";
+import { AuthFormSkeleton } from "@/components/ui/page-skeletons";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -18,7 +19,7 @@ export default function LoginPage() {
           </Link>
           <p className="mt-2 text-sm text-muted">Sign in to your account</p>
         </div>
-        <Suspense fallback={<div className="h-64" />}>
+        <Suspense fallback={<AuthFormSkeleton />}>
           <LoginForm />
         </Suspense>
       </div>

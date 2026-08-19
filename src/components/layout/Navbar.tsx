@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Heart, Search, ShoppingBag, User, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo, BrandWordmark } from "@/components/brand/BrandLogo";
 import { useLogoIntro } from "@/contexts/LogoIntroContext";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { cn } from "@/lib/utils";
 import type { ShopNavCategory } from "@/components/layout/AppShell";
 
@@ -32,11 +34,20 @@ function pickFeaturedCategories(categories: ShopNavCategory[]) {
 }
 
 export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCategory[] }) {
+  const pathname = usePathname();
   const { showNavLogo, showNavLabel } = useLogoIntro();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(mobileMenuRef, mobileOpen, () => setMobileOpen(false));
+
+  function isActive(href: string) {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
 
   const collectionFeatured = useMemo(
     () => pickFeaturedCategories(shopCategories),
@@ -117,6 +128,7 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={isActive(link.href) ? "page" : undefined}
                 className="text-sm font-medium text-navy/75 transition-colors hover:text-red"
               >
                 {link.label}
@@ -131,7 +143,7 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
             >
               <button
                 onClick={() => setCollectionsOpen(!collectionsOpen)}
-                className="flex items-center gap-1 text-sm font-medium text-navy/75 transition-colors hover:text-red focus:outline-none"
+                className="flex items-center gap-1 text-sm font-medium text-navy/75 transition-colors hover:text-red"
                 aria-expanded={collectionsOpen}
                 aria-haspopup="true"
               >
@@ -216,6 +228,7 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={isActive(link.href) ? "page" : undefined}
                 className="text-sm font-medium text-navy/75 transition-colors hover:text-red"
               >
                 {link.label}
@@ -257,6 +270,10 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
+            ref={mobileMenuRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -279,10 +296,20 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
               </div>
 
               <div className="mt-10 flex flex-col gap-4 overflow-y-auto">
-                <Link href="/" onClick={() => setMobileOpen(false)} className="font-display text-2xl text-navy">
+                <Link
+                  href="/"
+                  onClick={() => setMobileOpen(false)}
+                  aria-current={isActive("/") ? "page" : undefined}
+                  className="font-display text-2xl text-navy"
+                >
                   Home
                 </Link>
-                <Link href="/shop" onClick={() => setMobileOpen(false)} className="font-display text-2xl text-navy">
+                <Link
+                  href="/shop"
+                  onClick={() => setMobileOpen(false)}
+                  aria-current={isActive("/shop") ? "page" : undefined}
+                  className="font-display text-2xl text-navy"
+                >
                   Shop
                 </Link>
                 <div className="ml-4 flex flex-col gap-2 border-l-2 border-red/20 pl-4">
@@ -309,6 +336,7 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
+                    aria-current={isActive(link.href) ? "page" : undefined}
                     className="font-display text-2xl text-navy"
                   >
                     {link.label}

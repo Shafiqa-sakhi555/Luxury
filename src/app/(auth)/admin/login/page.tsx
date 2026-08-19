@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { AdminLoginForm } from "./AdminLoginForm";
+import { AuthFormSkeleton } from "@/components/ui/page-skeletons";
 
 export const metadata: Metadata = {
   title: "Admin sign in",
@@ -21,7 +22,7 @@ export default function AdminLoginPage() {
             For Super Admin, Admin, and Finance accounts
           </p>
         </div>
-        <Suspense fallback={<div className="h-64" />}>
+        <Suspense fallback={<AuthFormSkeleton />}>
           <AdminLoginForm />
         </Suspense>
       </div>
