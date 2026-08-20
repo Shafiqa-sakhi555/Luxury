@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +15,9 @@ import type { AdminCategoryOption, AdminProductDetail } from "@/types/admin-cata
 import type { AdminProductImage } from "@/types/media";
 
 type FormValues = {
-  categoryId: string;
+  mainCategoryId: string;
+  sectionId: string;
+  colors: string;
   name: string;
   slug?: string;
   shortDescription?: string;
@@ -30,7 +32,9 @@ type FormValues = {
 };
 
 const productSchema = z.object({
-  categoryId: z.string().min(1, "Select a category"),
+  mainCategoryId: z.string().min(1, "Select a category"),
+  sectionId: z.string(),
+  colors: z.string(),
   name: z.string().min(2, "Name is required"),
   slug: z.string().optional(),
   shortDescription: z.string().optional(),
@@ -59,8 +63,14 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   const draftKeyRef = useRef(crypto.randomUUID());
   const isEdit = Boolean(product);
 
+  const initialCategory = product
+    ? { mainCategoryId: product.mainCategoryId, sectionId: product.sectionId }
+    : { mainCategoryId: "", sectionId: "" };
+
   const defaultValues: FormValues = {
-    categoryId: product?.categoryId ?? "",
+    mainCategoryId: initialCategory.mainCategoryId,
+    sectionId: initialCategory.sectionId,
+    colors: product?.colors ?? "",
     name: product?.name ?? "",
     slug: product?.slug ?? "",
     shortDescription: product?.shortDescription ?? "",
@@ -80,9 +90,31 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   });
 
   const watchName = form.watch("name");
-  const watchCategoryId = form.watch("categoryId");
-  const resolvedCategoryId = watchCategoryId || product?.categoryId || "";
-  const selectedCategory = categories.find((category) => category.id === resolvedCategoryId);
+  const watchMainCategoryId = form.watch("mainCategoryId");
+  const watchSectionId = form.watch("sectionId");
+
+  const mainCategories = useMemo(
+    () => categories.filter((category) => !category.parentId),
+    [categories]
+  );
+
+  const sectionOptions = useMemo(
+    () => categories.filter((category) => category.parentId === watchMainCategoryId),
+    [categories, watchMainCategoryId]
+  );
+
+  useEffect(() => {
+    if (!watchSectionId) return;
+    const sectionStillValid = sectionOptions.some((section) => section.id === watchSectionId);
+    if (!sectionStillValid) {
+      form.setValue("sectionId", "");
+    }
+  }, [form, sectionOptions, watchSectionId]);
+
+  const resolvedCategoryId = watchSectionId || watchMainCategoryId || product?.categoryId || "";
+  const selectedCategory =
+    categories.find((category) => category.id === resolvedCategoryId) ??
+    categories.find((category) => category.id === watchMainCategoryId);
   const categorySlug = selectedCategory?.slug ?? product?.categorySlug ?? null;
   const categoryId = resolvedCategoryId || null;
 
@@ -100,16 +132,29 @@ export function ProductForm({ categories, product }: ProductFormProps) {
       return;
     }
 
+    const categoryIdToSave = values.sectionId || values.mainCategoryId;
+    if (!categoryIdToSave) {
+      setError("Select a category.");
+      return;
+    }
+
     startTransition(async () => {
       const slug = values.slug?.trim() || slugify(values.name);
       const result = await saveProductAction({
         id: product?.id,
         values: {
-          ...values,
+          categoryId: categoryIdToSave,
+          colors: values.colors?.trim() ?? "",
+          name: values.name,
           slug,
           shortDescription: values.shortDescription ?? "",
           description: values.description ?? "",
           sku: values.sku ?? "",
+          originalPriceMajor: values.originalPriceMajor,
+          salePriceMajor: values.salePriceMajor,
+          stockQuantity: values.stockQuantity,
+          status: values.status,
+          isFeatured: values.isFeatured,
           sellingUnit: values.sellingUnit ?? "",
           images: currentImages,
           draftKey: draftKeyRef.current,
@@ -192,19 +237,63 @@ export function ProductForm({ categories, product }: ProductFormProps) {
 
         <div className="space-y-4">
           <AdminCard className="space-y-4 p-5">
-            <h2 className="text-sm font-semibold text-navy">Pricing & inventory</h2>
+            <h2 className="text-sm font-semibold text-navy">Classification</h2>
 
             <div>
-              <AdminLabel htmlFor="categoryId">Category</AdminLabel>
-              <AdminSelect id="categoryId" {...form.register("categoryId")}>
+              <AdminLabel htmlFor="mainCategoryId">Category</AdminLabel>
+              <AdminSelect id="mainCategoryId" {...form.register("mainCategoryId")}>
                 <option value="">Select category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
+                {mainCategories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
                   </option>
                 ))}
               </AdminSelect>
+              {form.formState.errors.mainCategoryId && (
+                <p className="mt-1 text-xs text-red">{form.formState.errors.mainCategoryId.message}</p>
+              )}
             </div>
+
+            <div>
+              <AdminLabel htmlFor="sectionId">Section</AdminLabel>
+              <AdminSelect
+                id="sectionId"
+                {...form.register("sectionId")}
+                disabled={!watchMainCategoryId || sectionOptions.length === 0}
+              >
+                <option value="">
+                  {!watchMainCategoryId
+                    ? "Select a category first"
+                    : sectionOptions.length === 0
+                      ? "No sections for this category"
+                      : "None (use main category)"}
+                </option>
+                {sectionOptions.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.name}
+                  </option>
+                ))}
+              </AdminSelect>
+              <p className="mt-1 text-xs text-muted">
+                Optional subcategory — create sections under Admin → Categories.
+              </p>
+            </div>
+
+            <div>
+              <AdminLabel htmlFor="colors">Colors</AdminLabel>
+              <AdminInput
+                id="colors"
+                {...form.register("colors")}
+                placeholder="e.g. Grey, Blue, Cream, White"
+              />
+              <p className="mt-1 text-xs text-muted">
+                Comma-separated list. The first color is used as the default variant color.
+              </p>
+            </div>
+          </AdminCard>
+
+          <AdminCard className="space-y-4 p-5">
+            <h2 className="text-sm font-semibold text-navy">Pricing & inventory</h2>
 
             <div>
               <AdminLabel htmlFor="sku">SKU</AdminLabel>

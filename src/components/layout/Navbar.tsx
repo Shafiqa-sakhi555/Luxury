@@ -20,39 +20,32 @@ const navLinks = [
   { label: "Contact", href: "/contact" },
 ];
 
-function pickFeaturedCategories(categories: ShopNavCategory[]) {
-  const preferred = ["carpets", "carpet", "furniture"];
-  const featured = categories.filter((category) =>
-    preferred.some(
-      (slug) =>
-        category.slug.toLowerCase() === slug || category.label.toLowerCase() === slug
-    )
-  );
-
-  if (featured.length >= 2) return featured.slice(0, 2);
-  return categories.slice(0, 2);
-}
+const COLLECTIONS_PANEL_ID = "collections-menu-panel";
 
 export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCategory[] }) {
   const pathname = usePathname();
   const { showNavLogo, showNavLabel } = useLogoIntro();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileCollectionsOpen, setMobileCollectionsOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   useFocusTrap(mobileMenuRef, mobileOpen, () => setMobileOpen(false));
 
+  const collectionFeatured = useMemo(() => shopCategories.slice(0, 2), [shopCategories]);
+
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  const collectionFeatured = useMemo(
-    () => pickFeaturedCategories(shopCategories),
-    [shopCategories]
-  );
+  function isCollectionsActive() {
+    return shopCategories.some(
+      (cat) => pathname === cat.href || pathname.startsWith(`${cat.href}/`)
+    );
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -68,10 +61,17 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
   }, [mobileOpen]);
 
   useEffect(() => {
+    setCollectionsOpen(false);
+    setMobileOpen(false);
+    setMobileCollectionsOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setMobileOpen(false);
         setCollectionsOpen(false);
+        setMobileCollectionsOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -142,10 +142,16 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
               onMouseLeave={() => setCollectionsOpen(false)}
             >
               <button
-                onClick={() => setCollectionsOpen(!collectionsOpen)}
-                className="flex items-center gap-1 text-sm font-medium text-navy/75 transition-colors hover:text-red"
+                type="button"
+                id="collections-menu-button"
+                aria-controls={COLLECTIONS_PANEL_ID}
                 aria-expanded={collectionsOpen}
                 aria-haspopup="true"
+                onClick={() => setCollectionsOpen((open) => !open)}
+                className={cn(
+                  "flex items-center gap-1 text-sm font-medium transition-colors hover:text-red",
+                  isCollectionsActive() ? "text-red" : "text-navy/75"
+                )}
               >
                 Collections
                 <ChevronDown
@@ -158,68 +164,78 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
 
               <AnimatePresence>
                 {collectionsOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute left-1/2 top-full z-55 mt-2 w-[520px] -translate-x-1/2 overflow-hidden rounded-2xl border border-navy/10 bg-white p-6 shadow-xl"
-                  >
-                    <div className="brand-accent-bar absolute inset-x-0 top-0" />
-                    {collectionFeatured.length > 0 && (
-                      <>
-                        <p className="relative mb-3 mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-red">
-                          Featured
-                        </p>
-                        <div className="relative mb-4 grid grid-cols-2 gap-2">
-                          {collectionFeatured.map((item) => (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              className="group rounded-xl bg-luxury-cream p-3 ring-1 ring-navy/8 transition-colors hover:bg-red/5 hover:ring-red/25"
-                              onClick={() => setCollectionsOpen(false)}
-                            >
-                              <span className="block text-sm font-semibold text-navy group-hover:text-red">
-                                {item.label}
-                              </span>
-                              {item.description ? (
-                                <span className="block text-[11px] text-muted">{item.description}</span>
-                              ) : null}
-                            </Link>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                    <p className="relative mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
-                      All Categories
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {shopCategories.map((category) => (
-                        <Link
-                          key={category.slug}
-                          href={category.href}
-                          className="group rounded-lg p-2 transition-colors hover:bg-luxury-cream"
-                          onClick={() => setCollectionsOpen(false)}
-                        >
-                          <span className="block text-sm font-semibold text-navy group-hover:text-red">
-                            {category.label}
-                          </span>
-                          {category.description ? (
-                            <span className="block text-[11px] text-muted line-clamp-1">
-                              {category.description}
-                            </span>
-                          ) : null}
-                        </Link>
-                      ))}
-                    </div>
-                    <Link
-                      href="/shop"
-                      className="mt-4 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-red hover:underline"
-                      onClick={() => setCollectionsOpen(false)}
+                  <div className="absolute left-1/2 top-full z-[60] w-[520px] -translate-x-1/2 pt-2">
+                    <motion.div
+                      id={COLLECTIONS_PANEL_ID}
+                      role="menu"
+                      aria-labelledby="collections-menu-button"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.18 }}
+                      className="overflow-hidden rounded-2xl border border-navy/10 bg-white p-6 shadow-xl"
                     >
-                      View Full Catalog
-                    </Link>
-                  </motion.div>
+                      <div className="brand-accent-bar absolute inset-x-0 top-0" />
+                      {collectionFeatured.length > 0 && (
+                        <>
+                          <p className="relative mb-3 mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-red">
+                            Featured
+                          </p>
+                          <div className="relative mb-4 grid grid-cols-2 gap-2">
+                            {collectionFeatured.map((item) => (
+                              <Link
+                                key={item.slug}
+                                href={item.href}
+                                role="menuitem"
+                                className="group rounded-xl bg-luxury-cream p-3 ring-1 ring-navy/8 transition-colors hover:bg-red/5 hover:ring-red/25"
+                                onClick={() => setCollectionsOpen(false)}
+                              >
+                                <span className="block text-sm font-semibold text-navy group-hover:text-red">
+                                  {item.label}
+                                </span>
+                                {item.description ? (
+                                  <span className="mt-1 block text-[11px] leading-snug text-muted">
+                                    {item.description}
+                                  </span>
+                                ) : null}
+                              </Link>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      <p className="relative mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
+                        All Collections
+                      </p>
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                        {shopCategories.map((category) => (
+                          <Link
+                            key={category.slug}
+                            href={category.href}
+                            role="menuitem"
+                            className="group rounded-lg p-2 transition-colors hover:bg-luxury-cream"
+                            onClick={() => setCollectionsOpen(false)}
+                          >
+                            <span className="block text-sm font-semibold text-navy group-hover:text-red">
+                              {category.label}
+                            </span>
+                            {category.description ? (
+                              <span className="mt-0.5 block text-[11px] leading-snug text-muted line-clamp-2">
+                                {category.description}
+                              </span>
+                            ) : null}
+                          </Link>
+                        ))}
+                      </div>
+                      <Link
+                        href="/shop"
+                        role="menuitem"
+                        className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-red hover:underline"
+                        onClick={() => setCollectionsOpen(false)}
+                      >
+                        View Full Catalog
+                      </Link>
+                    </motion.div>
+                  </div>
                 )}
               </AnimatePresence>
             </div>
@@ -304,33 +320,54 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
                 >
                   Home
                 </Link>
-                <Link
-                  href="/shop"
-                  onClick={() => setMobileOpen(false)}
-                  aria-current={isActive("/shop") ? "page" : undefined}
-                  className="font-display text-2xl text-navy"
-                >
-                  Shop
-                </Link>
-                <div className="ml-4 flex flex-col gap-2 border-l-2 border-red/20 pl-4">
-                  {shopCategories.map((category) => (
-                    <Link
-                      key={category.slug}
-                      href={category.href}
-                      onClick={() => setMobileOpen(false)}
-                      className="text-lg text-navy/75 hover:text-red"
-                    >
-                      {category.label}
-                    </Link>
-                  ))}
-                  <Link
-                    href="/shop"
-                    onClick={() => setMobileOpen(false)}
-                    className="text-sm font-medium text-red"
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setMobileCollectionsOpen((open) => !open)}
+                    aria-expanded={mobileCollectionsOpen}
+                    className="flex w-full items-center justify-between font-display text-2xl text-navy"
                   >
-                    View all categories
-                  </Link>
+                    Collections
+                    <ChevronDown
+                      className={cn(
+                        "h-5 w-5 text-navy/60 transition-transform",
+                        mobileCollectionsOpen && "rotate-180"
+                      )}
+                    />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {mobileCollectionsOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-3 ml-2 flex flex-col gap-2 border-l-2 border-red/20 pl-4">
+                          {shopCategories.map((category) => (
+                            <Link
+                              key={category.slug}
+                              href={category.href}
+                              onClick={() => setMobileOpen(false)}
+                              className="text-lg text-navy/75 hover:text-red"
+                            >
+                              {category.label}
+                            </Link>
+                          ))}
+                          <Link
+                            href="/shop"
+                            onClick={() => setMobileOpen(false)}
+                            className="text-sm font-medium text-red"
+                          >
+                            View full catalog
+                          </Link>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
+
                 {navLinks.slice(1).map((link) => (
                   <Link
                     key={link.href}
