@@ -7,7 +7,8 @@ import {
   listSupabaseProductsByCategorySlug,
 } from "@/server/catalog/supabase-products";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { formatCategoryLabel, normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
+import { formatCategoryLabel, normalizeCategorySlug, isDeprecatedCategorySlug, isSupabaseCatalogSlug } from "@/lib/supabase/catalog-categories";
+import { buildCanonicalShopCategories, buildCanonicalShopFilterCategories } from "@/lib/catalog/shop-categories";
 import { resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
 
 export type ProductListParams = {
@@ -150,25 +151,28 @@ export async function getRelatedProducts(slug: string, categorySlug: string) {
   return result.items.filter((p) => p.slug !== slug).slice(0, 4);
 }
 
+export async function listShopNavCategories() {
+  const rows = await listActiveShopCategories();
+  return buildCanonicalShopCategories(rows);
+}
+
 export async function listShopFilterCategories() {
   const rows = await listActiveShopCategories();
-  return rows.map((cat) => ({
-    label: cat.name,
-    href: `/shop?category=${encodeURIComponent(cat.slug)}`,
-    slug: cat.slug,
-    description: cat.description ?? "",
-  }));
+  return buildCanonicalShopFilterCategories(rows);
 }
 
 export async function listShopCategoryCards() {
   const rows = await listActiveShopCategories();
-  return rows.map((cat) => ({
-    slug: cat.slug,
-    title: cat.name,
-    description: cat.description ?? "",
-    href: `/shop?category=${encodeURIComponent(cat.slug)}`,
-    imageUrl: cat.image_url ?? null,
-  }));
+  return buildCanonicalShopCategories(rows).map((cat) => {
+    const db = rows.find((r) => (normalizeCategorySlug(r.slug) ?? r.slug) === cat.slug);
+    return {
+      slug: cat.slug,
+      title: cat.label,
+      description: cat.description,
+      href: cat.href,
+      imageUrl: db?.image_url ?? null,
+    };
+  });
 }
 
 async function listActiveShopCategories() {
@@ -181,7 +185,10 @@ async function listActiveShopCategories() {
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
 
-  return data ?? [];
+  return (data ?? []).filter((row) => {
+    const slug = normalizeCategorySlug(row.slug) ?? row.slug;
+    return !isDeprecatedCategorySlug(slug) && isSupabaseCatalogSlug(slug);
+  });
 }
 
 export async function resolveShopCategorySlug(inputSlug?: string | null) {

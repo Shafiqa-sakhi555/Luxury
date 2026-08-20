@@ -165,7 +165,9 @@ export async function adminListCategoryOptions(): Promise<AdminCategoryOption[]>
     const supabase = createSupabaseAdminClient();
     const { data } = await supabase
       .from("categories")
-      .select("id, name, slug")
+      .select("id, name, slug, parent_id")
+      .eq("is_active", true)
+      .order("sort_order")
       .order("name");
 
     for (const cat of data ?? []) {
@@ -173,6 +175,7 @@ export async function adminListCategoryOptions(): Promise<AdminCategoryOption[]>
         id: cat.id,
         name: cat.name,
         slug: cat.slug,
+        parentId: cat.parent_id ?? null,
       });
     }
   }
@@ -205,9 +208,11 @@ export async function adminGetProduct(
       has_variants,
       status,
       is_featured,
-      categories ( name, slug ),
+      categories ( name, slug, parent_id ),
       product_images ( image_url, cloudinary_public_id, alt_text, sort_order ),
-      inventory ( stock_quantity )
+      inventory ( stock_quantity ),
+      product_specifications ( spec_key, spec_value, sort_order ),
+      product_variants ( color, is_default )
     `
     )
     .eq("id", id)
@@ -216,6 +221,15 @@ export async function adminGetProduct(
   if (!data) return null;
 
   const category = unwrapRelation(data.categories as any);
+  const specs = asArray(data.product_specifications as Array<{ spec_key: string; spec_value: string }>);
+  const colorsSpec = specs.find((spec) => spec.spec_key === "colors")?.spec_value ?? "";
+  const variants = asArray(data.product_variants as Array<{ color: string | null; is_default: boolean }>);
+  const defaultVariant = variants.find((variant) => variant.is_default) ?? variants[0];
+  const colors = colorsSpec || defaultVariant?.color || "";
+
+  const parentId = category?.parent_id ?? null;
+  const mainCategoryId = parentId ?? data.category_id;
+  const sectionId = parentId ? data.category_id : "";
   const inventory = unwrapRelation(data.inventory as any);
   const images = asArray(data.product_images)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -234,6 +248,9 @@ export async function adminGetProduct(
   return {
     id: data.id,
     categoryId: data.category_id,
+    mainCategoryId,
+    sectionId,
+    colors,
     categoryName: category?.name ?? "",
     categorySlug: category?.slug ?? "",
     name: data.name,

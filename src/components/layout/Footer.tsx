@@ -12,9 +12,9 @@ import { company } from "@/lib/content";
 const footerColumns = {
   Shop: [
     { label: "All Collections", href: "/shop" },
-    { label: "Carpets", href: "/shop?category=carpets" },
-    { label: "Curtains", href: "/shop?category=curtains" },
-    { label: "Prayer Mats", href: "/shop?category=prayer-mats" },
+    { label: "Carpets & Rugs", href: "/categories/carpets" },
+    { label: "Curtains", href: "/categories/curtains" },
+    { label: "Prayer Mats", href: "/categories/prayer-mats" },
   ],
   Services: [
     { label: "Store Locator", href: "/stores" },

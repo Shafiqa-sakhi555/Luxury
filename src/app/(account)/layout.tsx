@@ -1,7 +1,8 @@
 import { AppShell } from "@/components/layout/AppShell";
 import { AccountNav } from "@/components/account/AccountNav";
 import { PageContainer } from "@/components/ui/page-container";
-import { listShopFilterCategories } from "@/server/catalog/products";
+import { listShopNavCategories } from "@/server/catalog/products";
+import { buildCanonicalShopCategories } from "@/lib/catalog/shop-categories";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function AccountLayout({
@@ -10,7 +11,7 @@ export default async function AccountLayout({
   children: React.ReactNode;
 }) {
   const [shopCategories, supabase] = await Promise.all([
-    listShopFilterCategories().catch(() => []),
+    listShopNavCategories().catch(() => buildCanonicalShopCategories()),
     createSupabaseServerClient(),
   ]);
   const {

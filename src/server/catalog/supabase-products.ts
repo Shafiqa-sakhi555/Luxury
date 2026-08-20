@@ -72,6 +72,11 @@ type SupabaseProductRow = {
     stock_status: string;
   }> | null;
   product_variants: SupabaseVariantRow[];
+  product_specifications?: Array<{
+    spec_key: string;
+    spec_value: string;
+    sort_order: number;
+  }>;
 };
 
 const PRODUCT_SELECT = `
@@ -134,6 +139,11 @@ const PRODUCT_SELECT = `
       sort_order,
       is_primary
     )
+  ),
+  product_specifications (
+    spec_key,
+    spec_value,
+    sort_order
   )
 `;
 
@@ -231,6 +241,14 @@ export async function mapSupabaseProduct(
     ? mapImages(row.product_images, null)
     : mapImages(row.product_images);
 
+  const specifications: CatalogProductSpec[] = [...(row.product_specifications ?? [])]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((spec) => ({
+      key: spec.spec_key,
+      value: spec.spec_value,
+      sortOrder: spec.sort_order,
+    }));
+
   return {
     id: row.id,
     source: "supabase",
@@ -251,7 +269,7 @@ export async function mapSupabaseProduct(
     isFeatured: row.is_featured,
     category,
     images: galleryImages.length > 0 ? galleryImages : defaultVariant?.images ?? [],
-    specifications: [],
+    specifications,
     stockQuantity: row.has_variants
       ? defaultVariant?.stockQuantity ?? null
       : inventory?.stock_quantity ?? null,
