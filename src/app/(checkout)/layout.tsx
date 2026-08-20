@@ -1,21 +1,22 @@
-import Link from "next/link";
-
+import { FlowSiteHeader } from "@/components/layout/FlowSiteHeader";
+import { CheckoutFooter } from "@/components/layout/CheckoutFooter";
+import { SkipLink } from "@/components/layout/SkipLink";
+import { PageContainer } from "@/components/ui/page-container";
 export default function CheckoutLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-brand-50 text-ink">
-      <header className="border-b border-navy/10 bg-white">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-          <Link href="/" className="font-display text-xl text-navy">
-            <span className="text-red">J</span>alal&apos;s
-          </Link>
-          <span className="text-sm text-muted">Secure checkout</span>
-        </div>
-      </header>
-      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+    <div className="pattern-carpet flex min-h-screen flex-col bg-brand-50 text-ink">
+      <SkipLink />
+      <FlowSiteHeader badge="Secure checkout" />
+      <main id="main-content" tabIndex={-1} className="flex-1">
+        <PageContainer width="narrow" className="py-8 sm:py-10">
+          {children}
+        </PageContainer>
+      </main>
+      <CheckoutFooter />
     </div>
   );
 }

@@ -34,25 +34,35 @@ export function CartActions({ itemId, quantity }: { itemId: string; quantity: nu
   }
 
   return (
-    <div className="mt-3 flex items-center gap-3">
+    <div className="mt-3 flex items-center gap-3" aria-busy={loading}>
       <button
         type="button"
         disabled={loading || qty <= 1}
         onClick={() => update(qty - 1)}
+        aria-label="Decrease quantity"
         className="h-8 w-8 rounded-full border border-navy/10 text-navy"
       >
         −
       </button>
-      <span className="w-6 text-center text-sm tabular-nums">{qty}</span>
+      <span className="w-6 text-center text-sm tabular-nums" aria-live="polite" aria-label="Quantity">
+        {qty}
+      </span>
       <button
         type="button"
         disabled={loading}
         onClick={() => update(qty + 1)}
+        aria-label="Increase quantity"
         className="h-8 w-8 rounded-full border border-navy/10 text-navy"
       >
         +
       </button>
-      <button type="button" disabled={loading} onClick={remove} className="text-xs text-red hover:underline">
+      <button
+        type="button"
+        disabled={loading}
+        onClick={remove}
+        aria-label="Remove item from cart"
+        className="text-xs text-red hover:underline"
+      >
         Remove
       </button>
     </div>

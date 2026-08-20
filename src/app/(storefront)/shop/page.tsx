@@ -1,10 +1,10 @@
-import Link from "next/link";
-import type { Metadata } from "next";
-import { listProducts, listShopFilterCategories, getCategoryBySlug, resolveShopCategorySlug } from "@/server/catalog/products";
+import type { Metadata } from "next";import { listProducts, listShopFilterCategories, getCategoryBySlug, resolveShopCategorySlug } from "@/server/catalog/products";
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { CatalogFilterPills } from "@/components/commerce/CatalogFilterPills";
+import { CatalogPagination } from "@/components/commerce/CatalogPagination";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { Footer } from "@/components/layout/Footer";
+import { PageContainer } from "@/components/ui/page-container";
+import { EmptyState } from "@/components/ui/empty-state";
 import { normalizeCategorySlug, formatCategoryLabel } from "@/lib/supabase/catalog-categories";
 
 export const revalidate = 60;
@@ -57,7 +57,7 @@ export default async function ShopPage({
     <div>
       <section className="relative overflow-hidden section-brand-light pt-28 pb-12 sm:pb-16">
         <div className="blob-red left-0 top-10 h-64 w-64 opacity-40" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <PageContainer className="relative">
           <SectionHeading
             eyebrow="Shop"
             title={activeCategory ? activeCategory.name : "Full Catalog"}
@@ -74,26 +74,26 @@ export default async function ShopPage({
               {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
             </p>
           )}
-        </div>
+        </PageContainer>
       </section>
 
-      <section className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+      <PageContainer className="relative py-10 sm:py-12">
         <CatalogFilterPills
           items={filterItems}
           activeSlug={resolvedCategorySlug ?? params.category}
         />
 
         {items.length === 0 ? (
-          <div className="mt-10 rounded-2xl border border-navy/10 bg-white p-12 text-center shadow-sm ring-1 ring-navy/5">
-            <p className="font-display text-xl text-navy">No products found</p>
-            <p className="mt-2 text-muted">Try another category or browse our full collection.</p>
-            <Link
-              href="/shop"
-              className="mt-6 inline-flex rounded-full bg-red px-6 py-2.5 text-sm font-medium text-white transition hover:bg-red/90"
-            >
-              View all products
-            </Link>
-          </div>
+          <EmptyState
+            className="mt-10 surface-card"
+            title={params.q ? "No matching products" : "No products found"}
+            description={
+              params.q
+                ? `We couldn't find results for "${params.q}". Try another search or browse categories.`
+                : "Try another category or browse our full collection."
+            }
+            action={{ label: "View all products", href: "/shop" }}
+          />
         ) : (
           <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
             {items.map((product, i) => (
@@ -108,31 +108,20 @@ export default async function ShopPage({
         )}
 
         {totalPages > 1 && (
-          <div className="mt-12 flex flex-wrap justify-center gap-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+          <CatalogPagination
+            className="mt-12"
+            page={page}
+            totalPages={totalPages}
+            buildHref={(p) => {
               const query = new URLSearchParams();
               if (params.category) query.set("category", params.category);
               if (params.q) query.set("q", params.q);
               if (p > 1) query.set("page", String(p));
-              const href = query.size ? `/shop?${query.toString()}` : "/shop";
-              return (
-                <Link
-                  key={p}
-                  href={href}
-                  className={`rounded-full px-4 py-2 text-sm transition ${
-                    p === page
-                      ? "bg-red font-medium text-white shadow-md shadow-red/20"
-                      : "border border-navy/10 bg-white text-navy/70 hover:border-red/30 hover:bg-red/5"
-                  }`}
-                >
-                  {p}
-                </Link>
-              );
-            })}
-          </div>
+              return query.size ? `/shop?${query.toString()}` : "/shop";
+            }}
+          />
         )}
-      </section>
-      <Footer />
+      </PageContainer>
     </div>
   );
 }

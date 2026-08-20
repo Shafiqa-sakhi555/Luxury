@@ -2,8 +2,29 @@ import Link from "next/link";
 import { adminListOrders } from "@/server/orders";
 import { requireAdminPageAccess } from "@/server/admin/page-access";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
-import { AdminBadge } from "@/components/admin/ui";
+import {
+  AdminTable,
+  AdminTableHeader,
+  AdminTableBody,
+  AdminTableRow,
+  AdminTableHead,
+  AdminTableCell,
+  AdminTableEmpty,
+  AdminTableToolbar,
+  AdminPagination,
+  OrderStatusBadge,
+  AdminFilterPills,
+  orderStatusFilterItems,
+} from "@/components/admin/ui";
 import { formatMoney } from "@/lib/money";
+
+function buildOrdersHref(page: number, status?: string) {
+  const query = new URLSearchParams();
+  if (status) query.set("status", status);
+  if (page > 1) query.set("page", String(page));
+  const qs = query.toString();
+  return qs ? `/admin/orders?${qs}` : "/admin/orders";
+}
 
 export default async function AdminOrdersPage({
   searchParams,
@@ -11,56 +32,88 @@ export default async function AdminOrdersPage({
   searchParams: Promise<{ page?: string; status?: string }>;
 }) {
   const params = await searchParams;
+  const page = Number(params.page ?? 1);
+  const status = params.status;
+
   await requireAdminPageAccess("order.read");
   const result = await adminListOrders({
-    page: Number(params.page ?? 1),
-    status: params.status,
+    page,
+    status,
   }).catch(() => ({ items: [], total: 0, page: 1, pageSize: 25, totalPages: 0 }));
 
   return (
     <div>
       <AdminPageHeader title="Orders" description="Manage fulfilment and order status transitions" />
+
+      <AdminCard className="mb-4 p-4">
+        <AdminFilterPills items={orderStatusFilterItems(status)} activeValue={status} />
+      </AdminCard>
+
       <AdminCard className="overflow-hidden">
-        <table className="min-w-full text-sm">
-          <thead className="border-b border-navy/10 bg-[#FAFBFD] text-left text-xs uppercase tracking-wide text-muted">
+        <AdminTableToolbar>
+          <p className="text-sm text-muted">
+            {result.total} order{result.total === 1 ? "" : "s"}
+            {status ? ` · ${status.replace(/_/g, " ").toLowerCase()}` : ""}
+          </p>
+        </AdminTableToolbar>
+
+        <AdminTable>
+          <AdminTableHeader>
             <tr>
-              <th className="px-4 py-3">Order</th>
-              <th className="px-4 py-3">Customer</th>
-              <th className="px-4 py-3">Total</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3" />
+              <AdminTableHead>Order</AdminTableHead>
+              <AdminTableHead>Customer</AdminTableHead>
+              <AdminTableHead>Total</AdminTableHead>
+              <AdminTableHead>Status</AdminTableHead>
+              <AdminTableHead align="right"> </AdminTableHead>
             </tr>
-          </thead>
-          <tbody>
+          </AdminTableHeader>
+          <AdminTableBody>
             {result.items.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-muted">
-                  No orders yet.
-                </td>
-              </tr>
+              <AdminTableEmpty
+                colSpan={5}
+                title="No orders found"
+                description={
+                  status
+                    ? `No orders with status "${status.replace(/_/g, " ").toLowerCase()}".`
+                    : "Orders will appear here when customers complete checkout."
+                }
+                action={status ? { label: "View all orders", href: "/admin/orders" } : undefined}
+              />
             ) : (
-              result.items.map((order: any) => (
-                <tr key={order.id} className="border-b border-navy/5">
-                  <td className="px-4 py-3 font-medium text-navy">{order.order_number}</td>
-                  <td className="px-4 py-3 text-muted">
+              result.items.map((order: {
+                id: string;
+                order_number: string;
+                total_minor: number;
+                status: string;
+                customers?: { profiles?: { name?: string | null; email?: string | null } | null } | null;
+              }) => (
+                <AdminTableRow key={order.id}>
+                  <AdminTableCell className="font-medium text-navy">{order.order_number}</AdminTableCell>
+                  <AdminTableCell className="text-muted">
                     {order.customers?.profiles?.name ?? order.customers?.profiles?.email ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 tabular-nums">{formatMoney(order.total_minor)}</td>
-                  <td className="px-4 py-3">
-                    <AdminBadge tone={order.status === "PENDING" ? "warning" : "default"}>
-                      {order.status}
-                    </AdminBadge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link href={`/admin/orders/${order.id}`} className="text-navy hover:underline">
+                  </AdminTableCell>
+                  <AdminTableCell className="tabular-nums">{formatMoney(order.total_minor)}</AdminTableCell>
+                  <AdminTableCell>
+                    <OrderStatusBadge status={order.status} />
+                  </AdminTableCell>
+                  <AdminTableCell align="right">
+                    <Link href={`/admin/orders/${order.id}`} className="font-medium text-navy hover:underline">
                       View
                     </Link>
-                  </td>
-                </tr>
+                  </AdminTableCell>
+                </AdminTableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </AdminTableBody>
+        </AdminTable>
+
+        <AdminPagination
+          page={result.page}
+          totalPages={result.totalPages}
+          total={result.total}
+          pageSize={result.pageSize}
+          buildHref={(p) => buildOrdersHref(p, status)}
+        />
       </AdminCard>
     </div>
   );

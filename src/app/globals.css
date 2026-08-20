@@ -10,6 +10,7 @@
 @import "@fontsource/dm-sans/700.css";
 
 @theme inline {
+  /* —— Brand —— */
   --color-navy: #241c6b;
   --color-red: #d71920;
   --color-luxury-cream: #f8f5f2;
@@ -17,16 +18,38 @@
   --color-blue: #3b6fe0;
   --color-cyan: #29c4e8;
   --color-white: #ffffff;
-  --color-mist: #f7f9fc;
-  --color-slate: #c9cdd6;
+
+  /* —— Semantic surfaces —— */
+  --color-background: #e8ecf5;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f7f9fc;
+  --color-surface-dark: #0e1024;
+  --color-surface-card: #161a38;
+  --color-surface-elevated: #1e2348;
+
+  /* —— Semantic text —— */
   --color-ink: #111827;
   --color-muted: #6b7280;
+  --color-text-on-dark: #f8f5f2;
 
-  /* Legacy aliases mapped to brand tokens for gradual migration */
+  /* —— Semantic borders —— */
+  --color-border: rgba(36, 28, 107, 0.1);
+  --color-border-strong: rgba(36, 28, 107, 0.18);
+
+  /* —— Status —— */
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-info: #3b6fe0;
+
+  /* —— Legacy / aliases (prefer semantic tokens in new code) —— */
+  --color-mist: #f7f9fc;
+  --color-slate: #c9cdd6;
   --color-midnight: #241c6b;
-  --color-royal: #ee1c25;
-  --color-gold: #ee1c25;
-  --color-ivory: #241c6b;
+  --color-royal: #d71920;
+  --color-gold: #d71920;
+  --color-accent: #d71920;
+  --color-ivory: #f8f5f2;
   --color-emerald: #059669;
   --color-maroon: #7f1d1d;
   --color-glass: rgba(255, 255, 255, 0.72);
@@ -35,12 +58,26 @@
   --color-brand-100: #d4daf0;
   --color-brand-200: #b8c2e8;
   --color-ink-deep: #070818;
-  --color-surface-dark: #0e1024;
-  --color-surface-card: #161a38;
-  --color-surface-elevated: #1e2348;
 
+  /* —— Layout —— */
+  --container-max: 80rem;
+  --section-py-sm: 4rem;
+  --section-py-md: 5rem;
+  --section-py-lg: 6rem;
+  --radius-card: 1rem;
+  --radius-input: 0.75rem;
+  --radius-button: 9999px;
+
+  /* —— Typography —— */
   --font-display: "Cormorant Garamond", Georgia, serif;
   --font-body: "DM Sans", system-ui, sans-serif;
+  --text-display: clamp(2rem, 4vw, 3.5rem);
+  --text-h1: clamp(1.875rem, 3vw, 3rem);
+  --text-h2: clamp(1.5rem, 2.5vw, 2.25rem);
+  --text-h3: clamp(1.25rem, 2vw, 1.5rem);
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-caption: 0.75rem;
 }
 
 @layer base {
@@ -81,9 +118,58 @@
   ::selection {
     @apply bg-violet/20 text-navy;
   }
+
+  :focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--color-violet) 40%, transparent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    .animate-float,
+    .animate-float-delayed,
+    .skeleton,
+    .promo-marquee {
+      animation: none !important;
+    }
+  }
 }
 
 @layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: 1rem;
+    top: 1rem;
+    z-index: 200;
+    border-radius: 0.5rem;
+    background: var(--color-navy);
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transform: translateY(-200%);
+    transition: transform 0.2s ease;
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
   .glass {
     @apply border border-glass-border bg-glass backdrop-blur-xl shadow-sm;
   }
@@ -341,6 +427,101 @@
 
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  /* —— Phase 1: layout & typography utilities —— */
+  .page-container {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .page-container-narrow {
+    @apply mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-spacing-sm {
+    @apply py-16 sm:py-20;
+  }
+
+  .section-spacing-md {
+    @apply py-20 sm:py-28;
+  }
+
+  .section-spacing-lg {
+    @apply py-24 sm:py-32 md:py-40;
+  }
+
+  .text-display {
+    font-family: var(--font-display), Georgia, serif;
+    font-size: var(--text-display);
+    font-weight: 300;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+
+  .text-h1 {
+    font-family: var(--font-display), Georgia, serif;
+    font-size: var(--text-h1);
+    font-weight: 300;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .text-h2 {
+    font-family: var(--font-display), Georgia, serif;
+    font-size: var(--text-h2);
+    font-weight: 400;
+    line-height: 1.2;
+  }
+
+  .text-h3 {
+    font-family: var(--font-display), Georgia, serif;
+    font-size: var(--text-h3);
+    font-weight: 400;
+    line-height: 1.25;
+  }
+
+  .text-body {
+    font-size: var(--text-body);
+    line-height: 1.65;
+  }
+
+  .text-caption {
+    font-size: var(--text-caption);
+    line-height: 1.5;
+  }
+
+  .surface-card {
+    @apply rounded-2xl border border-navy/10 bg-white shadow-sm shadow-navy/5;
+  }
+
+  .surface-muted {
+    @apply rounded-2xl border border-navy/8 bg-mist;
+  }
+
+  /* —— Jalal Assistance —— */
+  .assistant-shell {
+    @apply border border-white/10 bg-surface-dark text-text-on-dark shadow-2xl shadow-navy/40;
+  }
+
+  .assistant-header {
+    background: linear-gradient(135deg, #241c6b 0%, #1a1550 55%, #161a38 100%);
+    @apply border-b border-white/10;
+  }
+
+  .assistant-bubble-user {
+    @apply bg-red text-white shadow-md shadow-red/20;
+  }
+
+  .assistant-bubble-bot {
+    @apply bg-white/10 text-text-on-dark ring-1 ring-white/10;
+  }
+
+  .assistant-chip {
+    @apply rounded-full border border-white/15 bg-white/5 text-white/70 transition hover:border-cyan/35 hover:bg-white/10 hover:text-white;
+  }
+
+  .assistant-input {
+    @apply rounded-xl border border-white/12 bg-white/8 text-text-on-dark placeholder:text-white/35 outline-none focus-visible:ring-2 focus-visible:ring-cyan/30;
   }
 }
 

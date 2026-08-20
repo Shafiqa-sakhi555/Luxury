@@ -42,10 +42,10 @@ export function PropertiesShowcase({
   }, [activeSlug, products]);
 
   return (
-    <section id="products" className="relative overflow-hidden section-brand-light py-16 sm:py-24">
+    <section id="products" className="relative overflow-hidden section-brand-light section-spacing-md">
       <div className="blob-red left-0 top-10 h-64 w-64 opacity-50" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="relative page-container">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <SectionHeading
             eyebrow="Weekly Bestsellers"

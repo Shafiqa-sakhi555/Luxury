@@ -44,6 +44,11 @@ export function ProductGallery({
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"
         />
+        {sorted.length > 1 ? (
+          <span className="absolute bottom-3 right-3 rounded-full bg-ink/65 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
+            {activeIndex + 1} / {sorted.length}
+          </span>
+        ) : null}
       </div>
 
       {sorted.length > 1 && (

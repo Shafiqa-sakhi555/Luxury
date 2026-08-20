@@ -10,10 +10,15 @@ import { formatMoney } from "@/lib/money";
 import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { StockBadge } from "@/components/commerce/StockBadge";
 import { toast } from "sonner";
 
 function productSubtitle(product: CatalogProduct) {
   return [product.sellingUnit, product.size].filter(Boolean).join(" · ");
+}
+
+function isInStock(status: CatalogProduct["stockStatus"]) {
+  return status === "in_stock" || status === "unknown" || status === null;
 }
 
 export function ProductCard({
@@ -35,6 +40,7 @@ export function ProductCard({
 
   const hasDiscount = product.originalPriceMinor > product.salePriceMinor;
   const subtitle = productSubtitle(product);
+  const inStock = isInStock(product.stockStatus);
 
   async function addToCart(e: React.MouseEvent) {
     e.preventDefault();
@@ -98,6 +104,11 @@ export function ProductCard({
                 Featured
               </span>
             )}
+            {!inStock && (
+              <span className="rounded-md bg-navy/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                Sold out
+              </span>
+            )}
           </div>
 
           <button
@@ -150,14 +161,16 @@ export function ProductCard({
               </span>
             )}
           </div>
-          {product.stockStatus === "in_stock" && (
-            <span className="text-[10px] font-medium uppercase tracking-wide text-emerald sm:text-[11px]">
-              In stock
+          {inStock ? (
+            <StockBadge status={product.stockStatus} className="scale-90 origin-right" />
+          ) : (
+            <span className="text-[10px] font-medium uppercase tracking-wide text-navy/50 sm:text-[11px]">
+              Unavailable
             </span>
           )}
         </div>
 
-        {product.variantId && !product.hasVariants ? (
+        {product.variantId && !product.hasVariants && inStock ? (
           <Button
             type="button"
             variant="default"
@@ -170,12 +183,11 @@ export function ProductCard({
             {adding ? "Adding..." : "Add to Cart"}
           </Button>
         ) : (
-          <Link
-            href={`/products/${product.slug}`}
-            className="mt-3 block rounded-full border border-navy/10 py-2 text-center text-xs font-medium text-navy transition hover:border-red/30 hover:bg-red/5"
-          >
-            {product.hasVariants ? "Choose options" : "View product"}
-          </Link>
+          <Button asChild variant="secondary" size="sm" className="mt-3 w-full">
+            <Link href={`/products/${product.slug}`}>
+              {product.hasVariants ? "Choose options" : "View product"}
+            </Link>
+          </Button>
         )}
       </div>
     </motion.article>

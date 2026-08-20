@@ -4,7 +4,12 @@ export type AssistantToolName =
   | "check_stock"
   | "get_branches"
   | "search_faq"
-  | "get_policy";
+  | "get_policy"
+  | "design_consultation"
+  | "get_my_orders"
+  | "get_order_status"
+  | "get_my_cart"
+  | "request_handoff";
 
 export type ToolResult = {
   tool: AssistantToolName;
@@ -14,5 +19,8 @@ export type ToolResult = {
 
 export type ToolContext = {
   message: string;
+  messages?: Array<{ role: "user" | "assistant"; content: string }>;
   slug?: string;
+  sessionKey?: string;
+  userContext?: import("../context").AssistantUserContext;
 };

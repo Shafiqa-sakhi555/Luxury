@@ -9,8 +9,8 @@ import { SectionHeading } from "@/components/shared/SectionHeading";
 
 export function ShopStylesSection() {
   return (
-    <section className="relative section-brand-light py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="relative section-brand-light section-spacing-md">
+      <div className="page-container">
         <SectionHeading
           eyebrow="More To Explore"
           title="Your Imagination, Our Craftsmanship"

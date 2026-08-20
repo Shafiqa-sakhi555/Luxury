@@ -93,23 +93,14 @@ export function AdminLabel({
   );
 }
 
-export function AdminBadge({
-  children,
-  tone = "default",
-}: {
-  children: React.ReactNode;
-  tone?: "default" | "success" | "warning" | "danger" | "muted";
-}) {
-  const tones = {
-    default: "bg-navy/10 text-navy",
-    success: "bg-emerald/10 text-emerald",
-    warning: "bg-amber-100 text-amber-800",
-    danger: "bg-red/10 text-red",
-    muted: "bg-navy/5 text-muted",
-  };
-  return (
-    <span className={cn("inline-flex rounded-md px-2 py-0.5 text-xs font-medium", tones[tone])}>
-      {children}
-    </span>
-  );
-}
+export { AdminBadge, type AdminBadgeTone } from "./AdminBadge";
+export { AdminTable, AdminTableHeader, AdminTableBody, AdminTableRow, AdminTableHead, AdminTableCell, AdminTableEmpty, AdminTableToolbar } from "./AdminTable";
+export { AdminPagination } from "./AdminPagination";
+export { AdminFilterPills, orderStatusFilterItems, handoffStatusFilterItems } from "./AdminFilterPills";
+export {
+  OrderStatusBadge,
+  ProductStatusBadge,
+  StockStatusBadge,
+  HandoffStatusBadge,
+  AdminStatusBadge,
+} from "./AdminStatusBadges";

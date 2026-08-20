@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,21 +11,21 @@ import { toast } from "sonner";
 import { ImageUploader } from "@/components/admin/media/ImageUploader";
 import type { AdminHeroImage } from "@/types/media";
 import {
-  AdminBadge,
   AdminButton,
   AdminInput,
   AdminLabel,
   AdminSelect,
   AdminTextarea,
+  ProductStatusBadge,
 } from "@/components/admin/ui";
 import { AdminCard, AdminPageHeader } from "@/components/admin/layout/AdminPageHeader";
 import { saveCategoryAction, removeCategoryAction } from "@/server/catalog/admin-category-actions";
 import { slugify } from "@/lib/slug";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import type {
   AdminCategoryChildRow,
   AdminCategoryFormValues,
   AdminCategoryRow,
-  AdminCategoryStatus,
 } from "@/types/admin-category";
 
 const categorySchema = z.object({
@@ -43,12 +43,6 @@ type CategoryManagerProps = {
   categories: AdminCategoryRow[];
 };
 
-function statusTone(status: AdminCategoryStatus) {
-  if (status === "ACTIVE") return "success" as const;
-  if (status === "DRAFT") return "warning" as const;
-  return "muted" as const;
-}
-
 function CategoryFormModal({
   open,
   onClose,
@@ -62,7 +56,10 @@ function CategoryFormModal({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const dialogRef = useRef<HTMLDivElement>(null);
   const isEdit = Boolean(category);
+
+  useFocusTrap(dialogRef, open, onClose);
 
   const [heroImage, setHeroImage] = useState<AdminHeroImage>(null);
 
@@ -137,6 +134,7 @@ function CategoryFormModal({
         onClick={onClose}
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="category-form-title"
@@ -379,7 +377,7 @@ export function CategoryManager({ categories }: CategoryManagerProps) {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium text-navy">{category.name}</p>
-                    <AdminBadge tone={statusTone(category.status)}>{category.status}</AdminBadge>
+                    <ProductStatusBadge status={category.status} />
                   </div>
                   <p className="text-xs text-muted">
                     /{category.slug} · {category.productCount} products · sort {category.sortOrder}
@@ -398,7 +396,7 @@ export function CategoryManager({ categories }: CategoryManagerProps) {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-medium text-navy">{child.name}</span>
-                          <AdminBadge tone={statusTone(child.status)}>{child.status}</AdminBadge>
+                          <ProductStatusBadge status={child.status} />
                         </div>
                         <p className="text-xs text-muted">
                           /{child.slug} · {child.productCount} products · sort {child.sortOrder}

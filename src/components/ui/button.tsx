@@ -10,11 +10,16 @@ const buttonVariants = cva(
       variant: {
         default:
           "bg-red text-white hover:bg-red/90 shadow-lg shadow-red/20",
+        accent:
+          "gradient-gold text-white font-semibold hover:opacity-90 shadow-lg shadow-red/20",
+        /** @deprecated Use `accent` instead */
         gold: "gradient-gold text-white font-semibold hover:opacity-90 shadow-lg shadow-red/20",
         outline:
           "border border-navy/15 bg-transparent text-navy hover:bg-mist hover:border-blue/30",
         ghost: "text-navy/70 hover:text-navy hover:bg-mist",
         glass: "glass text-navy hover:bg-white",
+        secondary:
+          "border border-navy/15 bg-white text-navy hover:bg-mist",
       },
       size: {
         default: "h-10 px-5 py-2 sm:h-11 sm:px-6",

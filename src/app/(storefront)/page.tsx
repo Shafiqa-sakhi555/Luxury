@@ -1,16 +1,15 @@
 import { HeroSection } from "@/components/sections/HeroSection";
 import { HeroStatsSection } from "@/components/sections/HeroStatsSection";
 import { FeaturedCategoriesSection } from "@/components/sections/FeaturedCategoriesSection";
+import { PropertiesShowcase } from "@/components/sections/PropertiesShowcase";
 import { WhyChooseUsSection } from "@/components/sections/WhyChooseUsSection";
 import { SocialProofStrip } from "@/components/sections/SocialProofStrip";
-import { CollectionsStrip } from "@/components/sections/CollectionsStrip";
-import { PropertiesShowcase } from "@/components/sections/PropertiesShowcase";
+import { JalalAssistanceSection } from "@/components/sections/JalalAssistanceSection";
 import { ShopStylesSection } from "@/components/sections/ShopStylesSection";
 import { WhyJalals } from "@/components/sections/WhyJalals";
 import { FounderPreviewSection } from "@/components/sections/FounderPreviewSection";
 import { FeaturedDestinations } from "@/components/sections/FeaturedDestinations";
 import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
-import { Footer } from "@/components/layout/Footer";
 import { homeJsonLd } from "@/lib/seo";
 import { listProducts, listShopFilterCategories, listShopCategoryCards } from "@/server/catalog/products";
 
@@ -41,9 +40,6 @@ export default async function HomePage() {
       <HeroSection />
       <HeroStatsSection />
       <FeaturedCategoriesSection categories={categoryCards} />
-      <WhyChooseUsSection />
-      <SocialProofStrip />
-      <CollectionsStrip />
       <PropertiesShowcase
         products={showcaseProducts}
         filterCategories={filterCategories.map((category) => ({
@@ -51,12 +47,14 @@ export default async function HomePage() {
           slug: category.slug,
         }))}
       />
+      <WhyChooseUsSection />
+      <SocialProofStrip />
+      <JalalAssistanceSection />
       <ShopStylesSection />
       <WhyJalals />
       <FounderPreviewSection />
       <FeaturedDestinations />
       <TestimonialsSection />
-      <Footer />
     </div>
   );
 }
