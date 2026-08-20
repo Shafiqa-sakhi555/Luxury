@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { InfoPage } from "@/lib/infoPages";
-import { Footer } from "@/components/layout/Footer";
 
 export function InfoPageView({ page }: { page: InfoPage }) {
   return (
@@ -35,7 +34,6 @@ export function InfoPageView({ page }: { page: InfoPage }) {
           ))}
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Quote } from "lucide-react";
-import { Footer } from "@/components/layout/Footer";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { TimelineCard } from "@/components/shared/TimelineCard";
 import { resolveTimelineMedia } from "@/lib/timeline";
@@ -243,8 +242,6 @@ export function AboutPageContent() {
           </div>
         </section>
       </div>
-
-      <Footer />
     </>
   );
 }

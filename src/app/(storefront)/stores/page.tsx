@@ -11,8 +11,8 @@ import {
   TOTAL_BRANCHES,
   type Branch,
 } from "@/lib/branches";
-import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
+import { OpenAssistantButton } from "@/components/assistant/OpenAssistantButton";
 
 export const metadata: Metadata = {
   title: "Store Locator",
@@ -162,7 +162,13 @@ export default function StoresPage() {
             Book a free consultation or send us a message — we respond within one business day.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-4">
-            <Button asChild>
+            <OpenAssistantButton
+              prompt="I'd like a free design consultation for my home"
+              size="lg"
+            >
+              Book free consultation
+            </OpenAssistantButton>
+            <Button asChild variant="outline">
               <Link href="/contact">Contact us</Link>
             </Button>
             <Button asChild variant="outline">
@@ -171,8 +177,6 @@ export default function StoresPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

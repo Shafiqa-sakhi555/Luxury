@@ -16,6 +16,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/admin/orders", label: "Orders", permissions: ["order.read"] },
   { href: "/admin/inventory", label: "Inventory", permissions: ["inventory.read"] },
   { href: "/admin/customers", label: "Customers", permissions: ["customer.read"] },
+  { href: "/admin/assistant", label: "Assistant", permissions: ["customer.read"] },
   { href: "/admin/settings", label: "Settings", permissions: ["*"] },
 ];
 
@@ -26,6 +27,7 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, string[]> = {
   "/admin/orders": ["order.read"],
   "/admin/inventory": ["inventory.read"],
   "/admin/customers": ["customer.read"],
+  "/admin/assistant": ["customer.read"],
   "/admin/settings": ["*"],
 };
 

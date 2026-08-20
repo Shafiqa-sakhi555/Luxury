@@ -62,7 +62,7 @@ export async function getDashboardSummary() {
     total: 0,
   }));
 
-  const [{ count: lowProductStock }, { count: lowVariantStock }] = await Promise.all([
+  const [{ count: lowProductStock }, { count: lowVariantStock }, pendingHandoffs] = await Promise.all([
     supabase
       .from("inventory")
       .select("id", { count: "exact", head: true })
@@ -71,7 +71,22 @@ export async function getDashboardSummary() {
       .from("product_variant_inventory")
       .select("id", { count: "exact", head: true })
       .or("stock_quantity.lte.5,stock_quantity.is.null"),
+    supabase
+      .from("assistant_handoff_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "PENDING")
+      .then(({ count, error }) => {
+        if (error) return 0;
+        return count ?? 0;
+      }),
   ]);
+
+  // recent handoffs
+  const { data: recentHandoffs } = await supabase
+    .from("assistant_handoff_requests")
+    .select("id, issue_summary, status, contact_name, contact_email, created_at")
+    .order("created_at", { ascending: false })
+    .limit(5);
 
   return {
     products: productCounts,
@@ -79,6 +94,8 @@ export async function getDashboardSummary() {
     customers: customerCount ?? 0,
     revenueMinor,
     lowStockCount: (lowProductStock ?? 0) + (lowVariantStock ?? 0),
+    pendingHandoffs,
     recentOrders: recentOrders ?? [],
+    recentHandoffs: recentHandoffs ?? [],
   };
 }

@@ -15,6 +15,7 @@ import {
   Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { OpenAssistantButton } from "@/components/assistant/OpenAssistantButton";
 import { MagneticButton } from "@/components/shared/MagneticButton";
 import { TextReveal } from "@/components/shared/TextReveal";
 import { categories } from "@/lib/categories";
@@ -48,8 +49,9 @@ export function HeroSection() {
           className="object-cover object-center"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-ink/70 via-ink/45 to-luxury-cream/95" />
-        <div className="absolute inset-0 bg-gradient-to-r from-ink/50 via-transparent to-white/30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-ink/85 via-ink/70 to-ink/75" />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink/60 via-ink/25 to-ink/40" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(15,15,20,0.45)_100%)]" />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-36 pb-12 sm:px-6 sm:pt-40 sm:pb-16 lg:px-8 lg:pb-20">
@@ -59,7 +61,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: d }}
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white backdrop-blur-md sm:text-xs">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-ink/40 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white shadow-sm backdrop-blur-md sm:text-xs">
               <MapPin className="h-3.5 w-3.5 text-red" aria-hidden />
               {heroContent.badge}
             </span>
@@ -68,7 +70,7 @@ export function HeroSection() {
           <div className="mt-6 sm:mt-8">
             <TextReveal
               as="h1"
-              className="font-display text-[1.75rem] font-light leading-[1.15] tracking-tight text-white text-balance sm:text-4xl md:text-5xl lg:text-6xl xl:text-[3.5rem]"
+              className="font-display text-[1.75rem] font-light leading-[1.15] tracking-tight text-white text-balance drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)] sm:text-4xl md:text-5xl lg:text-6xl xl:text-[3.5rem]"
               delay={d + 0.15}
             >
               {heroContent.headline}
@@ -79,7 +81,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.75, delay: d + 0.45 }}
-            className="mx-auto mt-6 max-w-2xl text-sm leading-[1.75] text-white/88 sm:mt-8 sm:text-base md:text-lg"
+            className="mx-auto mt-6 max-w-2xl text-sm leading-[1.75] text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)] sm:mt-8 sm:text-base md:text-lg"
           >
             {heroContent.subtitle}
           </motion.p>
@@ -103,14 +105,14 @@ export function HeroSection() {
                 </Link>
               </Button>
             </MagneticButton>
-            <Button
-              asChild
+            <OpenAssistantButton
               variant="outline"
               size="lg"
-              className="min-w-[200px] border-white/50 bg-transparent text-white transition-all hover:scale-[1.02] hover:border-white hover:bg-white/10 hover:text-white"
+              prompt={heroContent.secondaryCta.prompt}
+              className="min-w-[200px] border-white/80 bg-white/95 font-medium text-ink shadow-lg transition-all hover:scale-[1.02] hover:border-white hover:bg-white hover:text-ink"
             >
-              <Link href={heroContent.secondaryCta.href}>{heroContent.secondaryCta.label}</Link>
-            </Button>
+              {heroContent.secondaryCta.label}
+            </OpenAssistantButton>
           </motion.div>
 
           <motion.ul
@@ -125,7 +127,7 @@ export function HeroSection() {
               return (
                 <li
                   key={badge.label}
-                  className="inline-flex items-center gap-1.5 text-[11px] text-white/85 sm:text-xs"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-ink/35 px-2.5 py-1 text-[11px] font-medium text-white shadow-sm backdrop-blur-sm sm:text-xs"
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0 text-red" aria-hidden />
                   {badge.label}

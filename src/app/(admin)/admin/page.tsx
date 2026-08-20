@@ -3,6 +3,7 @@ import { getDashboardSummary } from "@/server/audit";
 import { requireAdminPageAccess } from "@/server/admin/page-access";
 import { hasAnyPermission } from "@/server/rbac";
 import { AdminPageHeader, StatCard, AdminCard } from "@/components/admin/layout/AdminPageHeader";
+import { OrderStatusBadge, HandoffStatusBadge } from "@/components/admin/ui";
 import { formatMoney } from "@/lib/money";
 
 function customerLabel(order: {
@@ -45,7 +46,9 @@ export default async function AdminDashboardPage({
       customers: 0,
       revenueMinor: 0,
       lowStockCount: 0,
+      pendingHandoffs: 0,
       recentOrders: [],
+      recentHandoffs: [],
     };
   }
 
@@ -75,6 +78,13 @@ export default async function AdminDashboardPage({
         ) : null}
         {canSeeCustomers ? (
           <StatCard label="Customers" value={String(summary.customers)} />
+        ) : null}
+        {canSeeCustomers ? (
+          <StatCard
+            label="Assistant handoffs"
+            value={String(summary.pendingHandoffs)}
+            hint="pending follow-up"
+          />
         ) : null}
         {canSeeProducts ? (
           <StatCard
@@ -116,7 +126,18 @@ export default async function AdminDashboardPage({
                 </Link>
               </li>
             ) : null}
-            {!canSeeInventory && !canSeeOrders && !canSeeProducts ? (
+            {canSeeCustomers ? (
+              <li className="flex items-center justify-between">
+                <span className="text-muted">Pending assistant handoffs</span>
+                <Link
+                  href="/admin/assistant?status=PENDING"
+                  className="font-medium text-navy hover:underline"
+                >
+                  {summary.pendingHandoffs}
+                </Link>
+              </li>
+            ) : null}
+            {!canSeeInventory && !canSeeOrders && !canSeeProducts && !canSeeCustomers ? (
               <li className="text-muted">No actionable items for your role.</li>
             ) : null}
           </ul>
@@ -134,22 +155,67 @@ export default async function AdminDashboardPage({
                 id: string;
                 order_number: string;
                 total_minor: number;
+                status: string;
                 customers?: { profiles?: { name?: string | null; email?: string | null } | null } | null;
                 shipping_name?: string | null;
               }) => (
-                <li key={order.id} className="flex items-center justify-between text-sm">
-                  <div>
+                <li key={order.id} className="flex items-center justify-between gap-3 text-sm">
+                  <div className="min-w-0">
                     <Link href={`/admin/orders/${order.id}`} className="font-medium text-navy hover:underline">
                       {order.order_number}
                     </Link>
-                    <p className="text-xs text-muted">{customerLabel(order)}</p>
+                    <p className="truncate text-xs text-muted">{customerLabel(order)}</p>
                   </div>
-                  <span className="tabular-nums">{formatMoney(order.total_minor)}</span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="tabular-nums">{formatMoney(order.total_minor)}</span>
+                    <OrderStatusBadge status={order.status} />
+                  </div>
                 </li>
               ))}
             </ul>
           )}
         </AdminCard>
+
+        {canSeeCustomers ? (
+          <AdminCard className="p-5 lg:col-span-2">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-navy">Recent assistant handoffs</h2>
+              <Link href="/admin/assistant" className="text-xs font-medium text-navy hover:underline">
+                View all
+              </Link>
+            </div>
+            {summary.recentHandoffs.length === 0 ? (
+              <p className="mt-4 text-sm text-muted">No handoff requests yet.</p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {summary.recentHandoffs.map((handoff: {
+                  id: string;
+                  issue_summary: string;
+                  status: string;
+                  contact_name: string | null;
+                  contact_email: string | null;
+                  created_at: string;
+                }) => (
+                  <li key={handoff.id} className="flex items-center justify-between gap-3 text-sm">
+                    <div className="min-w-0">
+                      <Link
+                        href={`/admin/assistant/${handoff.id}`}
+                        className="line-clamp-1 font-medium text-navy hover:underline"
+                      >
+                        {handoff.issue_summary}
+                      </Link>
+                      <p className="truncate text-xs text-muted">
+                        {handoff.contact_name ?? handoff.contact_email ?? "Anonymous visitor"} ·{" "}
+                        {new Date(handoff.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <HandoffStatusBadge status={handoff.status} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </AdminCard>
+        ) : null}
       </div>
     </div>
   );

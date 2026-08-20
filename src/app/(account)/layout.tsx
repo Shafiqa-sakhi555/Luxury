@@ -1,45 +1,40 @@
-import Link from "next/link";
+import { AppShell } from "@/components/layout/AppShell";
+import { AccountNav } from "@/components/account/AccountNav";
+import { PageContainer } from "@/components/ui/page-container";
+import { listShopFilterCategories } from "@/server/catalog/products";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-const links = [
-  { href: "/account", label: "Overview" },
-  { href: "/account/orders", label: "Orders" },
-  { href: "/account/addresses", label: "Addresses" },
-  { href: "/account/wishlist", label: "Wishlist" },
-];
 
 export default async function AccountLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const [shopCategories, supabase] = await Promise.all([
+    listShopFilterCategories().catch(() => []),
+    createSupabaseServerClient(),
+  ]);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
-    <div className="min-h-screen bg-brand-50 text-ink">
-      <header className="border-b border-navy/10 bg-white">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <Link href="/" className="font-display text-xl text-navy">
-            <span className="text-red">J</span>alal&apos;s
-          </Link>
-          <span className="text-sm text-muted">{user?.email}</span>
-        </div>
-      </header>
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[220px_1fr]">
-        <aside className="space-y-1">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="block rounded-lg px-3 py-2 text-sm text-navy/80 hover:bg-white hover:text-navy"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </aside>
-        <div>{children}</div>
-      </div>
+    <div className="pattern-carpet min-h-screen bg-brand-50 text-ink">
+      <AppShell shopCategories={shopCategories}>
+        <PageContainer className="pb-16 pt-28 sm:pt-32">
+          <div className="mb-8 flex flex-col gap-1 sm:mb-10">
+            <h1 className="font-display text-2xl text-navy sm:text-3xl">My account</h1>
+            {user?.email ? (
+              <p className="text-sm text-muted">{user.email}</p>
+            ) : null}
+          </div>
+          <div className="grid gap-8 lg:grid-cols-[220px_1fr] lg:gap-12">
+            <aside className="lg:sticky lg:top-28 lg:self-start">
+              <AccountNav />
+            </aside>
+            <div className="min-w-0">{children}</div>
+          </div>
+        </PageContainer>
+      </AppShell>
     </div>
   );
 }
