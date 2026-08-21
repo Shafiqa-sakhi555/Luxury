@@ -1,5 +1,6 @@
 import Image from "next/image";
-import type { Metadata } from "next";import { Package } from "lucide-react";
+import type { Metadata } from "next";
+import { Package } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { listProducts, getCategoryBySlug } from "@/server/catalog/products";
 import { ProductCard } from "@/components/commerce/ProductCard";
@@ -9,7 +10,9 @@ import { SectionHeading } from "@/components/shared/SectionHeading";
 import { PageContainer } from "@/components/ui/page-container";
 import { EmptyState } from "@/components/ui/empty-state";
 import { normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
+import { isCanonicalShopSlug } from "@/lib/catalog/shop-categories";
 import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
+
 export const revalidate = 60;
 
 export async function generateMetadata({
@@ -42,6 +45,10 @@ export default async function CategoryPage({
 
   if (normalizedSlug !== slug) {
     redirect(`/categories/${normalizedSlug}${sp.page ? `?page=${sp.page}` : ""}`);
+  }
+
+  if (!isCanonicalShopSlug(normalizedSlug)) {
+    notFound();
   }
 
   const page = Math.max(1, Number(sp.page ?? 1));
@@ -98,7 +105,8 @@ export default async function CategoryPage({
             ]}
           />
 
-          <SectionHeading            eyebrow="Collection"
+          <SectionHeading
+            eyebrow="Collection"
             title={category.name}
             description={
               category.description ??

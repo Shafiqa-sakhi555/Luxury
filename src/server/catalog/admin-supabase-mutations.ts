@@ -13,6 +13,63 @@ function discountPercent(original: number, sale: number) {
   return Math.round((1 - sale / original) * 100);
 }
 
+function normalizeColors(raw: string) {
+  return raw
+    .split(",")
+    .map((color) => color.trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+function firstColor(raw: string) {
+  const normalized = normalizeColors(raw);
+  if (!normalized) return null;
+  return normalized.split(", ")[0] ?? null;
+}
+
+async function upsertColorsSpecification(productId: string, colors: string) {
+  const supabase = createSupabaseAdminClient();
+  const normalized = normalizeColors(colors);
+
+  if (!normalized) {
+    await supabase
+      .from("product_specifications")
+      .delete()
+      .eq("product_id", productId)
+      .eq("spec_key", "colors");
+    return;
+  }
+
+  await supabase.from("product_specifications").upsert(
+    {
+      product_id: productId,
+      spec_key: "colors",
+      spec_value: normalized,
+      sort_order: 0,
+    },
+    { onConflict: "product_id,spec_key" }
+  );
+}
+
+async function updateDefaultVariantColor(productId: string, colors: string) {
+  const supabase = createSupabaseAdminClient();
+  const color = firstColor(colors);
+
+  const { data: defaultVariant } = await supabase
+    .from("product_variants")
+    .select("id")
+    .eq("product_id", productId)
+    .eq("is_default", true)
+    .maybeSingle();
+
+  if (!defaultVariant) return;
+
+  await supabase
+    .from("product_variants")
+    .update({ color })
+    .eq("id", defaultVariant.id);
+}
+
 function buildProductPrices(input: AdminProductFormValues) {
   const originalMajor = input.originalPriceMajor;
   const saleMajor =
@@ -36,11 +93,13 @@ async function createDefaultVariant(
 ) {
   const supabase = createSupabaseAdminClient();
   const prices = buildProductPrices(input);
+  const color = firstColor(input.colors);
 
   await supabase.from("product_variants").insert({
     product_id: productId,
     sku,
     name: input.name.trim(),
+    color,
     original_price: prices.original_price,
     sale_price: prices.sale_price,
     discount_percentage: prices.discount_percentage,
@@ -126,6 +185,7 @@ export async function createSupabaseCatalogProduct(
   }
 
   await createDefaultVariant(product.id, input, sku);
+  await upsertColorsSpecification(product.id, input.colors);
 
   const categorySlug = await getCategorySlugById(category.id);
   if (!categorySlug) {
@@ -241,6 +301,11 @@ export async function updateSupabaseCatalogProduct(
     return { ok: false, error: "Product images could not be linked. Re-upload and save again." };
   }
   await upsertSupabaseInventory(id, input.stockQuantity);
+  await upsertColorsSpecification(id, input.colors);
+
+  if (!existing.has_variants) {
+    await updateDefaultVariantColor(id, input.colors);
+  }
 
   await writeAuditLog({
     actorId: user.id,

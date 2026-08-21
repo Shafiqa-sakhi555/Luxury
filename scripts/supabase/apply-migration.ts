@@ -12,6 +12,7 @@ import path from "node:path";
 import pg from "pg";
 
 config({ path: path.join(process.cwd(), ".env.local"), override: true });
+config({ path: path.join(process.cwd(), ".env"), override: true });
 
 const POOLER_REGIONS = [
   "ap-northeast-1",

@@ -21,10 +21,12 @@ export type AdminCategoryOption = {
   id: string;
   name: string;
   slug: string;
+  parentId: string | null;
 };
 
 export type AdminProductFormValues = {
   categoryId: string;
+  colors: string;
   name: string;
   slug: string;
   shortDescription: string;
@@ -45,6 +47,8 @@ export type AdminProductDetail = AdminProductFormValues & {
   hasVariants: boolean;
   categoryName: string;
   categorySlug: string;
+  mainCategoryId: string;
+  sectionId: string;
 };
 
 export type MutationResult = { ok: true; id: string } | { ok: false; error: string };
