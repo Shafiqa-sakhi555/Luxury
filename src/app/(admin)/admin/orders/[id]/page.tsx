@@ -18,15 +18,20 @@ import { OrderStatusForm } from "@/components/admin/orders/OrderStatusForm";
 import { formatMoney } from "@/lib/money";
 
 function profileFromOrder(order: {
-  customers?: { profiles?: { name?: string | null; email?: string | null; phone?: string | null } | null } | null;
+  customers?: {
+    phone?: string | null;
+    profiles?: { name?: string | null; email?: string | null } | null;
+  } | null;
   shipping_name?: string | null;
   shipping_phone?: string | null;
 }) {
-  const profile = order.customers?.profiles;
+  const profile = Array.isArray(order.customers?.profiles)
+    ? order.customers?.profiles[0]
+    : order.customers?.profiles;
   return {
     name: profile?.name ?? order.shipping_name ?? "Guest",
     email: profile?.email ?? "—",
-    phone: profile?.phone ?? order.shipping_phone ?? "—",
+    phone: order.customers?.phone ?? order.shipping_phone ?? "—",
   };
 }
 

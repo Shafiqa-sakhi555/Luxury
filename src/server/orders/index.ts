@@ -152,11 +152,16 @@ export async function updateOrderStatus(
 
 export async function adminGetOrderById(orderId: string) {
   const supabase = createSupabaseAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("orders")
-    .select("*, order_items(*), order_status_history(*), customers(profiles(name, email, phone))")
+    .select("*, order_items(*), order_status_history(*), customers(phone, profiles(name, email))")
     .eq("id", orderId)
     .maybeSingle();
+
+  if (error) {
+    console.error("adminGetOrderById failed:", error.message);
+    return null;
+  }
 
   return data;
 }
