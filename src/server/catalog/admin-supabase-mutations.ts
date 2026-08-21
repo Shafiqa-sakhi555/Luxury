@@ -7,6 +7,7 @@ import { slugify, uniqueProductSlug } from "@/lib/slug";
 import type { AdminProductFormValues, MutationResult } from "@/types/admin-catalog";
 import { getCategorySlugById } from "@/server/catalog/cloudinary-upload-context";
 import { persistProductImages } from "@/server/catalog/product-image-sync";
+import { deleteCloudinaryImage } from "@/lib/cloudinary";
 
 function discountPercent(original: number, sale: number) {
   if (original <= 0 || sale >= original) return 0;
@@ -360,5 +361,54 @@ export async function archiveSupabaseCatalogProduct(id: string): Promise<Mutatio
 }
 
 export async function deleteSupabaseCatalogProduct(id: string): Promise<MutationResult> {
-  return archiveSupabaseCatalogProduct(id);
+  if (!isSupabaseConfigured()) {
+    return { ok: false, error: "Supabase is not configured." };
+  }
+
+  try {
+    const user = await requirePermission("product.delete");
+    const supabase = createSupabaseAdminClient();
+
+    const { data: existing, error: loadError } = await supabase
+      .from("products")
+      .select("id, name, slug, product_images ( cloudinary_public_id )")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (loadError) return { ok: false, error: loadError.message };
+    if (!existing) return { ok: false, error: "Product not found." };
+
+    const imageRows = Array.isArray(existing.product_images)
+      ? existing.product_images
+      : existing.product_images
+        ? [existing.product_images]
+        : [];
+
+    for (const image of imageRows) {
+      if (image.cloudinary_public_id) {
+        await deleteCloudinaryImage(image.cloudinary_public_id).catch(() => undefined);
+      }
+    }
+
+    const { error: deleteError } = await supabase.from("products").delete().eq("id", id);
+    if (deleteError) return { ok: false, error: deleteError.message };
+
+    await writeAuditLog({
+      actorId: user.id,
+      action: "product.delete",
+      entityType: "SupabaseProduct",
+      entityId: id,
+      before: { name: existing.name, slug: existing.slug },
+    });
+
+    revalidatePath("/admin/catalog/products");
+    revalidatePath("/shop");
+
+    return { ok: true, id };
+  } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return { ok: false, error: error.message };
+    }
+    return { ok: false, error: error instanceof Error ? error.message : "Failed to delete product." };
+  }
 }

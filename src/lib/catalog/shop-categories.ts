@@ -42,7 +42,9 @@ export function buildCanonicalShopCategories(
     dbRows.map((row) => [normalizeCategorySlug(row.slug) ?? row.slug, row])
   );
 
-  return SUPABASE_CATALOG_SLUGS.map((slug) => {
+  const slugs = SUPABASE_CATALOG_SLUGS.filter((slug) => bySlug.has(slug));
+
+  return slugs.map((slug) => {
     const db = bySlug.get(slug);
     const meta = CANONICAL_SHOP_CATEGORY_META[slug];
     return {

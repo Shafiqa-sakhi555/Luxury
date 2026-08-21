@@ -264,7 +264,9 @@ function DeleteCategoryButton({
     <div className="rounded-lg border border-red/20 bg-red/5 p-3">
       <p className="text-xs text-navy">
         Delete <span className="font-medium">{category.name}</span>?
-        {category.productCount > 0 && " Categories with products will be archived."}
+        {category.productCount > 0
+          ? " This category has products and will be archived instead of deleted."
+          : " Empty categories are permanently deleted."}
       </p>
       <div className="mt-2 flex gap-2">
         <AdminButton
@@ -276,17 +278,14 @@ function DeleteCategoryButton({
             startTransition(async () => {
               const result = await removeCategoryAction({ id: category.id });
               if (!result.ok) {
-                if (result.error.includes("archived instead")) {
-                  toast.success(result.error);
-                  setConfirming(false);
-                  onDeleted();
-                  router.refresh();
-                } else {
-                  toast.error(result.error);
-                }
+                toast.error(result.error);
                 return;
               }
-              toast.success("Category deleted");
+              toast.success(
+                result.archived
+                  ? result.message ?? "Category archived"
+                  : "Category deleted"
+              );
               setConfirming(false);
               onDeleted();
               router.refresh();
