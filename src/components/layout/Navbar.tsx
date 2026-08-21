@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,8 +33,6 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   useFocusTrap(mobileMenuRef, mobileOpen, () => setMobileOpen(false));
-
-  const collectionFeatured = useMemo(() => shopCategories.slice(0, 2), [shopCategories]);
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
@@ -164,7 +162,7 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
 
               <AnimatePresence>
                 {collectionsOpen && (
-                  <div className="absolute left-1/2 top-full z-[60] w-[520px] -translate-x-1/2 pt-2">
+                  <div className="absolute left-1/2 top-full z-[60] w-56 -translate-x-1/2 pt-2">
                     <motion.div
                       id={COLLECTIONS_PANEL_ID}
                       role="menu"
@@ -173,67 +171,42 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.18 }}
-                      className="overflow-hidden rounded-2xl border border-navy/10 bg-white p-6 shadow-xl"
+                      className="overflow-hidden rounded-xl border border-navy/10 bg-white py-2 shadow-xl"
                     >
                       <div className="brand-accent-bar absolute inset-x-0 top-0" />
-                      {collectionFeatured.length > 0 && (
-                        <>
-                          <p className="relative mb-3 mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-red">
-                            Featured
-                          </p>
-                          <div className="relative mb-4 grid grid-cols-2 gap-2">
-                            {collectionFeatured.map((item) => (
-                              <Link
-                                key={item.slug}
-                                href={item.href}
-                                role="menuitem"
-                                className="group rounded-xl bg-luxury-cream p-3 ring-1 ring-navy/8 transition-colors hover:bg-red/5 hover:ring-red/25"
-                                onClick={() => setCollectionsOpen(false)}
-                              >
-                                <span className="block text-sm font-semibold text-navy group-hover:text-red">
-                                  {item.label}
-                                </span>
-                                {item.description ? (
-                                  <span className="mt-1 block text-[11px] leading-snug text-muted">
-                                    {item.description}
-                                  </span>
-                                ) : null}
-                              </Link>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                      <p className="relative mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">
-                        All Collections
-                      </p>
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      <div className="relative flex flex-col py-1">
                         {shopCategories.map((category) => (
                           <Link
                             key={category.slug}
                             href={category.href}
                             role="menuitem"
-                            className="group rounded-lg p-2 transition-colors hover:bg-luxury-cream"
+                            aria-current={
+                              pathname === category.href || pathname.startsWith(`${category.href}/`)
+                                ? "page"
+                                : undefined
+                            }
+                            className={cn(
+                              "px-4 py-2.5 text-sm font-medium transition-colors hover:bg-luxury-cream hover:text-red",
+                              pathname === category.href || pathname.startsWith(`${category.href}/`)
+                                ? "text-red"
+                                : "text-navy"
+                            )}
                             onClick={() => setCollectionsOpen(false)}
                           >
-                            <span className="block text-sm font-semibold text-navy group-hover:text-red">
-                              {category.label}
-                            </span>
-                            {category.description ? (
-                              <span className="mt-0.5 block text-[11px] leading-snug text-muted line-clamp-2">
-                                {category.description}
-                              </span>
-                            ) : null}
+                            {category.label}
                           </Link>
                         ))}
                       </div>
-                      <Link
-                        href="/shop"
-                        role="menuitem"
-                        className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-red hover:underline"
-                        onClick={() => setCollectionsOpen(false)}
-                      >
-                        View Full Catalog
-                      </Link>
+                      <div className="relative border-t border-navy/8 px-4 py-2">
+                        <Link
+                          href="/shop"
+                          role="menuitem"
+                          className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-red hover:underline"
+                          onClick={() => setCollectionsOpen(false)}
+                        >
+                          View full catalog
+                        </Link>
+                      </div>
                     </motion.div>
                   </div>
                 )}
