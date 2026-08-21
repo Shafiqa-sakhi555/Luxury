@@ -23,6 +23,10 @@ export function canWriteProducts(permissions: Set<string>) {
   return hasAnyPermission(permissions, ["product.write"]);
 }
 
+export function canDeleteProducts(permissions: Set<string>) {
+  return hasAnyPermission(permissions, ["product.delete"]);
+}
+
 export function canWriteCatalog(permissions: Set<string>) {
   return hasAnyPermission(permissions, ["catalog.write"]);
 }

@@ -134,17 +134,64 @@ export async function removeCategoryAction(input: { id: string }) {
   try {
     const user = await requirePermission("catalog.delete");
     const supabase = createSupabaseAdminClient();
-    
-    const { data: existingCategory } = await supabase
+
+    const { data: existingCategory, error: loadError } = await supabase
       .from("categories")
-      .select("cloudinary_public_id")
+      .select("id, name, cloudinary_public_id, is_active")
       .eq("id", input.id)
       .maybeSingle();
 
-    const { error } = await supabase.from("categories").delete().eq("id", input.id);
-    if (error) throw new Error(error.message);
+    if (loadError) throw new Error(loadError.message);
+    if (!existingCategory) {
+      return { ok: false as const, error: "Category not found." };
+    }
 
-    if (existingCategory?.cloudinary_public_id) {
+    const [{ count: productCount }, { count: childCount }] = await Promise.all([
+      supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("category_id", input.id),
+      supabase
+        .from("categories")
+        .select("id", { count: "exact", head: true })
+        .eq("parent_id", input.id),
+    ]);
+
+    const hasLinkedProducts = (productCount ?? 0) > 0;
+    const hasChildCategories = (childCount ?? 0) > 0;
+
+    if (hasLinkedProducts || hasChildCategories) {
+      const { error: archiveError } = await supabase
+        .from("categories")
+        .update({ is_active: false })
+        .eq("id", input.id);
+
+      if (archiveError) throw new Error(archiveError.message);
+
+      await writeAuditLog({
+        actorId: user.id,
+        action: "category.archive",
+        entityType: "SupabaseCategory",
+        entityId: input.id,
+        after: { is_active: false, reason: hasLinkedProducts ? "has_products" : "has_children" },
+      });
+
+      revalidatePath("/admin/catalog/categories");
+      revalidatePath("/shop");
+
+      return {
+        ok: true as const,
+        archived: true as const,
+        message: hasLinkedProducts
+          ? "Category archived because it still has products assigned."
+          : "Category archived because it has child categories.",
+      };
+    }
+
+    const { error: deleteError } = await supabase.from("categories").delete().eq("id", input.id);
+    if (deleteError) throw new Error(deleteError.message);
+
+    if (existingCategory.cloudinary_public_id) {
       await deleteCloudinaryImage(existingCategory.cloudinary_public_id).catch(() => undefined);
     }
 
@@ -158,7 +205,7 @@ export async function removeCategoryAction(input: { id: string }) {
     revalidatePath("/admin/catalog/categories");
     revalidatePath("/shop");
 
-    return { ok: true as const };
+    return { ok: true as const, archived: false as const };
   } catch (error) {
     if (error instanceof AuthorizationError) {
       return { ok: false as const, error: error.message };

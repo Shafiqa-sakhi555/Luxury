@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { adminListAllProducts, adminListCategoryOptions } from "@/server/catalog/admin-queries";
 import { requireAdminPageAccess } from "@/server/admin/page-access";
-import { canWriteProducts } from "@/server/rbac";
+import { canWriteProducts, canDeleteProducts } from "@/server/rbac";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import {
   AdminTable,
@@ -16,6 +16,7 @@ import {
   ProductStatusBadge,
 } from "@/components/admin/ui";
 import { ProductListFilters } from "@/components/admin/catalog/ProductListFilters";
+import { ProductRowActions } from "@/components/admin/catalog/ProductRowActions";
 import { RepairProductImagesButton } from "@/components/admin/catalog/RepairProductImagesButton";
 import { formatMoney } from "@/lib/money";
 
@@ -137,12 +138,11 @@ export default async function AdminProductsPage({
                     <ProductStatusBadge status={product.status} />
                   </AdminTableCell>
                   <AdminTableCell align="right">
-                    <Link
-                      href={`/admin/catalog/products/${product.id}`}
-                      className="font-medium text-navy hover:underline"
-                    >
-                      Edit
-                    </Link>
+                    <ProductRowActions
+                      id={product.id}
+                      name={product.name}
+                      canDelete={canDeleteProducts(ctx.permissions)}
+                    />
                   </AdminTableCell>
                 </AdminTableRow>
               ))

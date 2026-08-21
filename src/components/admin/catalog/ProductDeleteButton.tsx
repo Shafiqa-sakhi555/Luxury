@@ -28,8 +28,8 @@ export function ProductDeleteButton({
   return (
     <div className="rounded-lg border border-red/20 bg-red/5 p-4">
       <p className="text-sm text-navy">
-        Remove <span className="font-medium">{name}</span> from the catalog? Products with order
-        history will be archived instead of deleted.
+        Delete <span className="font-medium">{name}</span> permanently? This removes the product,
+        its images, variants, and inventory from the catalog.
       </p>
       {error && <p className="mt-2 text-xs text-red">{error}</p>}
       <div className="mt-3 flex gap-2">
