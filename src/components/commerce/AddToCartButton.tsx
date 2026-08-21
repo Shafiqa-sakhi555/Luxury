@@ -2,53 +2,76 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShoppingCart } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { addItemToCart } from "@/lib/cart-client";
+import { cn } from "@/lib/utils";
 
-export function AddToCartButton({ variantId }: { variantId: string }) {
+type ProductActionsProps = {
+  variantId: string;
+  productName?: string;
+  className?: string;
+};
+
+export function ProductActions({ variantId, productName, className }: ProductActionsProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<"cart" | "buy" | null>(null);
+  const [added, setAdded] = useState(false);
 
-  async function handleClick() {
-    setLoading(true);
+  async function handleAddToCart() {
+    setLoading("cart");
     try {
-      const res = await fetch("/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ variantId, quantity: 1 }),
+      await addItemToCart(variantId);
+      setAdded(true);
+      toast.success("Added to cart", {
+        description: productName,
+        action: {
+          label: "View cart",
+          onClick: () => router.push("/cart"),
+        },
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed");
-      toast.success("Added to cart");
       router.refresh();
+      window.setTimeout(() => setAdded(false), 2000);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not add to cart");
     } finally {
-      setLoading(false);
+      setLoading(null);
+    }
+  }
+
+  async function handleBuyNow() {
+    setLoading("buy");
+    try {
+      await addItemToCart(variantId);
+      router.push("/checkout");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not proceed to checkout");
+    } finally {
+      setLoading(null);
     }
   }
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row">
-      <Button
-        onClick={handleClick}
-        disabled={loading}
-        size="lg"
-        className="flex-1 gap-2 shadow-md shadow-red/20"
+    <div className={cn("grid gap-3", className)}>
+      <button
+        type="button"
+        onClick={handleAddToCart}
+        disabled={loading !== null}
+        className="w-full border border-navy bg-white px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.12em] text-navy transition hover:bg-navy hover:text-white disabled:opacity-60"
       >
-        <ShoppingCart className="h-4 w-4" />
-        {loading ? "Adding..." : "Add to cart"}
-      </Button>
-      <Button
-        variant="outline"
-        size="lg"
-        className="flex-1 border-navy/15"
-        onClick={() => router.push("/cart")}
+        {loading === "cart" ? "Adding..." : added ? "Added to cart" : "Add to Cart"}
+      </button>
+      <button
+        type="button"
+        onClick={handleBuyNow}
+        disabled={loading !== null}
+        className="w-full bg-navy px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-navy/90 disabled:opacity-60"
       >
-        View cart
-      </Button>
+        {loading === "buy" ? "Processing..." : "Buy It Now"}
+      </button>
     </div>
   );
+}
+
+export function AddToCartButton({ variantId }: { variantId: string }) {
+  return <ProductActions variantId={variantId} />;
 }

@@ -2,29 +2,79 @@
 
 import { useMemo, useState } from "react";
 import type { CatalogProduct, CatalogProductVariant } from "@/types/catalog";
-import { cn } from "@/lib/utils";
 import { ProductGallery } from "@/components/commerce/ProductGallery";
 import { ProductPurchasePanel } from "@/components/commerce/ProductPurchasePanel";
-import { Card } from "@/components/ui/card";
+
+function buildColorOptions(variants: CatalogProductVariant[]) {
+  const colors = new Map<string, { id: string; label: string }>();
+  for (const variant of variants) {
+    const label = variant.color?.trim();
+    if (!label) continue;
+    if (!colors.has(label)) colors.set(label, { id: label, label });
+  }
+  return [...colors.values()];
+}
+
+function buildSizeOptions(variants: CatalogProductVariant[]) {
+  const sizes = new Map<string, { id: string; label: string }>();
+  for (const variant of variants) {
+    const label = variant.size?.trim();
+    if (!label) continue;
+    if (!sizes.has(label)) sizes.set(label, { id: label, label });
+  }
+  return [...sizes.values()];
+}
+
+function pickVariant(
+  variants: CatalogProductVariant[],
+  colorId: string,
+  sizeId: string
+): CatalogProductVariant | undefined {
+  return (
+    variants.find((variant) => {
+      const colorMatch = !colorId || variant.color === colorId;
+      const sizeMatch = !sizeId || variant.size === sizeId;
+      return colorMatch && sizeMatch;
+    }) ?? variants[0]
+  );
+}
+
+function buildSpecs(product: CatalogProduct, selected?: CatalogProductVariant) {
+  return [
+    product.includedItems && { label: "What's included", value: product.includedItems },
+    product.fabric && { label: "Fabric", value: product.fabric },
+    product.design && { label: "Design", value: product.design },
+    product.size && { label: "Size", value: product.size },
+    selected?.design && { label: "Design", value: selected.design },
+    selected?.color && { label: "Color", value: selected.color },
+    selected?.quality && { label: "Quality", value: selected.quality },
+    product.sellingUnit && { label: "Unit", value: product.sellingUnit },
+    ...product.specifications.map((spec) => ({
+      label: spec.key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()),
+      value: spec.value,
+    })),
+  ].filter(Boolean) as Array<{ label: string; value: string }>;
+}
 
 export function ProductVariantSelector({ product }: { product: CatalogProduct }) {
   const variants = useMemo(() => product.variants ?? [], [product.variants]);
-  const [selectedId, setSelectedId] = useState(
-    variants.find((v) => v.isDefault)?.id ?? variants[0]?.id ?? ""
-  );
+  const colorOptions = useMemo(() => buildColorOptions(variants), [variants]);
+  const sizeOptions = useMemo(() => buildSizeOptions(variants), [variants]);
+  const defaultVariant = variants.find((variant) => variant.isDefault) ?? variants[0];
+  const [selectedColorId, setSelectedColorId] = useState(defaultVariant?.color ?? colorOptions[0]?.id ?? "");
+  const [selectedSizeId, setSelectedSizeId] = useState(defaultVariant?.size ?? sizeOptions[0]?.id ?? "");
 
   const selected = useMemo(
-    () => variants.find((v) => v.id === selectedId) ?? variants[0],
-    [selectedId, variants]
+    () => pickVariant(variants, selectedColorId, selectedSizeId) ?? defaultVariant,
+    [variants, selectedColorId, selectedSizeId, defaultVariant]
   );
 
   if (!selected || variants.length === 0) return null;
 
   const galleryImages = selected.images.length > 0 ? selected.images : product.images;
-  const priceSubtitle = [product.sellingUnit, product.size].filter(Boolean).join(" · ");
 
   return (
-    <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12 xl:gap-16">
       <ProductGallery
         images={galleryImages.map((img) => ({
           id: img.id,
@@ -34,91 +84,73 @@ export function ProductVariantSelector({ product }: { product: CatalogProduct })
         }))}
         productName={product.name}
       />
-
-      <div className="space-y-6 lg:sticky lg:top-28 lg:self-start">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-muted">
-            Select design
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {variants.map((variant) => (
-              <VariantChip
-                key={variant.id}
-                variant={variant}
-                active={variant.id === selected.id}
-                onSelect={() => setSelectedId(variant.id)}
-              />
-            ))}
-          </div>
-        </div>
-
+      <div className="sticky-below-header lg:self-start">
         <ProductPurchasePanel
+          productName={product.name}
+          categoryName={product.category.name}
+          brandName={product.brand?.name ?? product.category.name}
           salePriceMinor={selected.salePriceMinor}
           originalPriceMinor={selected.originalPriceMinor}
           discountPercentage={selected.discountPercentage}
-          priceSubtitle={priceSubtitle}
-          sellingUnit={product.sellingUnit}
           sku={selected.sku}
           stockStatus={selected.stockStatus}
           variantId={selected.id}
-          productName={product.name}
-          assistantPrompt={`Tell me about ${product.name} design ${selected.design ?? selected.name}.`}
+          description={product.description}
+          specs={buildSpecs(product, selected)}
+          colorOptions={colorOptions}
+          sizeOptions={sizeOptions}
+          selectedColorId={selectedColorId}
+          selectedSizeId={selectedSizeId}
+          onColorChange={colorOptions.length > 0 ? setSelectedColorId : undefined}
+          onSizeChange={sizeOptions.length > 0 ? setSelectedSizeId : undefined}
         />
-
-        {(selected.design || selected.color || selected.quality) && (
-          <Card padding="md" variant="muted">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
-              Selected design details
-            </p>
-            <dl className="mt-3 grid gap-3 sm:grid-cols-2">
-              {selected.design && <Spec label="Design" value={selected.design} />}
-              {selected.color && <Spec label="Color" value={selected.color} />}
-              {selected.quality && <Spec label="Quality" value={selected.quality} />}
-            </dl>
-          </Card>
-        )}
       </div>
     </div>
   );
 }
 
-function VariantChip({
-  variant,
-  active,
-  onSelect,
-}: {
-  variant: CatalogProductVariant;
-  active: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        "rounded-full border px-4 py-2 text-left text-sm transition",
-        active
-          ? "border-red bg-red text-white shadow-md shadow-red/20"
-          : "border-navy/10 bg-white text-navy hover:border-red/30 hover:bg-red/5"
-      )}
-    >
-      <span className="block font-medium">
-        {variant.design ? `Design ${variant.design}` : variant.name}
-      </span>
-      {variant.color && (
-        <span className={cn("block text-xs", active ? "text-white/80" : "text-muted")}>
-          {variant.color}
-        </span>
-      )}
-    </button>
-  );
-}
+export function ProductSimpleDetail({ product }: { product: CatalogProduct }) {
+  const colorOptions = product.fabric
+    ? [{ id: product.fabric, label: product.fabric }]
+    : product.design
+      ? [{ id: product.design, label: product.design }]
+      : [];
+  const sizeOptions = product.size ? [{ id: product.size, label: product.size }] : [];
+  const [selectedColorId, setSelectedColorId] = useState(colorOptions[0]?.id ?? "");
+  const [selectedSizeId, setSelectedSizeId] = useState(sizeOptions[0]?.id ?? "");
 
-function Spec({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">{label}</dt>
-      <dd className="mt-1 text-sm text-navy">{value}</dd>
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12 xl:gap-16">
+      <ProductGallery
+        images={product.images.map((img) => ({
+          id: img.id,
+          url: img.url,
+          alt: img.alt,
+          sortOrder: img.sortOrder,
+        }))}
+        productName={product.name}
+      />
+      <div className="sticky-below-header lg:self-start">
+        <ProductPurchasePanel
+          productName={product.name}
+          categoryName={product.category.name}
+          brandName={product.brand?.name ?? product.category.name}
+          salePriceMinor={product.salePriceMinor}
+          originalPriceMinor={product.originalPriceMinor}
+          discountPercentage={product.discountPercentage}
+          sku={product.sku}
+          stockStatus={product.stockStatus}
+          variantId={product.variantId}
+          description={product.description}
+          specs={buildSpecs(product)}
+          colorOptions={colorOptions}
+          sizeOptions={sizeOptions}
+          selectedColorId={selectedColorId}
+          selectedSizeId={selectedSizeId}
+          onColorChange={colorOptions.length > 0 ? setSelectedColorId : undefined}
+          onSizeChange={sizeOptions.length > 0 ? setSelectedSizeId : undefined}
+        />
+      </div>
     </div>
   );
 }

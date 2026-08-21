@@ -7,6 +7,7 @@ import { placeOrder } from "@/server/orders";
 const schema = z.object({
   fulfilmentType: z.enum(["DELIVERY", "BRANCH_PICKUP"]).default("DELIVERY"),
   storeId: z.string().optional(),
+  paymentMethod: z.enum(["COD", "CARD"]).default("COD"),
   shipping: z.object({
     name: z.string().min(1),
     line1: z.string().min(1),
@@ -38,11 +39,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
+    if (body.paymentMethod === "CARD") {
+      return NextResponse.json(
+        { error: "Online payment is coming soon. Please use Cash on Delivery." },
+        { status: 400 }
+      );
+    }
+
     const order = await placeOrder({
       customerId,
       cartId: cart.id,
       fulfilmentType: body.fulfilmentType,
       storeId: body.storeId,
+      paymentMethod: body.paymentMethod,
       shipping: body.shipping,
       notes: body.notes,
     });

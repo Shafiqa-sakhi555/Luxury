@@ -2,10 +2,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { getOrCreateCart, cartTotals, resolveCustomerCart } from "@/server/cart";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, resolveCartItemPriceMinor } from "@/lib/money";
+import { resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
 import { CartActions } from "@/components/commerce/CartActions";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card } from "@/components/ui/card";
+import { PageContainer } from "@/components/ui/page-container";
 import { ShoppingBag } from "lucide-react";
 
 export default async function CartPage() {
@@ -23,7 +25,8 @@ export default async function CartPage() {
   const totals = cartTotals(cart);
 
   return (
-    <div>
+    <PageContainer width="narrow" className="py-8 sm:py-10">
+      <div>
       <h1 className="font-display text-3xl text-navy">Your cart</h1>
       {!user && cart?.cart_items?.length ? (
         <p className="mt-2 text-sm text-muted">
@@ -50,28 +53,37 @@ export default async function CartPage() {
             <ul className="space-y-4">
               {cart.cart_items.map((item: any) => {
                 const product = item.product_variants?.products;
-                const image = product?.product_images?.[0]?.image_url ?? "/brand/jalals-logo.png";
-                const price =
-                  item.price_snapshot_minor ??
-                  item.product_variants?.sale_price_minor ??
-                  item.product_variants?.price_minor;
+                const productRow = Array.isArray(product) ? product[0] : product;
+                const imageRow = productRow?.product_images?.[0];
+                const image =
+                  resolveCloudinaryImageUrl(
+                    imageRow?.image_url,
+                    imageRow?.cloudinary_public_id
+                  ) ?? "/brand/jalals-logo.png";
+                const price = resolveCartItemPriceMinor({
+                  priceSnapshotMinor: item.price_snapshot_minor,
+                  variantPriceMinor: item.product_variants?.price_minor,
+                  variantSalePriceMinor: item.product_variants?.sale_price_minor,
+                  productOriginalPriceMinor: productRow?.original_price_minor,
+                  productSalePriceMinor: productRow?.sale_price_minor,
+                });
 
                 return (
                   <li key={item.id} className="flex gap-4 rounded-xl border border-navy/10 bg-white p-4">
                     <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg">
                       <Image
                         src={image}
-                        alt={product?.name ?? "Product"}
+                        alt={productRow?.name ?? "Product"}
                         fill
                         className="object-cover"
                       />
                     </div>
                     <div className="flex-1">
                       <Link
-                        href={`/products/${product?.slug}`}
+                        href={`/products/${productRow?.slug}`}
                         className="font-medium text-navy hover:underline"
                       >
-                        {product?.name}
+                        {productRow?.name}
                       </Link>
                       <p className="text-xs text-muted">{item.product_variants?.sku}</p>
                       <p className="mt-2 tabular-nums text-navy">{formatMoney(price)}</p>
@@ -108,6 +120,7 @@ export default async function CartPage() {
             </aside>
           </div>
         )}
-    </div>
+      </div>
+    </PageContainer>
   );
 }

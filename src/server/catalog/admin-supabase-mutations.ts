@@ -52,6 +52,23 @@ async function upsertColorsSpecification(productId: string, colors: string) {
   );
 }
 
+async function syncDefaultVariantPrices(productId: string, input: AdminProductFormValues) {
+  const supabase = createSupabaseAdminClient();
+  const prices = buildProductPrices(input);
+
+  await supabase
+    .from("product_variants")
+    .update({
+      original_price: prices.original_price,
+      sale_price: prices.sale_price,
+      discount_percentage: prices.discount_percentage,
+      price_minor: prices.original_price_minor,
+      sale_price_minor: prices.sale_price_minor,
+    })
+    .eq("product_id", productId)
+    .eq("is_default", true);
+}
+
 async function updateDefaultVariantColor(productId: string, colors: string) {
   const supabase = createSupabaseAdminClient();
   const color = firstColor(colors);
@@ -306,6 +323,7 @@ export async function updateSupabaseCatalogProduct(
 
   if (!existing.has_variants) {
     await updateDefaultVariantColor(id, input.colors);
+    await syncDefaultVariantPrices(id, input);
   }
 
   await writeAuditLog({

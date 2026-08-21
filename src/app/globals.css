@@ -67,6 +67,8 @@
   --radius-card: 1rem;
   --radius-input: 0.75rem;
   --radius-button: 9999px;
+  --site-header-height: 8.75rem;
+  --site-header-height-sm: 9.5rem;
 
   /* —— Typography —— */
   --font-display: "Cormorant Garamond", Georgia, serif;
@@ -87,6 +89,13 @@
 
   html {
     @apply scroll-smooth;
+    scroll-padding-top: var(--site-header-height);
+  }
+
+  @media (min-width: 640px) {
+    html {
+      scroll-padding-top: var(--site-header-height-sm);
+    }
   }
 
   html.lenis,
@@ -149,6 +158,37 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border-width: 0;
+  }
+
+  .pt-site-header {
+    padding-top: calc(var(--site-header-height) + 1rem);
+  }
+
+  @media (min-width: 640px) {
+    .pt-site-header {
+      padding-top: calc(var(--site-header-height-sm) + 1.25rem);
+    }
+  }
+
+  .top-site-header {
+    top: var(--site-header-height);
+  }
+
+  @media (min-width: 640px) {
+    .top-site-header {
+      top: var(--site-header-height-sm);
+    }
+  }
+
+  .sticky-below-header {
+    position: sticky;
+    top: calc(var(--site-header-height) + 1rem);
+  }
+
+  @media (min-width: 640px) {
+    .sticky-below-header {
+      top: calc(var(--site-header-height-sm) + 1rem);
+    }
   }
 
   .skip-link {

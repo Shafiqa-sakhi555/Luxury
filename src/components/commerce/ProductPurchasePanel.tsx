@@ -1,36 +1,50 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 import { formatMoney } from "@/lib/money";
-import { Card } from "@/components/ui/card";
-import { AddToCartButton } from "@/components/commerce/AddToCartButton";
-import { StockBadge } from "@/components/commerce/StockBadge";
+import { ProductActions } from "@/components/commerce/AddToCartButton";
+import { ProductAccordions } from "@/components/commerce/ProductAccordions";
+import { ProductOptionSelector } from "@/components/commerce/ProductOptionSelector";
 import { OpenAssistantButton } from "@/components/assistant/OpenAssistantButton";
 
 type ProductPurchasePanelProps = {
+  productName: string;
+  categoryName: string;
+  brandName?: string | null;
   salePriceMinor: number;
   originalPriceMinor: number;
   discountPercentage: number;
-  priceSubtitle?: string;
-  sellingUnit?: string | null;
   sku?: string | null;
   stockStatus?: string | null;
   variantId?: string | null;
-  productName: string;
-  assistantPrompt?: string;
+  description?: string | null;
+  specs?: Array<{ label: string; value: string }>;
+  colorOptions?: Array<{ id: string; label: string }>;
+  sizeOptions?: Array<{ id: string; label: string }>;
+  selectedColorId?: string;
+  selectedSizeId?: string;
+  onColorChange?: (id: string) => void;
+  onSizeChange?: (id: string) => void;
 };
 
 export function ProductPurchasePanel({
+  productName,
+  categoryName,
+  brandName,
   salePriceMinor,
   originalPriceMinor,
   discountPercentage,
-  priceSubtitle,
-  sellingUnit,
   sku,
   stockStatus,
   variantId,
-  productName,
-  assistantPrompt,
+  description,
+  specs = [],
+  colorOptions = [],
+  sizeOptions = [],
+  selectedColorId = "",
+  selectedSizeId = "",
+  onColorChange,
+  onSizeChange,
 }: ProductPurchasePanelProps) {
   const hasDiscount = originalPriceMinor > salePriceMinor;
   const inStock =
@@ -38,65 +52,100 @@ export function ProductPurchasePanel({
     stockStatus === "unknown" ||
     stockStatus === null ||
     stockStatus === undefined;
+  const [shareLink, setShareLink] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShareLink(window.location.href);
+    }
+  }, []);
+
+  const encodedUrl = encodeURIComponent(shareLink || "https://jalalshomesolutions.vercel.app");
+  const encodedTitle = encodeURIComponent(productName);
 
   return (
-    <Card padding="lg" className="space-y-6">
-      <div>
-        <div className="flex flex-wrap items-baseline gap-3">
-          <span className="font-display text-3xl font-medium text-navy sm:text-4xl">
+    <div className="flex flex-col">
+      <div className="space-y-5">
+        <header className="space-y-2">
+          <h1 className="font-display text-2xl leading-tight text-navy sm:text-3xl lg:text-[2rem]">
+            {productName}
+          </h1>
+          {sku ? <p className="text-xs tracking-wide text-muted">{sku}</p> : null}
+          <p className="text-sm text-navy/70">{brandName ?? categoryName}</p>
+        </header>
+
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          {hasDiscount ? (
+            <span className="text-base text-muted line-through">
+              {formatMoney(originalPriceMinor)}
+            </span>
+          ) : null}
+          <span className="text-xl font-medium text-red sm:text-2xl">
             {formatMoney(salePriceMinor)}
           </span>
           {hasDiscount ? (
-            <>
-              <span className="text-lg text-muted line-through">
-                {formatMoney(originalPriceMinor)}
-              </span>
-              <span className="rounded-md bg-red px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-white">
-                Save {Math.round(discountPercentage)}%
-              </span>
-            </>
+            <span className="text-sm font-medium text-red">
+              Save {Math.round(discountPercentage)}%
+            </span>
           ) : null}
         </div>
-        {(priceSubtitle || sellingUnit) && (
-          <p className="mt-2 text-sm text-muted">
-            {[priceSubtitle, sellingUnit].filter(Boolean).join(" · ")}
-          </p>
-        )}
+
+        {colorOptions.length > 0 && onColorChange ? (
+          <ProductOptionSelector
+            label="Color"
+            options={colorOptions}
+            value={selectedColorId}
+            onChange={onColorChange}
+          />
+        ) : null}
+
+        {sizeOptions.length > 0 && onSizeChange ? (
+          <ProductOptionSelector
+            label="Size"
+            options={sizeOptions}
+            value={selectedSizeId}
+            onChange={onSizeChange}
+          />
+        ) : null}
+
+        {variantId && inStock ? (
+          <ProductActions variantId={variantId} productName={productName} className="pt-1" />
+        ) : !inStock ? (
+          <div className="border border-navy/10 bg-brand-50 px-4 py-4 text-sm text-muted">
+            This item is currently unavailable online.{" "}
+            <OpenAssistantButton
+              variant="ghost"
+              size="sm"
+              prompt={`Is ${productName} available or can you suggest alternatives?`}
+              className="h-auto px-0 text-navy underline underline-offset-2 hover:bg-transparent"
+            >
+              Ask Jalal Assistance
+            </OpenAssistantButton>
+          </div>
+        ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-navy/10 pt-5">
-        <StockBadge status={stockStatus} />
-        {sku ? <span className="text-xs text-muted">SKU: {sku}</span> : null}
+      <ProductAccordions description={description} productName={productName} specs={specs} />
+
+      <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-navy/70">
+        <span className="font-medium uppercase tracking-[0.12em]">Share</span>
+        <a
+          href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-navy hover:underline"
+        >
+          Share
+        </a>
+        <a
+          href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-navy hover:underline"
+        >
+          Tweet
+        </a>
       </div>
-
-      {variantId && inStock ? (
-        <AddToCartButton variantId={variantId} />
-      ) : !inStock ? (
-        <div className="rounded-xl bg-mist px-4 py-3 text-sm text-muted">
-          This item is currently unavailable online.{" "}
-          <OpenAssistantButton
-            variant="ghost"
-            size="sm"
-            prompt={`Is ${productName} available or can you suggest alternatives?`}
-            className="h-auto px-0 text-navy underline underline-offset-2 hover:bg-transparent"
-          >
-            Ask Jalal Assistance
-          </OpenAssistantButton>
-        </div>
-      ) : null}
-
-      <OpenAssistantButton
-        variant="outline"
-        size="lg"
-        prompt={
-          assistantPrompt ??
-          `Tell me about ${productName} — sizing, fabric, and whether it fits my room.`
-        }
-        className="w-full border-navy/15"
-      >
-        <MessageCircle className="h-4 w-4" />
-        Ask Jalal Assistance
-      </OpenAssistantButton>
-    </Card>
+    </div>
   );
 }

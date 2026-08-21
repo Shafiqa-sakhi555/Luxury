@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { resolveCartItemPriceMinor } from "@/lib/money";
 import { cartTotals } from "@/server/cart";
 export type PlaceOrderInput = {
   customerId: string;
@@ -51,11 +52,15 @@ export async function placeOrder(input: PlaceOrderInput) {
 
   // 4. Create Order Items
   const orderItems = cart.cart_items.map((item: any) => {
-    const unitPrice =
-      item.price_snapshot_minor ??
-      item.product_variants?.sale_price_minor ??
-      item.product_variants?.price_minor ??
-      0;
+    const variant = item.product_variants;
+    const product = Array.isArray(variant?.products) ? variant.products[0] : variant?.products;
+    const unitPrice = resolveCartItemPriceMinor({
+      priceSnapshotMinor: item.price_snapshot_minor,
+      variantPriceMinor: variant?.price_minor,
+      variantSalePriceMinor: variant?.sale_price_minor,
+      productOriginalPriceMinor: product?.original_price_minor,
+      productSalePriceMinor: product?.sale_price_minor,
+    });
 
     return {
       order_id: order.id,
