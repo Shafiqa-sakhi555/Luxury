@@ -3,10 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Heart, ShoppingCart } from "lucide-react";
 import type { CatalogProduct } from "@/types/catalog";
 import { formatMoney } from "@/lib/money";
+import { addItemToCart } from "@/lib/cart-client";
 import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,6 +32,7 @@ export function ProductCard({
   index?: number;
   priorityImage?: boolean;
 }) {
+  const router = useRouter();
   const [wishlisted, setWishlisted] = useState(false);
   const [adding, setAdding] = useState(false);
 
@@ -41,25 +44,27 @@ export function ProductCard({
   const hasDiscount = product.originalPriceMinor > product.salePriceMinor;
   const subtitle = productSubtitle(product);
   const inStock = isInStock(product.stockStatus);
+  const canAddFromCard = Boolean(product.variantId && !product.hasVariants && inStock);
 
-  async function addToCart(e: React.MouseEvent) {
+  async function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     if (!product.variantId) {
       toast.error("This product is not available for cart yet.");
       return;
     }
+
     setAdding(true);
     try {
-      const res = await fetch("/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ variantId: product.variantId, quantity: 1 }),
+      await addItemToCart(product.variantId);
+      toast.success("Added to cart", {
+        description: product.name,
+        action: {
+          label: "View cart",
+          onClick: () => router.push("/cart"),
+        },
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed");
-      toast.success("Added to cart");
+      router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not add to cart");
     } finally {
@@ -170,14 +175,14 @@ export function ProductCard({
           )}
         </div>
 
-        {product.variantId && !product.hasVariants && inStock ? (
+        {canAddFromCard ? (
           <Button
             type="button"
             variant="default"
             size="sm"
-            className="mt-3 w-full"
+            className="mt-3 w-full gap-2"
             disabled={adding}
-            onClick={addToCart}
+            onClick={handleAddToCart}
           >
             <ShoppingCart className="h-3.5 w-3.5" />
             {adding ? "Adding..." : "Add to Cart"}

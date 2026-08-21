@@ -73,7 +73,7 @@ export function ShopPageSkeleton() {
 
 export function ProductDetailSkeleton() {
   return (
-    <PageContainer className="pb-16 pt-28 sm:pt-32" aria-busy="true" aria-label="Loading product">
+    <PageContainer className="pb-16 pt-site-header" aria-busy="true" aria-label="Loading product">
       <Skeleton className="mb-8 h-4 w-72 max-w-full" />
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
         <Skeleton className="aspect-square w-full" rounded="lg" />
