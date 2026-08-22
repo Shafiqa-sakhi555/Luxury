@@ -2,6 +2,10 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveCartItemPriceMinor } from "@/lib/money";
 import { cartTotals } from "@/server/cart";
 import {
+  ensureFinancialRecordsForOrder,
+  syncFinancialRecordsOnOrderStatusChange,
+} from "@/server/finance/sync";
+import {
   sendNewOrderStaffNotifications,
   sendOrderStatusChangeNotifications,
 } from "@/server/orders/notifications";
@@ -81,6 +85,8 @@ export async function placeOrder(input: PlaceOrderInput) {
   await supabase.from("order_status_history").insert({ order_id: order.id, to_status: "PENDING", reason: "Order placed" });
   await supabase.from("cart_items").delete().eq("cart_id", cart.id);
 
+  await ensureFinancialRecordsForOrder(order.id);
+
   void sendNewOrderStaffNotifications(order.id).catch((error) => {
     console.error("New order staff notification failed:", error);
   });
@@ -156,6 +162,8 @@ export async function updateOrderStatus(
     reason,
     actor_id: actorId ?? null,
   });
+
+  await syncFinancialRecordsOnOrderStatusChange(orderId, status, order.status);
 
   void sendOrderStatusChangeNotifications(orderId, order.status, status, reason).catch((error) => {
     console.error("Order status notification failed:", error);
