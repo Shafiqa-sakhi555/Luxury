@@ -15,6 +15,13 @@ import {
   X,
   ChevronLeft,
   LogOut,
+  Landmark,
+  Receipt,
+  ArrowLeftRight,
+  FileText,
+  Wallet,
+  Scale,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,6 +35,13 @@ const ICONS: Record<string, LucideIcon> = {
   "/admin/catalog/products": Package,
   "/admin/catalog/categories": Package,
   "/admin/orders": ShoppingCart,
+  "/admin/finance": Landmark,
+  "/admin/finance/transactions": ArrowLeftRight,
+  "/admin/finance/refunds": Receipt,
+  "/admin/finance/invoices": FileText,
+  "/admin/finance/payouts": Wallet,
+  "/admin/finance/reconciliation": Scale,
+  "/admin/finance/reports": BarChart3,
   "/admin/inventory": Warehouse,
   "/admin/customers": Users,
   "/admin/assistant": MessageCircle,
@@ -88,7 +102,9 @@ export function AdminShell({ children, allowedHrefs, roleLabel }: AdminShellProp
       <nav className="flex-1 space-y-1 p-3" aria-label="Admin">
         {nav.map(({ href, label }) => {
           const Icon = ICONS[href] ?? LayoutDashboard;
-          const active = pathname === href || (href !== "/admin" && pathname.startsWith(href));
+          const active =
+            pathname === href ||
+            (href !== "/admin" && href !== "/admin/finance" && pathname.startsWith(`${href}/`));
           return (
             <Link
               key={href}

@@ -13,7 +13,7 @@ export type AdminContext = {
   primaryRole: string;
 };
 
-export function hasAnyPermission(permissions: Set<string>, required: string[]) {
+export function hasAnyPermission(permissions: Set<string>, required: readonly string[]) {
   if (required.length === 0) return true;
   if (permissions.has("*")) return true;
   return required.some((permission) => permissions.has(permission));
@@ -55,8 +55,29 @@ const ROLE_DEFAULT_PERMISSIONS: Record<StaffRole, string[]> = {
     "customer.read",
     "inventory.read",
     "inventory.write",
+    "refunds.create",
+    "refunds.view",
+    "invoices.view",
   ],
-  Finance: ["order.read", "finance.read", "customer.read"],
+  Finance: [
+    "order.read",
+    "finance.read",
+    "finance.dashboard.view",
+    "transactions.view",
+    "payments.view",
+    "refunds.view",
+    "refunds.approve",
+    "refunds.reject",
+    "invoices.view",
+    "invoices.download",
+    "payouts.view",
+    "settlements.view",
+    "reconciliation.view",
+    "reconciliation.manage",
+    "financial_reports.view",
+    "financial_reports.export",
+    "customer.read",
+  ],
 };
 
 type RoleJoin = { name: string } | { name: string }[] | null;
