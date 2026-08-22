@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { adminGetOrderById } from "@/server/orders";
 import { requireAdminPageAccess } from "@/server/admin/page-access";
 import { canWriteOrders } from "@/server/rbac";
+import { getRemainingRefundableMinor } from "@/server/finance/queries";
+import { canCreateRefunds } from "@/lib/auth/finance-permissions";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import {
   AdminTable,
@@ -15,6 +17,7 @@ import {
 } from "@/components/admin/ui";
 import { formatStatusLabel } from "@/lib/admin/status-badges";
 import { OrderStatusForm } from "@/components/admin/orders/OrderStatusForm";
+import { CreateRefundRequestForm } from "@/components/admin/finance/CreateRefundRequestForm";
 import { formatMoney } from "@/lib/money";
 
 function profileFromOrder(order: {
@@ -47,6 +50,8 @@ export default async function AdminOrderDetailPage({
   if (!order) notFound();
 
   const customer = profileFromOrder(order);
+  const remainingRefundable = await getRemainingRefundableMinor(order.id).catch(() => 0);
+  const canRequestRefund = canCreateRefunds(ctx.permissions);
   const history = [...(order.order_status_history ?? [])].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
@@ -179,6 +184,14 @@ export default async function AdminOrderDetailPage({
             </p>
             <p className="text-muted">{order.shipping_phone}</p>
           </AdminCard>
+
+          {canRequestRefund && ["DELIVERED", "SHIPPED", "CANCELLED"].includes(order.status) ? (
+            <CreateRefundRequestForm
+              orderId={order.id}
+              orderNumber={order.order_number}
+              remainingRefundableMinor={remainingRefundable}
+            />
+          ) : null}
         </div>
       </div>
     </div>
