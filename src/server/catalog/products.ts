@@ -8,7 +8,7 @@ import {
 } from "@/server/catalog/supabase-products";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatCategoryLabel, normalizeCategorySlug, isDeprecatedCategorySlug, isSupabaseCatalogSlug } from "@/lib/supabase/catalog-categories";
-import { buildCanonicalShopCategories, buildCanonicalShopFilterCategories } from "@/lib/catalog/shop-categories";
+import { buildCanonicalShopCategories, buildCanonicalShopFilterCategories, shopFilterHref } from "@/lib/catalog/shop-categories";
 import { resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
 
 export type ProductListParams = {
@@ -153,24 +153,59 @@ export async function getRelatedProducts(slug: string, categorySlug: string) {
 
 export async function listShopNavCategories() {
   const rows = await listActiveShopCategories();
-  return buildCanonicalShopCategories(rows);
+  const canonical = buildCanonicalShopCategories(rows);
+  const seen = new Set(canonical.map((cat) => cat.slug));
+
+  const extras = rows
+    .filter((row) => {
+      const slug = normalizeCategorySlug(row.slug) ?? row.slug;
+      return !seen.has(slug as (typeof canonical)[number]["slug"]);
+    })
+    .map((row) => {
+      const slug = normalizeCategorySlug(row.slug) ?? row.slug;
+      return {
+        slug,
+        label: row.name,
+        description: row.description?.trim() || "",
+        href: `/categories/${slug}`,
+      };
+    });
+
+  return [...canonical, ...extras];
 }
 
 export async function listShopFilterCategories() {
   const rows = await listActiveShopCategories();
-  return buildCanonicalShopFilterCategories(rows);
+
+  return rows.map((row) => {
+    const slug = normalizeCategorySlug(row.slug) ?? row.slug;
+    return {
+      label: row.name,
+      slug,
+      description: row.description?.trim() || "",
+      href: isSupabaseCatalogSlug(slug)
+        ? shopFilterHref(slug)
+        : `/shop?category=${encodeURIComponent(slug)}`,
+    };
+  });
 }
 
 export async function listShopCategoryCards() {
   const rows = await listActiveShopCategories();
-  return buildCanonicalShopCategories(rows).map((cat) => {
-    const db = rows.find((r) => (normalizeCategorySlug(r.slug) ?? r.slug) === cat.slug);
+
+  return rows.map((row) => {
+    const slug = normalizeCategorySlug(row.slug) ?? row.slug;
+    const canonical = buildCanonicalShopCategories(rows).find((cat) => cat.slug === slug);
+
     return {
-      slug: cat.slug,
-      title: cat.label,
-      description: cat.description,
-      href: cat.href,
-      imageUrl: db?.image_url ?? null,
+      slug,
+      title: row.name,
+      description:
+        row.description?.trim() ||
+        canonical?.description ||
+        `Browse our ${row.name.toLowerCase()} collection.`,
+      href: `/categories/${slug}`,
+      imageUrl: row.image_url ?? null,
     };
   });
 }
@@ -181,13 +216,16 @@ async function listActiveShopCategories() {
   const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("categories")
-    .select("name, slug, description, image_url")
+    .select("name, slug, description, image_url, parent_id")
     .eq("is_active", true)
+    .is("parent_id", null)
     .order("sort_order", { ascending: true });
 
-  return (data ?? []).filter((row) => {
+  const rows = data ?? [];
+
+  return rows.filter((row) => {
     const slug = normalizeCategorySlug(row.slug) ?? row.slug;
-    return !isDeprecatedCategorySlug(slug) && isSupabaseCatalogSlug(slug);
+    return !isDeprecatedCategorySlug(slug);
   });
 }
 

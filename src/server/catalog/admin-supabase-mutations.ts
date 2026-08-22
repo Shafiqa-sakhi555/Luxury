@@ -8,6 +8,7 @@ import type { AdminProductFormValues, MutationResult } from "@/types/admin-catal
 import { getCategorySlugById } from "@/server/catalog/cloudinary-upload-context";
 import { persistProductImages } from "@/server/catalog/product-image-sync";
 import { deleteCloudinaryImage } from "@/lib/cloudinary";
+import { revalidateStorefrontCatalog } from "@/server/catalog/revalidate-storefront";
 
 function discountPercent(original: number, sale: number) {
   if (original <= 0 || sale >= original) return 0;
@@ -214,7 +215,7 @@ export async function createSupabaseCatalogProduct(
   });
 
   revalidatePath("/admin/catalog/products");
-  revalidatePath("/shop");
+  revalidateStorefrontCatalog([category.slug]);
 
   return { ok: true, id: product.id };
   } catch (error) {
@@ -318,7 +319,7 @@ export async function updateSupabaseCatalogProduct(
 
   revalidatePath("/admin/catalog/products");
   revalidatePath(`/admin/catalog/products/${id}`);
-  revalidatePath("/shop");
+  revalidateStorefrontCatalog([category.slug]);
 
   return { ok: true, id };
   } catch (error) {
@@ -349,7 +350,7 @@ export async function archiveSupabaseCatalogProduct(id: string): Promise<Mutatio
   });
 
   revalidatePath("/admin/catalog/products");
-  revalidatePath("/shop");
+  revalidateStorefrontCatalog();
 
   return { ok: true, id };
   } catch (error) {
@@ -402,7 +403,7 @@ export async function deleteSupabaseCatalogProduct(id: string): Promise<Mutation
     });
 
     revalidatePath("/admin/catalog/products");
-    revalidatePath("/shop");
+    revalidateStorefrontCatalog();
 
     return { ok: true, id };
   } catch (error) {

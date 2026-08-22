@@ -5,6 +5,7 @@ import { requirePermission } from "@/server/rbac";
 import { getCategorySlugById } from "@/server/catalog/cloudinary-upload-context";
 import { persistProductImages } from "@/server/catalog/product-image-sync";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { revalidateStorefrontCatalog } from "@/server/catalog/revalidate-storefront";
 
 const schema = z.object({
   images: z.array(
@@ -59,7 +60,7 @@ export async function PUT(
 
     revalidatePath("/admin/catalog/products");
     revalidatePath(`/admin/catalog/products/${id}`);
-    revalidatePath("/shop");
+    revalidateStorefrontCatalog([categorySlug]);
 
     return NextResponse.json({ ok: true, images });
   } catch (error) {

@@ -331,6 +331,7 @@ export async function getSupabaseCategoryBySlug(
     .from("categories")
     .select("id, name, slug, description, image_url, cloudinary_public_id")
     .ilike("slug", normalized)
+    .eq("is_active", true)
     .maybeSingle();
 
   if (error || !data) return null;

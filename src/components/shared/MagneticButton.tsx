@@ -17,10 +17,10 @@ export function MagneticButton({
   strength = 0.35,
   onClick,
 }: MagneticButtonProps) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
-  const handleMouse = (e: MouseEvent<HTMLDivElement>) => {
+  const handleMouse = (e: MouseEvent<HTMLButtonElement>) => {
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -32,16 +32,16 @@ export function MagneticButton({
   const reset = () => setPosition({ x: 0, y: 0 });
 
   return (
-    <motion.div
+    <motion.button
       ref={ref}
       onMouseMove={handleMouse}
       onMouseLeave={reset}
       onClick={onClick}
       animate={{ x: position.x, y: position.y }}
       transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
-      className={cn("relative inline-block", className)}
+      className={cn("relative", className)}
     >
       {children}
-    </motion.div>
+    </motion.button>
   );
 }
