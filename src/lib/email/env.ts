@@ -11,7 +11,12 @@ export function getResendApiKey(): string {
 }
 
 export function getEmailFrom(): string {
-  return process.env.EMAIL_FROM?.trim() || "orders@jalalsgroup.com";
+  return process.env.EMAIL_FROM?.trim() || "Jalal's Home Solution <orders@jalalsgroup.com>";
+}
+
+export function getEmailReplyTo(): string | undefined {
+  const replyTo = process.env.EMAIL_REPLY_TO?.trim();
+  return replyTo || undefined;
 }
 
 export function getSiteUrl(): string {

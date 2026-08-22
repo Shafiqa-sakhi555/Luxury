@@ -19,7 +19,8 @@
     "supabase:setup": "npm run supabase:migrate && npm run supabase:seed-admins",
     "supabase:bootstrap": "npm run supabase:migrate && npm run supabase:seed-admins && npm run supabase:seed-catalog",
     "assistant:export-products": "npx tsx scripts/assistant/export-product-knowledge.ts",
-    "assistant:reindex": "npx tsx scripts/assistant/reindex-knowledge.ts"
+    "assistant:reindex": "npx tsx scripts/assistant/reindex-knowledge.ts",
+    "email:test": "npx tsx scripts/test-email.ts"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.3.0",
