@@ -1,5 +1,10 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { resolveCartItemPriceMinor } from "@/lib/money";
 import { cartTotals } from "@/server/cart";
+import {
+  sendNewOrderStaffNotifications,
+  sendOrderStatusChangeNotifications,
+} from "@/server/orders/notifications";
 export type PlaceOrderInput = {
   customerId: string;
   cartId: string;
@@ -51,11 +56,15 @@ export async function placeOrder(input: PlaceOrderInput) {
 
   // 4. Create Order Items
   const orderItems = cart.cart_items.map((item: any) => {
-    const unitPrice =
-      item.price_snapshot_minor ??
-      item.product_variants?.sale_price_minor ??
-      item.product_variants?.price_minor ??
-      0;
+    const variant = item.product_variants;
+    const product = Array.isArray(variant?.products) ? variant.products[0] : variant?.products;
+    const unitPrice = resolveCartItemPriceMinor({
+      priceSnapshotMinor: item.price_snapshot_minor,
+      variantPriceMinor: variant?.price_minor,
+      variantSalePriceMinor: variant?.sale_price_minor,
+      productOriginalPriceMinor: product?.original_price_minor,
+      productSalePriceMinor: product?.sale_price_minor,
+    });
 
     return {
       order_id: order.id,
@@ -71,6 +80,10 @@ export async function placeOrder(input: PlaceOrderInput) {
   await supabase.from("order_items").insert(orderItems);
   await supabase.from("order_status_history").insert({ order_id: order.id, to_status: "PENDING", reason: "Order placed" });
   await supabase.from("cart_items").delete().eq("cart_id", cart.id);
+
+  void sendNewOrderStaffNotifications(order.id).catch((error) => {
+    console.error("New order staff notification failed:", error);
+  });
 
   return order;
 }
@@ -143,15 +156,24 @@ export async function updateOrderStatus(
     reason,
     actor_id: actorId ?? null,
   });
+
+  void sendOrderStatusChangeNotifications(orderId, order.status, status, reason).catch((error) => {
+    console.error("Order status notification failed:", error);
+  });
 }
 
 export async function adminGetOrderById(orderId: string) {
   const supabase = createSupabaseAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("orders")
-    .select("*, order_items(*), order_status_history(*), customers(profiles(name, email, phone))")
+    .select("*, order_items(*), order_status_history(*), customers(phone, profiles(name, email))")
     .eq("id", orderId)
     .maybeSingle();
+
+  if (error) {
+    console.error("adminGetOrderById failed:", error.message);
+    return null;
+  }
 
   return data;
 }

@@ -1,5 +1,5 @@
 import { cartTotals, getOrCreateCart } from "@/server/cart";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, resolveCartItemPriceMinor } from "@/lib/money";
 import type { ToolContext, ToolResult } from "./types";
 
 export async function runGetMyCart(ctx: ToolContext): Promise<ToolResult | null> {
@@ -41,23 +41,31 @@ export async function runGetMyCart(ctx: ToolContext): Promise<ToolResult | null>
       sku?: string;
       price_minor?: number | null;
       sale_price_minor?: number | null;
-      products?: { name?: string; slug?: string };
+      products?: {
+        name?: string;
+        slug?: string;
+        original_price_minor?: number | null;
+        sale_price_minor?: number | null;
+      };
     } | null;
   }) => {
     const product = item.product_variants?.products;
-    const price =
-      item.price_snapshot_minor ??
-      item.product_variants?.sale_price_minor ??
-      item.product_variants?.price_minor ??
-      0;
+    const productRow = Array.isArray(product) ? product[0] : product;
+    const price = resolveCartItemPriceMinor({
+      priceSnapshotMinor: item.price_snapshot_minor,
+      variantPriceMinor: item.product_variants?.price_minor,
+      variantSalePriceMinor: item.product_variants?.sale_price_minor,
+      productOriginalPriceMinor: productRow?.original_price_minor,
+      productSalePriceMinor: productRow?.sale_price_minor,
+    });
 
     return {
-      name: product?.name ?? "Product",
-      slug: product?.slug,
+      name: productRow?.name ?? "Product",
+      slug: productRow?.slug,
       sku: item.product_variants?.sku,
       quantity: item.quantity,
       unitPrice: formatMoney(price),
-      url: product?.slug ? `/products/${product.slug}` : null,
+      url: productRow?.slug ? `/products/${productRow.slug}` : null,
     };
   });
 

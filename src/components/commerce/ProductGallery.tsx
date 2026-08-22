@@ -25,7 +25,7 @@ export function ProductGallery({
 
   if (!active) {
     return (
-      <div className="relative aspect-square overflow-hidden rounded-2xl bg-gradient-to-br from-brand-50 to-mist ring-1 ring-navy/8">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-brand-50">
         <div className="flex h-full items-center justify-center">
           <span className="font-display text-lg text-navy/30">{productName}</span>
         </div>
@@ -34,35 +34,19 @@ export function ProductGallery({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="group relative aspect-square overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-navy/8">
-        <Image
-          src={getOptimizedImageUrl(active.url, { width: 1200, crop: "limit" })}
-          alt={active.alt ?? productName}
-          fill
-          className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-          priority
-          sizes="(max-width: 1024px) 100vw, 50vw"
-        />
-        {sorted.length > 1 ? (
-          <span className="absolute bottom-3 right-3 rounded-full bg-ink/65 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
-            {activeIndex + 1} / {sorted.length}
-          </span>
-        ) : null}
-      </div>
-
-      {sorted.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar sm:gap-3">
+    <div className="flex gap-3 sm:gap-4">
+      {sorted.length > 1 ? (
+        <div className="hidden shrink-0 flex-col gap-2 sm:flex">
           {sorted.map((img, index) => (
             <button
               key={img.id}
               type="button"
               onClick={() => setActiveIndex(index)}
               className={cn(
-                "relative h-16 w-16 shrink-0 overflow-hidden rounded-lg ring-2 transition sm:h-20 sm:w-20",
+                "relative h-16 w-16 overflow-hidden border transition lg:h-[72px] lg:w-[72px]",
                 index === activeIndex
-                  ? "ring-red shadow-md shadow-red/10"
-                  : "ring-transparent hover:ring-navy/20"
+                  ? "border-navy ring-1 ring-navy"
+                  : "border-navy/15 hover:border-navy/40"
               )}
               aria-label={`View image ${index + 1}`}
               aria-current={index === activeIndex}
@@ -72,13 +56,54 @@ export function ProductGallery({
                 alt={img.alt ?? `${productName} ${index + 1}`}
                 fill
                 className="object-cover"
-                sizes="80px"
+                sizes="72px"
                 loading="lazy"
               />
             </button>
           ))}
         </div>
-      )}
+      ) : null}
+
+      <div className="relative min-w-0 flex-1">
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-white">
+          <Image
+            src={getOptimizedImageUrl(active.url, { width: 1200, crop: "limit" })}
+            alt={active.alt ?? productName}
+            fill
+            className="object-cover"
+            priority
+            sizes="(max-width: 1024px) 100vw, 45vw"
+          />
+        </div>
+
+        {sorted.length > 1 ? (
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1 hide-scrollbar sm:hidden">
+            {sorted.map((img, index) => (
+              <button
+                key={img.id}
+                type="button"
+                onClick={() => setActiveIndex(index)}
+                className={cn(
+                  "relative h-16 w-16 shrink-0 overflow-hidden border transition",
+                  index === activeIndex
+                    ? "border-navy ring-1 ring-navy"
+                    : "border-navy/15"
+                )}
+                aria-label={`View image ${index + 1}`}
+              >
+                <Image
+                  src={getOptimizedImageUrl(img.url, { width: 160, height: 160, crop: "fill" })}
+                  alt={img.alt ?? `${productName} ${index + 1}`}
+                  fill
+                  className="object-cover"
+                  sizes="64px"
+                  loading="lazy"
+                />
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

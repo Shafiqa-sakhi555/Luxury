@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { resolveCartItemPriceMinor } from "@/lib/money";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 
@@ -147,7 +148,9 @@ async function upsertCartItem(
   if (price === undefined) {
     const { data: variant } = await supabase
       .from("product_variants")
-      .select("sale_price_minor, price_minor, products(status)")
+      .select(
+        "sale_price_minor, price_minor, products(status, original_price_minor, sale_price_minor)"
+      )
       .eq("id", variantId)
       .single();
 
@@ -160,7 +163,12 @@ async function upsertCartItem(
       throw new Error("Product unavailable");
     }
 
-    price = variant.sale_price_minor > 0 ? variant.sale_price_minor : variant.price_minor;
+    price = resolveCartItemPriceMinor({
+      variantPriceMinor: variant.price_minor,
+      variantSalePriceMinor: variant.sale_price_minor,
+      productOriginalPriceMinor: product?.original_price_minor,
+      productSalePriceMinor: product?.sale_price_minor,
+    });
   }
 
   const { data: existing } = await supabase
@@ -235,11 +243,33 @@ export async function removeCartItem(itemId: string, customerId?: string) {
   return supabase.from("cart_items").delete().eq("id", itemId);
 }
 
+function readProductPrices(product: unknown) {
+  const row = Array.isArray(product) ? product[0] : product;
+  if (!row || typeof row !== "object") {
+    return { originalPriceMinor: 0, salePriceMinor: 0 };
+  }
+  const record = row as {
+    original_price_minor?: number | null;
+    sale_price_minor?: number | null;
+  };
+  return {
+    originalPriceMinor: record.original_price_minor ?? 0,
+    salePriceMinor: record.sale_price_minor ?? 0,
+  };
+}
+
 export function cartTotals(cart: {
   cart_items?: Array<{
     quantity: number;
     price_snapshot_minor?: number | null;
-    product_variants?: { price_minor?: number | null; sale_price_minor?: number | null } | null;
+    product_variants?: {
+      price_minor?: number | null;
+      sale_price_minor?: number | null;
+      products?: {
+        original_price_minor?: number | null;
+        sale_price_minor?: number | null;
+      } | null;
+    } | null;
   }> | null;
 } | null) {
   if (!cart?.cart_items?.length) {
@@ -250,11 +280,15 @@ export function cartTotals(cart: {
   let itemCount = 0;
 
   for (const item of cart.cart_items) {
-    const price =
-      item.price_snapshot_minor ??
-      item.product_variants?.sale_price_minor ??
-      item.product_variants?.price_minor ??
-      0;
+    const variant = item.product_variants;
+    const productPrices = readProductPrices(variant?.products);
+    const price = resolveCartItemPriceMinor({
+      priceSnapshotMinor: item.price_snapshot_minor,
+      variantPriceMinor: variant?.price_minor,
+      variantSalePriceMinor: variant?.sale_price_minor,
+      productOriginalPriceMinor: productPrices.originalPriceMinor,
+      productSalePriceMinor: productPrices.salePriceMinor,
+    });
     subtotalMinor += price * item.quantity;
     itemCount += item.quantity;
   }
