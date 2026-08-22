@@ -1,6 +1,10 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveCartItemPriceMinor } from "@/lib/money";
 import { cartTotals } from "@/server/cart";
+import {
+  sendNewOrderStaffNotifications,
+  sendOrderStatusChangeNotifications,
+} from "@/server/orders/notifications";
 export type PlaceOrderInput = {
   customerId: string;
   cartId: string;
@@ -77,6 +81,10 @@ export async function placeOrder(input: PlaceOrderInput) {
   await supabase.from("order_status_history").insert({ order_id: order.id, to_status: "PENDING", reason: "Order placed" });
   await supabase.from("cart_items").delete().eq("cart_id", cart.id);
 
+  void sendNewOrderStaffNotifications(order.id).catch((error) => {
+    console.error("New order staff notification failed:", error);
+  });
+
   return order;
 }
 
@@ -148,15 +156,24 @@ export async function updateOrderStatus(
     reason,
     actor_id: actorId ?? null,
   });
+
+  void sendOrderStatusChangeNotifications(orderId, order.status, status, reason).catch((error) => {
+    console.error("Order status notification failed:", error);
+  });
 }
 
 export async function adminGetOrderById(orderId: string) {
   const supabase = createSupabaseAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("orders")
-    .select("*, order_items(*), order_status_history(*), customers(profiles(name, email, phone))")
+    .select("*, order_items(*), order_status_history(*), customers(phone, profiles(name, email))")
     .eq("id", orderId)
     .maybeSingle();
+
+  if (error) {
+    console.error("adminGetOrderById failed:", error.message);
+    return null;
+  }
 
   return data;
 }

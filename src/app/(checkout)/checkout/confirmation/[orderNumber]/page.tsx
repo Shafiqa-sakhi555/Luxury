@@ -21,10 +21,11 @@ export default async function ConfirmationPage({
 
   return (
     <div className="mx-auto max-w-lg text-center">
-      <p className="text-xs font-semibold uppercase tracking-widest text-red">Order confirmed</p>
+      <p className="text-xs font-semibold uppercase tracking-widest text-red">Order received</p>
       <h1 className="mt-2 font-display text-3xl text-navy">{order.order_number}</h1>
       <p className="mt-4 text-muted">
-        Thank you for your order. We will contact you to confirm delivery details.
+        Thank you for your order. Our team will review and confirm it shortly. You can track the
+        status anytime in your account.
       </p>
       <p className="mt-6 text-2xl font-semibold tabular-nums text-navy">{formatMoney(order.total_minor)}</p>
       <p className="mt-2 text-sm text-muted">Payment: Cash on delivery</p>

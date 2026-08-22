@@ -10,7 +10,6 @@ import { SectionHeading } from "@/components/shared/SectionHeading";
 import { PageContainer } from "@/components/ui/page-container";
 import { EmptyState } from "@/components/ui/empty-state";
 import { normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
-import { isCanonicalShopSlug } from "@/lib/catalog/shop-categories";
 import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
 
 export const revalidate = 60;
@@ -45,10 +44,6 @@ export default async function CategoryPage({
 
   if (normalizedSlug !== slug) {
     redirect(`/categories/${normalizedSlug}${sp.page ? `?page=${sp.page}` : ""}`);
-  }
-
-  if (!isCanonicalShopSlug(normalizedSlug)) {
-    notFound();
   }
 
   const page = Math.max(1, Number(sp.page ?? 1));

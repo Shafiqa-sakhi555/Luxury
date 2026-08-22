@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
+    "check:env": "npx tsx scripts/check-env.ts",
     "supabase:migrate": "npx tsx scripts/supabase/apply-migration.ts",
     "supabase:seed-admins": "npx tsx scripts/supabase/seed-admins.ts",
     "supabase:seed-curtains": "npx tsx scripts/supabase/seed-curtains.ts",
@@ -19,7 +20,8 @@
     "supabase:setup": "npm run supabase:migrate && npm run supabase:seed-admins",
     "supabase:bootstrap": "npm run supabase:migrate && npm run supabase:seed-admins && npm run supabase:seed-catalog",
     "assistant:export-products": "npx tsx scripts/assistant/export-product-knowledge.ts",
-    "assistant:reindex": "npx tsx scripts/assistant/reindex-knowledge.ts"
+    "assistant:reindex": "npx tsx scripts/assistant/reindex-knowledge.ts",
+    "email:test": "npx tsx scripts/test-email.ts"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.3.0",
@@ -57,6 +59,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.84.0",
+    "resend": "^6.21.0",
     "slugify": "^1.6.9",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.0.2",

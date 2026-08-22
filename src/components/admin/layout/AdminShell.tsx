@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { tryCreateSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ADMIN_NAV } from "@/lib/auth/admin-access";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -49,13 +49,13 @@ export function AdminShell({ children, allowedHrefs, roleLabel }: AdminShellProp
 
   useFocusTrap(mobileNavRef, mobileOpen, () => setMobileOpen(false));
 
-  const supabase = createSupabaseBrowserClient();
   const allowed = new Set(allowedHrefs);
   const nav = ADMIN_NAV.filter((item) => allowed.has(item.href));
 
   const handleSignOut = async () => {
     await fetch("/api/auth/admin/session", { method: "DELETE" });
-    await supabase.auth.signOut();
+    const supabase = tryCreateSupabaseBrowserClient();
+    if (supabase) await supabase.auth.signOut();
     router.push("/admin/login");
     router.refresh();
   };

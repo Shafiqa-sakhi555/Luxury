@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Package } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
+import { CustomerOrderStatusBadge } from "@/components/account/CustomerOrderStatusBadge";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -70,10 +71,10 @@ export default async function AccountOrdersPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="tabular-nums font-medium">{formatMoney(order.total_minor)}</p>
-                    <p className="text-xs capitalize text-muted">
-                      {order.status.replace(/_/g, " ")}
-                    </p>
+                    <p className="font-medium tabular-nums">{formatMoney(order.total_minor)}</p>
+                    <div className="mt-1 flex justify-end">
+                      <CustomerOrderStatusBadge status={order.status} />
+                    </div>
                   </div>
                 </div>
               </Card>

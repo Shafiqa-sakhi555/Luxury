@@ -8,6 +8,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/slug";
 import { deleteCloudinaryImage } from "@/lib/cloudinary";
 import { writeAuditLog } from "@/server/audit";
+import { revalidateStorefrontCatalog } from "@/server/catalog/revalidate-storefront";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
@@ -113,9 +114,10 @@ export async function saveCategoryAction(input: {
     }
 
     revalidatePath("/admin/catalog/categories");
-    revalidatePath("/shop");
-    
-    return { ok: true as const };
+    revalidatePath("/admin/catalog/products");
+    revalidateStorefrontCatalog([finalSlug]);
+
+    return { ok: true as const, slug: finalSlug };
   } catch (error) {
     if (error instanceof AuthorizationError) {
       return { ok: false as const, error: error.message };
@@ -137,7 +139,7 @@ export async function removeCategoryAction(input: { id: string }) {
 
     const { data: existingCategory, error: loadError } = await supabase
       .from("categories")
-      .select("id, name, cloudinary_public_id, is_active")
+      .select("id, name, slug, cloudinary_public_id, is_active")
       .eq("id", input.id)
       .maybeSingle();
 
@@ -177,7 +179,8 @@ export async function removeCategoryAction(input: { id: string }) {
       });
 
       revalidatePath("/admin/catalog/categories");
-      revalidatePath("/shop");
+      revalidatePath("/admin/catalog/products");
+      revalidateStorefrontCatalog([existingCategory.slug]);
 
       return {
         ok: true as const,
@@ -203,7 +206,8 @@ export async function removeCategoryAction(input: { id: string }) {
     });
 
     revalidatePath("/admin/catalog/categories");
-    revalidatePath("/shop");
+    revalidatePath("/admin/catalog/products");
+    revalidateStorefrontCatalog([existingCategory.slug]);
 
     return { ok: true as const, archived: false as const };
   } catch (error) {
