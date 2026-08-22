@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { tryCreateSupabaseBrowserClient } from "@/lib/supabase/client";
+import { SupabaseSetupNotice } from "@/components/shared/SupabaseSetupNotice";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -17,10 +18,12 @@ export function RegisterForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const supabase = createSupabaseBrowserClient();
+  const supabase = tryCreateSupabaseBrowserClient();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!supabase) return;
+
     setLoading(true);
     setError("");
 
@@ -64,6 +67,10 @@ export function RegisterForm() {
   }
 
   const loginHref = `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+
+  if (!supabase) {
+    return <SupabaseSetupNotice />;
+  }
 
   return (
     <>

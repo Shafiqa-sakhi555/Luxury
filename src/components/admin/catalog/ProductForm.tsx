@@ -79,7 +79,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     originalPriceMajor: product?.originalPriceMajor ?? 0,
     salePriceMajor: product?.salePriceMajor ?? 0,
     stockQuantity: product?.stockQuantity ?? 0,
-    status: product?.status ?? "DRAFT",
+    status: product?.status ?? "ACTIVE",
     isFeatured: product?.isFeatured ?? false,
     sellingUnit: product?.sellingUnit ?? "",
   };

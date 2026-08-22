@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getCategorySlugById } from "@/server/catalog/cloudinary-upload-context";
 import { persistProductImages } from "@/server/catalog/product-image-sync";
+import { revalidateStorefrontCatalog } from "@/server/catalog/revalidate-storefront";
 
 export async function repairMissingProductImages() {
   const supabase = createSupabaseAdminClient();
@@ -44,7 +45,7 @@ export async function repairMissingProductImages() {
   }
 
   revalidatePath("/admin/catalog/products");
-  revalidatePath("/shop");
+  revalidateStorefrontCatalog();
 
   return { repaired, scanned: products?.length ?? 0 };
 }
