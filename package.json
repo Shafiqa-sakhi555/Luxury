@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
+    "check:env": "npx tsx scripts/check-env.ts",
     "supabase:migrate": "npx tsx scripts/supabase/apply-migration.ts",
     "supabase:seed-admins": "npx tsx scripts/supabase/seed-admins.ts",
     "supabase:seed-curtains": "npx tsx scripts/supabase/seed-curtains.ts",

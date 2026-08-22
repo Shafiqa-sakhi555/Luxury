@@ -1,4 +1,7 @@
-import type { Metadata } from "next";import { listProducts, listShopFilterCategories, getCategoryBySlug, resolveShopCategorySlug } from "@/server/catalog/products";
+import type { Metadata } from "next";
+import { listProducts, listShopFilterCategories, getCategoryBySlug, resolveShopCategorySlug } from "@/server/catalog/products";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { SupabaseSetupNotice } from "@/components/shared/SupabaseSetupNotice";
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { CatalogFilterPills } from "@/components/commerce/CatalogFilterPills";
 import { CatalogPagination } from "@/components/commerce/CatalogPagination";
@@ -21,6 +24,7 @@ export default async function ShopPage({
 }) {
   const params = await searchParams;
   const page = Number(params.page ?? 1);
+  const supabaseReady = isSupabaseConfigured();
   const requestedCategorySlug = normalizeCategorySlug(params.category);
   const resolvedCategorySlug = requestedCategorySlug
     ? await resolveShopCategorySlug(requestedCategorySlug)
@@ -78,6 +82,8 @@ export default async function ShopPage({
       </section>
 
       <PageContainer className="relative py-10 sm:py-12">
+        {!supabaseReady && <SupabaseSetupNotice className="mb-8" />}
+
         <CatalogFilterPills
           items={filterItems}
           activeSlug={resolvedCategorySlug ?? params.category}

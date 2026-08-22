@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { tryCreateSupabaseBrowserClient } from "@/lib/supabase/client";
+import { SupabaseSetupNotice } from "@/components/shared/SupabaseSetupNotice";
 import { hasStaffRoleFromRows, isStaffRole } from "@/lib/auth/staff";
 
 export function LoginForm() {
@@ -17,10 +18,12 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const supabase = createSupabaseBrowserClient();
+  const supabase = tryCreateSupabaseBrowserClient();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!supabase) return;
+
     setLoading(true);
     setError("");
     
@@ -80,6 +83,10 @@ export function LoginForm() {
     }
     
     router.refresh();
+  }
+
+  if (!supabase) {
+    return <SupabaseSetupNotice />;
   }
 
   return (
