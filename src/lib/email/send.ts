@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { getEmailFrom, getResendApiKey, isEmailConfigured } from "@/lib/email/env";
+import { getEmailFrom, getEmailReplyTo, getResendApiKey, isEmailConfigured } from "@/lib/email/env";
 
 let resendClient: Resend | null = null;
 
@@ -35,7 +35,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: true } | {
       subject: input.subject,
       html: input.html,
       text: input.text,
-      replyTo: input.replyTo,
+      replyTo: input.replyTo ?? getEmailReplyTo(),
     });
 
     if (error) {
