@@ -10,6 +10,7 @@ import { BrandLogo, BrandWordmark } from "@/components/brand/BrandLogo";
 import { useLogoIntro } from "@/contexts/LogoIntroContext";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { cn } from "@/lib/utils";
+import { tryCreateSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { ShopNavCategory } from "@/components/layout/AppShell";
 
 const navLinks = [
@@ -29,6 +30,7 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileCollectionsOpen, setMobileCollectionsOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const [accountHref, setAccountHref] = useState("/login?callbackUrl=/account");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -84,6 +86,25 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const supabase = tryCreateSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const syncAccountHref = (user: { id: string } | null | undefined) => {
+      setAccountHref(user ? "/account" : "/login?callbackUrl=/account");
+    };
+
+    supabase.auth.getUser().then(({ data }) => syncAccountHref(data.user));
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncAccountHref(session?.user);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   return (
@@ -238,7 +259,7 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
               </Link>
             </Button>
             <Button variant="ghost" size="icon" aria-label="Account" className="hidden sm:inline-flex" asChild>
-              <Link href="/login">
+              <Link href={accountHref}>
                 <User className="h-4.5 w-4.5" />
               </Link>
             </Button>
@@ -352,6 +373,14 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
                     {link.label}
                   </Link>
                 ))}
+                <Link
+                  href={accountHref}
+                  onClick={() => setMobileOpen(false)}
+                  aria-current={isActive("/account") ? "page" : undefined}
+                  className="font-display text-2xl text-navy"
+                >
+                  My account
+                </Link>
               </div>
 
               <div className="mt-auto pt-6">
