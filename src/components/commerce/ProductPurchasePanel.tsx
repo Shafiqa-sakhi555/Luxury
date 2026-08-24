@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatMoney } from "@/lib/money";
+import {
+  formatProductPriceDisplay,
+  isNumericRateValue,
+  productSellingUnitSubtitle,
+} from "@/lib/catalog/product-pricing";
 import { ProductActions } from "@/components/commerce/AddToCartButton";
 import { ProductAccordions } from "@/components/commerce/ProductAccordions";
 import { ProductOptionSelector } from "@/components/commerce/ProductOptionSelector";
@@ -13,7 +17,10 @@ type ProductPurchasePanelProps = {
   brandName?: string | null;
   salePriceMinor: number;
   originalPriceMinor: number;
-  discountPercentage: number;
+  sellingUnit?: string | null;
+  categorySlug?: string | null;
+  size?: string | null;
+  showFromPrefix?: boolean;
   sku?: string | null;
   stockStatus?: string | null;
   variantId?: string | null;
@@ -33,7 +40,10 @@ export function ProductPurchasePanel({
   brandName,
   salePriceMinor,
   originalPriceMinor,
-  discountPercentage,
+  sellingUnit,
+  categorySlug,
+  size,
+  showFromPrefix = false,
   sku,
   stockStatus,
   variantId,
@@ -46,7 +56,17 @@ export function ProductPurchasePanel({
   onColorChange,
   onSizeChange,
 }: ProductPurchasePanelProps) {
-  const hasDiscount = originalPriceMinor > salePriceMinor;
+  const priceInput = {
+    salePriceMinor,
+    originalPriceMinor,
+    sellingUnit,
+    categorySlug,
+    size,
+    prefix: showFromPrefix ? "From" : null,
+  };
+  const priceDisplay = formatProductPriceDisplay(priceInput);
+  const hasDiscount = priceDisplay.discountPercentage > 0;
+  const unitSubtitle = productSellingUnitSubtitle(priceInput);
   const inStock =
     stockStatus === "in_stock" ||
     stockStatus === "unknown" ||
@@ -74,19 +94,25 @@ export function ProductPurchasePanel({
           <p className="text-sm text-navy/70">{brandName ?? categoryName}</p>
         </header>
 
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          {hasDiscount ? (
-            <span className="text-base text-muted line-through">
-              {formatMoney(originalPriceMinor)}
-            </span>
-          ) : null}
-          <span className="text-xl font-medium text-red sm:text-2xl">
-            {formatMoney(salePriceMinor)}
-          </span>
-          {hasDiscount ? (
-            <span className="text-sm font-medium text-red">
-              Save {Math.round(discountPercentage)}%
-            </span>
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            {priceDisplay.showFromPrefix ? (
+              <span className="text-sm font-medium uppercase tracking-wide text-muted">From</span>
+            ) : null}
+            {hasDiscount && priceDisplay.compareAt ? (
+              <span className="text-base text-muted line-through">{priceDisplay.compareAt}</span>
+            ) : null}
+            <span className="text-xl font-medium text-red sm:text-2xl">{priceDisplay.primary}</span>
+            {hasDiscount ? (
+              <span className="text-sm font-medium text-red">
+                Save {priceDisplay.discountPercentage}%
+              </span>
+            ) : null}
+          </div>
+          {unitSubtitle && !isNumericRateValue(sellingUnit) ? (
+            <p className="text-sm text-muted">{unitSubtitle}</p>
+          ) : priceDisplay.unitLabel && isNumericRateValue(sellingUnit) ? (
+            <p className="text-sm text-muted">Final price depends on room size · sold per sq ft</p>
           ) : null}
         </div>
 

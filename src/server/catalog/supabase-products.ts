@@ -190,8 +190,14 @@ async function mapVariants(
       color: row.color,
       quality: row.quality,
       size: row.size,
-      originalPriceMinor: row.price_minor,
-      salePriceMinor: row.sale_price_minor,
+      originalPriceMinor:
+        row.price_minor > 0
+          ? row.price_minor
+          : Math.round(Number(row.original_price ?? 0) * 100),
+      salePriceMinor:
+        row.sale_price_minor > 0
+          ? row.sale_price_minor
+          : Math.round(Number(row.sale_price ?? 0) * 100),
       discountPercentage: row.price_minor > row.sale_price_minor ? Math.round((1 - row.sale_price_minor / row.price_minor) * 100) : 0,
       stockQuantity: null, // Simplified
       stockStatus: null,

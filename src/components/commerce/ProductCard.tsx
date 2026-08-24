@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Heart, ShoppingCart } from "lucide-react";
 import type { CatalogProduct } from "@/types/catalog";
-import { formatMoney } from "@/lib/money";
+import { formatProductPriceDisplay, productSellingUnitSubtitle } from "@/lib/catalog/product-pricing";
 import { addItemToCart } from "@/lib/cart-client";
 import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,14 @@ import { StockBadge } from "@/components/commerce/StockBadge";
 import { toast } from "sonner";
 
 function productSubtitle(product: CatalogProduct) {
-  return [product.sellingUnit, product.size].filter(Boolean).join(" · ");
+  const unitNote = productSellingUnitSubtitle({
+    salePriceMinor: product.salePriceMinor,
+    originalPriceMinor: product.originalPriceMinor,
+    sellingUnit: product.sellingUnit,
+    categorySlug: product.category.slug,
+    size: product.size,
+  });
+  return [unitNote, product.size].filter(Boolean).join(" · ");
 }
 
 function isInStock(status: CatalogProduct["stockStatus"]) {
@@ -41,7 +48,16 @@ export function ProductCard({
     product.images[0]?.url ??
     null;
 
-  const hasDiscount = product.originalPriceMinor > product.salePriceMinor;
+  const priceInput = {
+    salePriceMinor: product.salePriceMinor,
+    originalPriceMinor: product.originalPriceMinor,
+    sellingUnit: product.sellingUnit,
+    categorySlug: product.category.slug,
+    size: product.size,
+    prefix: product.hasVariants ? "From" : null,
+  };
+  const priceDisplay = formatProductPriceDisplay(priceInput);
+  const hasDiscount = priceDisplay.discountPercentage > 0;
   const subtitle = productSubtitle(product);
   const inStock = isInStock(product.stockStatus);
   const canAddFromCard = Boolean(product.variantId && !product.hasVariants && inStock);
@@ -101,7 +117,7 @@ export function ProductCard({
           <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1.5 sm:left-3 sm:top-3">
             {hasDiscount && (
               <span className="rounded-md bg-red px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                -{Math.round(product.discountPercentage)}%
+                -{priceDisplay.discountPercentage}%
               </span>
             )}
             {product.isFeatured && (
@@ -152,18 +168,14 @@ export function ProductCard({
 
         <div className="mt-auto flex items-end justify-between gap-2 pt-3">
           <div className="flex flex-wrap items-baseline gap-1.5">
-            {product.hasVariants && (
+            {priceDisplay.showFromPrefix && (
               <span className="text-[10px] font-medium uppercase tracking-wide text-muted sm:text-[11px]">
                 From
               </span>
             )}
-            <span className="text-sm font-semibold text-navy sm:text-base">
-              {formatMoney(product.salePriceMinor)}
-            </span>
-            {hasDiscount && (
-              <span className="text-[11px] text-muted line-through sm:text-xs">
-                {formatMoney(product.originalPriceMinor)}
-              </span>
+            <span className="text-sm font-semibold text-navy sm:text-base">{priceDisplay.primary}</span>
+            {priceDisplay.compareAt && (
+              <span className="text-[11px] text-muted line-through sm:text-xs">{priceDisplay.compareAt}</span>
             )}
           </div>
           {inStock ? (

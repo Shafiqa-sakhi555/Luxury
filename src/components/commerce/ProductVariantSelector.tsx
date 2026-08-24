@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { CatalogProduct, CatalogProductVariant } from "@/types/catalog";
+import { isNumericRateValue } from "@/lib/catalog/product-pricing";
 import { ProductGallery } from "@/components/commerce/ProductGallery";
 import { ProductPurchasePanel } from "@/components/commerce/ProductPurchasePanel";
 
@@ -48,7 +49,11 @@ function buildSpecs(product: CatalogProduct, selected?: CatalogProductVariant) {
     selected?.design && { label: "Design", value: selected.design },
     selected?.color && { label: "Color", value: selected.color },
     selected?.quality && { label: "Quality", value: selected.quality },
-    product.sellingUnit && { label: "Unit", value: product.sellingUnit },
+    product.sellingUnit &&
+      !isNumericRateValue(product.sellingUnit) && {
+        label: "Unit",
+        value: product.sellingUnit,
+      },
     ...product.specifications.map((spec) => ({
       label: spec.key.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()),
       value: spec.value,
@@ -91,7 +96,10 @@ export function ProductVariantSelector({ product }: { product: CatalogProduct })
           brandName={product.brand?.name ?? product.category.name}
           salePriceMinor={selected.salePriceMinor}
           originalPriceMinor={selected.originalPriceMinor}
-          discountPercentage={selected.discountPercentage}
+          sellingUnit={product.sellingUnit}
+          categorySlug={product.category.slug}
+          size={selected.size ?? product.size}
+          showFromPrefix={variants.length > 1}
           sku={selected.sku}
           stockStatus={selected.stockStatus}
           variantId={selected.id}
@@ -137,7 +145,9 @@ export function ProductSimpleDetail({ product }: { product: CatalogProduct }) {
           brandName={product.brand?.name ?? product.category.name}
           salePriceMinor={product.salePriceMinor}
           originalPriceMinor={product.originalPriceMinor}
-          discountPercentage={product.discountPercentage}
+          sellingUnit={product.sellingUnit}
+          categorySlug={product.category.slug}
+          size={product.size}
           sku={product.sku}
           stockStatus={product.stockStatus}
           variantId={product.variantId}

@@ -38,6 +38,7 @@ export type AdminProductFormValues = {
   status: "ACTIVE" | "DRAFT" | "ARCHIVED";
   isFeatured: boolean;
   sellingUnit: string;
+  pricePerSquareFoot?: boolean;
   images: AdminProductImage[];
   draftKey?: string;
 };
