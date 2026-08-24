@@ -12,7 +12,7 @@ import { hasStaffRoleFromRows, isStaffRole } from "@/lib/auth/staff";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/account";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -65,7 +65,7 @@ export function LoginForm() {
           await supabase.auth.signOut();
           router.push("/admin/login?error=unauthorized");
         }
-      } else if (isStaff && callbackUrl === "/") {
+      } else if (isStaff && (callbackUrl === "/" || callbackUrl === "/account")) {
         const sessionResponse = await fetch("/api/auth/admin/session", { method: "POST" });
         if (!sessionResponse.ok) {
           await supabase.auth.signOut();

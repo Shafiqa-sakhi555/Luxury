@@ -94,7 +94,7 @@ export async function getRefundRequestById(id: string) {
   const { data, error } = await supabase
     .from("refund_requests")
     .select(
-      "*, orders(*, order_items(*)), customers(profiles(name, email, phone)), financial_transactions(*)"
+      "*, orders(*, order_items(*)), customers(phone, profiles(name, email)), financial_transactions(*)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -141,7 +141,7 @@ export async function getInvoiceById(id: string) {
   const { data, error } = await supabase
     .from("invoices")
     .select(
-      "*, orders(*, order_items(*), shipping_name, shipping_line1, shipping_city, shipping_phone), customers(profiles(name, email, phone))"
+      "*, orders(*, order_items(*)), customers(phone, profiles(name, email))"
     )
     .eq("id", id)
     .maybeSingle();
