@@ -16,7 +16,7 @@ export default async function FinanceInvoiceDetailPage({
 }) {
   await requireAdminPageAccess("invoices.view", "finance.read");
   const { id } = await params;
-  const invoice = await getInvoiceById(id).catch(() => null);
+  const invoice = await getInvoiceById(id);
 
   if (!invoice) notFound();
 
