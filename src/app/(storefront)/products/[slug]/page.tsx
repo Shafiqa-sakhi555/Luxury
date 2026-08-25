@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProductBySlug, getRelatedProducts } from "@/server/catalog/products";
+import { listPublishedProductReviews } from "@/server/product-reviews/queries";
 import {
   ProductSimpleDetail,
   ProductVariantSelector,
@@ -8,6 +9,8 @@ import {
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { PageContainer } from "@/components/ui/page-container";
 import { Section } from "@/components/ui/section";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -32,16 +35,19 @@ export default async function ProductPage({
   const product = await getProductBySlug(slug).catch(() => null);
   if (!product) notFound();
 
-  const related = await getRelatedProducts(slug, product.category.slug).catch(() => []);
+  const [related, reviews] = await Promise.all([
+    getRelatedProducts(slug, product.category.slug).catch(() => []),
+    listPublishedProductReviews(product.id),
+  ]);
   const isCollection = product.hasVariants && (product.variants?.length ?? 0) > 0;
 
   return (
     <div className="bg-white">
       <PageContainer className="pb-16 pt-site-header">
         {isCollection ? (
-          <ProductVariantSelector product={product} />
+          <ProductVariantSelector product={product} reviews={reviews} />
         ) : (
-          <ProductSimpleDetail product={product} />
+          <ProductSimpleDetail product={product} reviews={reviews} />
         )}
 
         {related.length > 0 ? (

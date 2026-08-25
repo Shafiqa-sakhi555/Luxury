@@ -1,10 +1,24 @@
 import { requireAdminPageAccess } from "@/server/admin/page-access";
 import { listAdminReviews } from "@/server/reviews/queries";
-import { ReviewManager } from "@/components/admin/catalog/ReviewManager";
+import {
+  listAdminProductReviews,
+  listProductReviewProductOptions,
+} from "@/server/product-reviews/queries";
+import { ReviewsAdminTabs } from "@/components/admin/catalog/ReviewsAdminTabs";
 
 export default async function AdminReviewsPage() {
   await requireAdminPageAccess("catalog.write");
-  const reviews = await listAdminReviews().catch(() => []);
+  const [homepageReviews, productReviews, products] = await Promise.all([
+    listAdminReviews().catch(() => []),
+    listAdminProductReviews().catch(() => []),
+    listProductReviewProductOptions().catch(() => []),
+  ]);
 
-  return <ReviewManager reviews={reviews} />;
+  return (
+    <ReviewsAdminTabs
+      homepageReviews={homepageReviews}
+      productReviews={productReviews}
+      products={products}
+    />
+  );
 }
