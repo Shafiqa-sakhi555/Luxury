@@ -12,6 +12,7 @@ type ImageUploaderProps = {
   value: AdminHeroImage;
   onChange: (value: AdminHeroImage) => void;
   categorySlug?: string | null;
+  bannerKey?: string | null;
 };
 
 export function ImageUploader({
@@ -19,6 +20,7 @@ export function ImageUploader({
   value,
   onChange,
   categorySlug,
+  bannerKey,
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, deleteFile } = useCloudinaryUpload();
@@ -26,14 +28,14 @@ export function ImageUploader({
   const [progress, setProgress] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const canUpload = Boolean(categorySlug?.trim());
+  const canUpload = Boolean(categorySlug?.trim() || bannerKey?.trim());
 
   async function handleFiles(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
 
-    if (!canUpload || !categorySlug) {
-      setError("Enter a category name/slug before uploading the hero image.");
+    if (!canUpload) {
+      setError("Enter a name/slug before uploading an image.");
       return;
     }
 
@@ -43,10 +45,9 @@ export function ImageUploader({
 
     try {
       const uploaded = await uploadFile(file, {
-        context: {
-          type: "category",
-          categorySlug,
-        },
+        context: bannerKey
+          ? { type: "banner", bannerKey }
+          : { type: "category", categorySlug: categorySlug! },
         onProgress: setProgress,
       });
 
@@ -90,9 +91,9 @@ export function ImageUploader({
 
       {!canUpload && (
         <p className="text-xs text-amber-700">
-          Images upload to{" "}
-          <code className="rounded bg-amber-50 px-1">jalals-home-solution/categories/&lt;category-slug&gt;/hero</code>{" "}
-          once the category slug is set.
+          {bannerKey === undefined
+            ? "Enter a category name/slug before uploading the hero image."
+            : "Enter a branch name before uploading the image."}
         </p>
       )}
 
