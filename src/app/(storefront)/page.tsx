@@ -13,11 +13,12 @@ import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
 import { homeJsonLd } from "@/lib/seo";
 import { listProducts, listShopFilterCategories, listShopCategoryCards } from "@/server/catalog/products";
 import { listActiveStorefrontBranches } from "@/server/stores/queries";
+import { listActiveStorefrontReviews } from "@/server/reviews/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [{ items }, filterCategories, categoryCards, branches] = await Promise.all([
+  const [{ items }, filterCategories, categoryCards, branches, reviews] = await Promise.all([
     listProducts({ pageSize: 12 }).catch(() => ({
       items: [],
       total: 0,
@@ -29,6 +30,10 @@ export default async function HomePage() {
     listShopCategoryCards().catch(() => []),
     listActiveStorefrontBranches().catch((error) => {
       console.error("Homepage branches failed:", error);
+      return [];
+    }),
+    listActiveStorefrontReviews().catch((error) => {
+      console.error("Homepage reviews failed:", error);
       return [];
     }),
   ]);
@@ -55,13 +60,13 @@ export default async function HomePage() {
         }))}
       />
       <WhyChooseUsSection />
-      <SocialProofStrip />
+      <SocialProofStrip reviews={reviews} />
       <JalalAssistanceSection />
       <ShopStylesSection />
       <WhyJalals />
       <FounderPreviewSection />
       <FeaturedDestinations branches={branches} />
-      <TestimonialsSection />
+      <TestimonialsSection reviews={reviews} />
     </div>
   );
 }
