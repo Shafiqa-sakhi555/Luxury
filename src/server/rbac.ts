@@ -55,7 +55,6 @@ const ROLE_DEFAULT_PERMISSIONS: Record<StaffRole, string[]> = {
     "customer.read",
     "inventory.read",
     "inventory.write",
-    "settings.write",
     "refunds.create",
     "refunds.view",
     "invoices.view",

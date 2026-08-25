@@ -2,10 +2,6 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveCartItemPriceMinor } from "@/lib/money";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
-import {
-  deliveryFeeForSubtotal,
-  getStoreSettings,
-} from "@/server/settings/store-settings";
 
 const CART_COOKIE = "jalals_cart_token";
 
@@ -262,7 +258,7 @@ function readProductPrices(product: unknown) {
   };
 }
 
-export async function cartTotals(cart: {
+export function cartTotals(cart: {
   cart_items?: Array<{
     quantity: number;
     price_snapshot_minor?: number | null;
@@ -297,8 +293,7 @@ export async function cartTotals(cart: {
     itemCount += item.quantity;
   }
 
-  const settings = await getStoreSettings();
-  const deliveryMinor = deliveryFeeForSubtotal(subtotalMinor, settings);
+  const deliveryMinor = subtotalMinor >= 5_000_000 ? 0 : 250_000;
   return {
     subtotalMinor,
     deliveryMinor,

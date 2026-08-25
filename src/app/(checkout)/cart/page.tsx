@@ -22,7 +22,7 @@ export default async function CartPage() {
   }
 
   const cart = await getOrCreateCart(customerId).catch(() => null);
-  const totals = await cartTotals(cart);
+  const totals = cartTotals(cart);
 
   return (
     <PageContainer width="narrow" className="py-8 sm:py-10">
