@@ -550,7 +550,7 @@ export function CheckoutForm({
               <Link href="/contact" className="underline hover:text-ink">
                 Privacy policy
               </Link>
-            </div>
+      </div>
             <p className="text-sm text-neutral-600">
               <Link href="/cart" className="text-navy hover:underline">
                 Back to cart
@@ -603,8 +603,8 @@ export function CheckoutForm({
                 <span className="mr-2 text-xs font-normal uppercase tracking-wide text-neutral-500">PKR</span>
                 {formatMoney(totals.totalMinor).replace(/^Rs\.?\s?/, "")}
               </dd>
-            </div>
-          </dl>
+          </div>
+        </dl>
         </div>
       </aside>
     </div>
