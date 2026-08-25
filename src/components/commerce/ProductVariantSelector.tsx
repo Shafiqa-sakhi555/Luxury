@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { CatalogProduct, CatalogProductVariant } from "@/types/catalog";
 import { ProductGallery } from "@/components/commerce/ProductGallery";
 import { ProductPurchasePanel } from "@/components/commerce/ProductPurchasePanel";
+import type { ProductReview } from "@/types/product-review";
 
 function buildColorOptions(variants: CatalogProductVariant[]) {
   const colors = new Map<string, { id: string; label: string }>();
@@ -56,7 +57,13 @@ function buildSpecs(product: CatalogProduct, selected?: CatalogProductVariant) {
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 }
 
-export function ProductVariantSelector({ product }: { product: CatalogProduct }) {
+export function ProductVariantSelector({
+  product,
+  reviews = [],
+}: {
+  product: CatalogProduct;
+  reviews?: ProductReview[];
+}) {
   const variants = useMemo(() => product.variants ?? [], [product.variants]);
   const colorOptions = useMemo(() => buildColorOptions(variants), [variants]);
   const sizeOptions = useMemo(() => buildSizeOptions(variants), [variants]);
@@ -103,13 +110,22 @@ export function ProductVariantSelector({ product }: { product: CatalogProduct })
           selectedSizeId={selectedSizeId}
           onColorChange={colorOptions.length > 0 ? setSelectedColorId : undefined}
           onSizeChange={sizeOptions.length > 0 ? setSelectedSizeId : undefined}
+          productId={product.id}
+          productSlug={product.slug}
+          reviews={reviews}
         />
       </div>
     </div>
   );
 }
 
-export function ProductSimpleDetail({ product }: { product: CatalogProduct }) {
+export function ProductSimpleDetail({
+  product,
+  reviews = [],
+}: {
+  product: CatalogProduct;
+  reviews?: ProductReview[];
+}) {
   const colorOptions = product.fabric
     ? [{ id: product.fabric, label: product.fabric }]
     : product.design
@@ -149,6 +165,9 @@ export function ProductSimpleDetail({ product }: { product: CatalogProduct }) {
           selectedSizeId={selectedSizeId}
           onColorChange={colorOptions.length > 0 ? setSelectedColorId : undefined}
           onSizeChange={sizeOptions.length > 0 ? setSelectedSizeId : undefined}
+          productId={product.id}
+          productSlug={product.slug}
+          reviews={reviews}
         />
       </div>
     </div>

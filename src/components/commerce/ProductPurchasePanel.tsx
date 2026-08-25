@@ -6,6 +6,8 @@ import { ProductActions } from "@/components/commerce/AddToCartButton";
 import { ProductAccordions } from "@/components/commerce/ProductAccordions";
 import { ProductOptionSelector } from "@/components/commerce/ProductOptionSelector";
 import { OpenAssistantButton } from "@/components/assistant/OpenAssistantButton";
+import { ProductFeedback } from "@/components/commerce/ProductFeedback";
+import type { ProductReview } from "@/types/product-review";
 
 type ProductPurchasePanelProps = {
   productName: string;
@@ -25,6 +27,9 @@ type ProductPurchasePanelProps = {
   selectedSizeId?: string;
   onColorChange?: (id: string) => void;
   onSizeChange?: (id: string) => void;
+  productId?: string;
+  productSlug?: string;
+  reviews?: ProductReview[];
 };
 
 export function ProductPurchasePanel({
@@ -45,6 +50,9 @@ export function ProductPurchasePanel({
   selectedSizeId = "",
   onColorChange,
   onSizeChange,
+  productId,
+  productSlug,
+  reviews = [],
 }: ProductPurchasePanelProps) {
   const hasDiscount = originalPriceMinor > salePriceMinor;
   const inStock =
@@ -122,6 +130,10 @@ export function ProductPurchasePanel({
               Ask Jalal Assistance
             </OpenAssistantButton>
           </div>
+        ) : null}
+
+        {productId && productSlug ? (
+          <ProductFeedback productId={productId} productSlug={productSlug} reviews={reviews} />
         ) : null}
       </div>
 
