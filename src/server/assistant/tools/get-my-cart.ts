@@ -14,7 +14,7 @@ export async function runGetMyCart(ctx: ToolContext): Promise<ToolResult | null>
 
   const customerId = ctx.userContext?.customerId ?? undefined;
   const cart = await getOrCreateCart(customerId);
-  const totals = cartTotals(cart);
+  const totals = await cartTotals(cart);
 
   if (!cart?.cart_items?.length) {
     return {

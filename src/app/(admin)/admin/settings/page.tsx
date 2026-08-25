@@ -1,13 +1,35 @@
 import Link from "next/link";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import { requireAdminPageAccess } from "@/server/admin/page-access";
+import { getStoreSettings } from "@/server/settings/store-settings";
+import { DeliverySettingsForm } from "@/components/admin/settings/DeliverySettingsForm";
+import { formatMoney } from "@/lib/money";
 
 export default async function AdminSettingsPage() {
-  await requireAdminPageAccess("*");
+  await requireAdminPageAccess("*", "settings.write");
+  const settings = await getStoreSettings();
+
   return (
     <div>
-      <AdminPageHeader title="Settings" description="Store configuration and catalog help" />
+      <AdminPageHeader title="Settings" description="Store configuration, delivery charges, and catalog help" />
       <div className="grid gap-6 lg:grid-cols-2">
+        <AdminCard className="space-y-4 p-6">
+          <div>
+            <h2 className="font-semibold text-navy">Delivery charges</h2>
+            <p className="mt-1 text-sm text-muted">
+              These amounts are applied automatically to cart, checkout, and new orders.
+              Current fee: {formatMoney(settings.deliveryFeeMinor)}
+              {settings.freeDeliveryThresholdMinor > 0
+                ? ` · free above ${formatMoney(settings.freeDeliveryThresholdMinor)}`
+                : " · free delivery is off"}
+            </p>
+          </div>
+          <DeliverySettingsForm
+            deliveryFeeMinor={settings.deliveryFeeMinor}
+            freeDeliveryThresholdMinor={settings.freeDeliveryThresholdMinor}
+          />
+        </AdminCard>
+
         <AdminCard className="space-y-4 p-6 text-sm">
           <h2 className="font-semibold text-navy">Managing products</h2>
           <p className="text-muted leading-relaxed">

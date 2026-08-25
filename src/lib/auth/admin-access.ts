@@ -20,7 +20,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/admin/inventory", label: "Inventory", permissions: ["inventory.read"] },
   { href: "/admin/customers", label: "Customers", permissions: ["customer.read"] },
   { href: "/admin/assistant", label: "Assistant", permissions: ["order.write"] },
-  { href: "/admin/settings", label: "Settings", permissions: ["*"] },
+  { href: "/admin/settings", label: "Settings", permissions: ["*", "settings.write"] },
 ];
 
 export const ADMIN_ROUTE_PERMISSIONS: Record<string, readonly string[]> = {
@@ -38,7 +38,7 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, readonly string[]> = {
   "/admin/inventory": ["inventory.read"],
   "/admin/customers": ["customer.read"],
   "/admin/assistant": ["order.write"],
-  "/admin/settings": ["*"],
+  "/admin/settings": ["*", "settings.write"],
 };
 
 export function resolveRoutePermissions(pathname: string): readonly string[] | null {

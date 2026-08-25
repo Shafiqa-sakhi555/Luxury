@@ -25,7 +25,7 @@ export default async function CheckoutPage() {
   const cart = await getOrCreateCart(customerId);
   if (!cart?.cart_items?.length) redirect("/cart");
 
-  const totals = cartTotals(cart);
+  const totals = await cartTotals(cart);
 
   const lineItems: CheckoutLineItem[] = cart.cart_items.map((item: {
     id: string;

@@ -23,7 +23,7 @@ export async function GET() {
   try {
     const customerId = await resolveCartCustomerId();
     const cart = await getOrCreateCart(customerId);
-    return NextResponse.json({ cart, totals: cartTotals(cart) });
+    return NextResponse.json({ cart, totals: await cartTotals(cart) });
   } catch {
     return NextResponse.json({
       cart: { cart_items: [] },
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     const customerId = await resolveCartCustomerId();
     await addToCart(variantId, quantity, customerId);
     const cart = await getOrCreateCart(customerId);
-    return NextResponse.json({ ok: true, totals: cartTotals(cart) });
+    return NextResponse.json({ ok: true, totals: await cartTotals(cart) });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to add to cart" },
@@ -61,7 +61,7 @@ export async function PATCH(request: Request) {
     const customerId = await resolveCartCustomerId();
     await updateCartItem(itemId, quantity, customerId);
     const cart = await getOrCreateCart(customerId);
-    return NextResponse.json({ ok: true, totals: cartTotals(cart) });
+    return NextResponse.json({ ok: true, totals: await cartTotals(cart) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update cart";
     const status = message === "Forbidden" ? 403 : 400;
@@ -78,7 +78,7 @@ export async function DELETE(request: Request) {
     const customerId = await resolveCartCustomerId();
     await removeCartItem(itemId, customerId);
     const cart = await getOrCreateCart(customerId);
-    return NextResponse.json({ ok: true, totals: cartTotals(cart) });
+    return NextResponse.json({ ok: true, totals: await cartTotals(cart) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to remove item";
     const status = message === "Forbidden" ? 403 : 400;

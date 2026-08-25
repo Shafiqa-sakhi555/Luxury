@@ -52,8 +52,8 @@ export function ProductAccordions({
       title: "Shipping Information",
       content: (
         <div className="space-y-3 text-sm leading-relaxed text-navy/80">
-          <p>We deliver across Pakistan. Free delivery applies on orders above Rs 50,000.</p>
-          <p>Standard delivery fee is Rs 2,500 for orders below the free delivery threshold.</p>
+          <p>We deliver across Pakistan. Delivery charges are calculated at checkout.</p>
+          <p>Free delivery may apply above the threshold set by the store — see delivery details for the current amounts.</p>
           <div className="flex flex-wrap gap-4 pt-2">
             <Link href="/delivery" className="underline underline-offset-2 hover:text-navy">
               Delivery details
