@@ -14,11 +14,14 @@ export async function getFinanceDashboardMetrics(range: FinanceDateRange = {}) {
   const { data: transactions } = await txnQuery;
 
   const rows = transactions ?? [];
-  const grossMinor = rows.reduce((sum, row) => sum + (row.amount_minor ?? 0), 0);
+  const collected = rows.filter((row) =>
+    ["SUCCESSFUL", "PARTIALLY_REFUNDED"].includes(row.payment_status)
+  );
+  const grossMinor = collected.reduce((sum, row) => sum + (row.amount_minor ?? 0), 0);
   const refundMinor = rows.reduce((sum, row) => sum + (row.refund_amount_minor ?? 0), 0);
-  const feeMinor = rows.reduce((sum, row) => sum + (row.gateway_fee_minor ?? 0), 0);
-  const taxMinor = rows.reduce((sum, row) => sum + (row.tax_minor ?? 0), 0);
-  const netMinor = rows.reduce((sum, row) => sum + (row.net_amount_minor ?? 0), 0);
+  const feeMinor = collected.reduce((sum, row) => sum + (row.gateway_fee_minor ?? 0), 0);
+  const taxMinor = collected.reduce((sum, row) => sum + (row.tax_minor ?? 0), 0);
+  const netMinor = collected.reduce((sum, row) => sum + (row.net_amount_minor ?? 0), 0);
   const successfulMinor = rows
     .filter((row) => row.payment_status === "SUCCESSFUL")
     .reduce((sum, row) => sum + (row.net_amount_minor ?? 0), 0);
@@ -49,11 +52,17 @@ export async function getFinanceDashboardMetrics(range: FinanceDateRange = {}) {
   );
 
   const dailyMap = new Map<string, { gross: number; net: number; refunds: number }>();
-  for (const row of rows) {
+  for (const row of collected) {
     const day = new Date(row.transaction_date).toISOString().slice(0, 10);
     const current = dailyMap.get(day) ?? { gross: 0, net: 0, refunds: 0 };
     current.gross += row.amount_minor ?? 0;
     current.net += row.net_amount_minor ?? 0;
+    dailyMap.set(day, current);
+  }
+  for (const row of rows) {
+    if (!(row.refund_amount_minor > 0)) continue;
+    const day = new Date(row.transaction_date).toISOString().slice(0, 10);
+    const current = dailyMap.get(day) ?? { gross: 0, net: 0, refunds: 0 };
     current.refunds += row.refund_amount_minor ?? 0;
     dailyMap.set(day, current);
   }

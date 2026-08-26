@@ -63,8 +63,8 @@ export const ORDER_STATUS_META: Record<OrderStatusCode, OrderStatusMeta> = {
   CANCELLED: {
     label: "Cancelled",
     customerLabel: "Cancelled",
-    meaning: "Order cancelled before completion.",
-    nextSteps: "Contact us if you did not request cancellation.",
+    meaning: "This order was cancelled and will not be delivered.",
+    nextSteps: "COD is not collected. If you still want these items, you can place a new order.",
   },
 };
 
@@ -101,4 +101,11 @@ export function customerOrderStatusTone(status: string): string {
     default:
       return "bg-neutral-50 text-neutral-700 ring-neutral-200";
   }
+}
+
+/** Customers may cancel only before packing and dispatch. */
+export const CUSTOMER_CANCELLABLE_STATUSES: readonly OrderStatusCode[] = ["PENDING", "CONFIRMED"];
+
+export function canCustomerCancelOrder(status: string) {
+  return CUSTOMER_CANCELLABLE_STATUSES.includes(status as OrderStatusCode);
 }

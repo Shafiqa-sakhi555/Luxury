@@ -9,6 +9,7 @@ import {
   sendNewOrderStaffNotifications,
   sendOrderStatusChangeNotifications,
 } from "@/server/orders/notifications";
+import { canCustomerCancelOrder } from "@/lib/orders/status";
 export type PlaceOrderInput = {
   customerId: string;
   cartId: string;
@@ -141,6 +142,36 @@ export async function listCustomerOrders(customerId: string) {
     .order("created_at", { ascending: false });
 
   return data ?? [];
+}
+
+export async function cancelCustomerOrder(input: {
+  orderId: string;
+  customerId: string;
+  customerUserId?: string;
+}) {
+  const supabase = createSupabaseAdminClient();
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, status, customer_id")
+    .eq("id", input.orderId)
+    .maybeSingle();
+
+  if (!order || order.customer_id !== input.customerId) {
+    throw new Error("Order not found.");
+  }
+
+  if (!canCustomerCancelOrder(order.status)) {
+    throw new Error(
+      "This order can no longer be cancelled online. Contact us if you need help."
+    );
+  }
+
+  await updateOrderStatus(
+    order.id,
+    "CANCELLED",
+    "Cancelled by customer",
+    input.customerUserId
+  );
 }
 
 export async function updateOrderStatus(
