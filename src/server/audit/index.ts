@@ -40,11 +40,11 @@ export async function getDashboardSummary() {
     .from('customers')
     .select('*', { count: 'exact', head: true });
 
-  // revenue
+  // revenue — only counted once the order is delivered (COD collected)
   const { data: revenueData } = await supabase
     .from('orders')
     .select('total_minor')
-    .in('status', ["CONFIRMED", "PROCESSING", "PACKED", "SHIPPED", "DELIVERED"]);
+    .eq('status', 'DELIVERED');
     
   const revenueMinor = revenueData?.reduce((sum, order) => sum + (order.total_minor || 0), 0) ?? 0;
 
