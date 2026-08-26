@@ -181,12 +181,14 @@ export async function sendOrderStatusChangeNotifications(
   const accountUrl = `${getSiteUrl()}/account/orders/${order.id}`;
   const adminUrl = `${getSiteUrl()}/admin/orders/${order.id}`;
 
-  if (newStatus === "CONFIRMED" || newStatus === "SHIPPED") {
+  if (newStatus === "CONFIRMED" || newStatus === "SHIPPED" || newStatus === "CANCELLED") {
     if (order.customerEmail) {
       const customerSubject =
         newStatus === "CONFIRMED"
           ? `Your order ${order.order_number} is confirmed`
-          : `Your order ${order.order_number} has shipped`;
+          : newStatus === "CANCELLED"
+            ? `Your order ${order.order_number} has been cancelled`
+            : `Your order ${order.order_number} has shipped`;
 
       const customerText = `Hi ${order.customerName},
 
