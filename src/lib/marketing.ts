@@ -1,11 +1,21 @@
-export const promoMessages = [
-  "✓ Trusted Since 2005",
-  "✓ Free Delivery Above ₨50,000",
-  "✓ Over 1,000 Premium Products",
-  "✓ 5 Showrooms Across Gilgit-Baltistan",
-  "✓ Easy Returns",
-  "✓ Professional Installation",
-];
+export function promoMessagesFor(freeDeliveryThresholdMinor = 5_000_000) {
+  const amount = new Intl.NumberFormat("en-PK", {
+    style: "currency",
+    currency: "PKR",
+    maximumFractionDigits: 0,
+  }).format(freeDeliveryThresholdMinor / 100);
+
+  return [
+    "✓ Trusted Since 2005",
+    `✓ Free Delivery Above ${amount}`,
+    "✓ Over 1,000 Premium Products",
+    "✓ 5 Showrooms Across Gilgit-Baltistan",
+    "✓ Easy Returns",
+    "✓ Professional Installation",
+  ];
+}
+
+export const promoMessages = promoMessagesFor();
 export const trustFeatures = [
   {
     icon: "truck" as const,

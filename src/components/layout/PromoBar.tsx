@@ -2,12 +2,13 @@
 
 import { Truck, Ruler, Shield, Store } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import { promoMessages, trustFeatures } from "@/lib/marketing";
+import { promoMessagesFor, trustFeatures } from "@/lib/marketing";
 
 const icons = { truck: Truck, ruler: Ruler, shield: Shield, store: Store };
 
-export function PromoBar() {
+export function PromoBar({ freeDeliveryThresholdMinor = 5_000_000 }: { freeDeliveryThresholdMinor?: number }) {
   const prefersReducedMotion = useReducedMotion();
+  const promoMessages = promoMessagesFor(freeDeliveryThresholdMinor);
   const doubled = [...promoMessages, ...promoMessages];
 
   return (

@@ -30,6 +30,8 @@ type ProductPurchasePanelProps = {
   productId?: string;
   productSlug?: string;
   reviews?: ProductReview[];
+  deliveryFeeLabel?: string;
+  freeDeliveryThresholdLabel?: string;
 };
 
 export function ProductPurchasePanel({
@@ -53,6 +55,8 @@ export function ProductPurchasePanel({
   productId,
   productSlug,
   reviews = [],
+  deliveryFeeLabel,
+  freeDeliveryThresholdLabel,
 }: ProductPurchasePanelProps) {
   const hasDiscount = originalPriceMinor > salePriceMinor;
   const inStock =
@@ -137,7 +141,13 @@ export function ProductPurchasePanel({
         ) : null}
       </div>
 
-      <ProductAccordions description={description} productName={productName} specs={specs} />
+      <ProductAccordions
+        description={description}
+        productName={productName}
+        specs={specs}
+        deliveryFeeLabel={deliveryFeeLabel}
+        freeDeliveryThresholdLabel={freeDeliveryThresholdLabel}
+      />
 
       <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-navy/70">
         <span className="font-medium uppercase tracking-[0.12em]">Share</span>

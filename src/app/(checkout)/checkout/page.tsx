@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
 import { resolveCartItemPriceMinor } from "@/lib/money";
-import { cartTotals, getOrCreateCart, resolveCustomerCart } from "@/server/cart";
+import { getCartTotals, getOrCreateCart, resolveCustomerCart } from "@/server/cart";
 import { CheckoutForm, type CheckoutLineItem } from "@/components/commerce/CheckoutForm";
 
 export default async function CheckoutPage() {
@@ -25,7 +25,7 @@ export default async function CheckoutPage() {
   const cart = await getOrCreateCart(customerId);
   if (!cart?.cart_items?.length) redirect("/cart");
 
-  const totals = cartTotals(cart);
+  const totals = await getCartTotals(cart);
 
   const lineItems: CheckoutLineItem[] = cart.cart_items.map((item: {
     id: string;

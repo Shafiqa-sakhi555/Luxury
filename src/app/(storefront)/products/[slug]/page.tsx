@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProductBySlug, getRelatedProducts } from "@/server/catalog/products";
 import { listPublishedProductReviews } from "@/server/product-reviews/queries";
+import { getStoreSettings } from "@/server/settings/store-settings";
+import { formatMoney } from "@/lib/money";
 import {
   ProductSimpleDetail,
   ProductVariantSelector,
@@ -35,19 +37,32 @@ export default async function ProductPage({
   const product = await getProductBySlug(slug).catch(() => null);
   if (!product) notFound();
 
-  const [related, reviews] = await Promise.all([
+  const [related, reviews, settings] = await Promise.all([
     getRelatedProducts(slug, product.category.slug).catch(() => []),
     listPublishedProductReviews(product.id),
+    getStoreSettings(),
   ]);
   const isCollection = product.hasVariants && (product.variants?.length ?? 0) > 0;
+  const deliveryFeeLabel = formatMoney(settings.deliveryFeeMinor);
+  const freeDeliveryThresholdLabel = formatMoney(settings.freeDeliveryThresholdMinor);
 
   return (
     <div className="bg-white">
       <PageContainer className="pb-16 pt-site-header">
         {isCollection ? (
-          <ProductVariantSelector product={product} reviews={reviews} />
+          <ProductVariantSelector
+            product={product}
+            reviews={reviews}
+            deliveryFeeLabel={deliveryFeeLabel}
+            freeDeliveryThresholdLabel={freeDeliveryThresholdLabel}
+          />
         ) : (
-          <ProductSimpleDetail product={product} reviews={reviews} />
+          <ProductSimpleDetail
+            product={product}
+            reviews={reviews}
+            deliveryFeeLabel={deliveryFeeLabel}
+            freeDeliveryThresholdLabel={freeDeliveryThresholdLabel}
+          />
         )}
 
         {related.length > 0 ? (
