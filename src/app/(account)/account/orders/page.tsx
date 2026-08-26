@@ -3,6 +3,8 @@ import { Package } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { CustomerOrderStatusBadge } from "@/components/account/CustomerOrderStatusBadge";
+import { CancelOrderButton } from "@/components/account/CancelOrderButton";
+import { canCustomerCancelOrder } from "@/lib/orders/status";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -75,6 +77,13 @@ export default async function AccountOrdersPage() {
                     <div className="mt-1 flex justify-end">
                       <CustomerOrderStatusBadge status={order.status} />
                     </div>
+                    {canCustomerCancelOrder(order.status) ? (
+                      <CancelOrderButton
+                        orderId={order.id}
+                        orderNumber={order.order_number}
+                        className="mt-3"
+                      />
+                    ) : null}
                   </div>
                 </div>
               </Card>
