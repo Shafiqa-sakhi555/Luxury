@@ -10,8 +10,8 @@ import { AdminButton, AdminInput, AdminLabel } from "@/components/admin/ui";
 import { saveStoreSettingsAction } from "@/server/settings/actions";
 
 const schema = z.object({
-  deliveryFeeMajor: z.coerce.number().min(0, "Delivery fee cannot be negative"),
-  freeDeliveryThresholdMajor: z.coerce.number().min(0, "Threshold cannot be negative"),
+  deliveryFeeMajor: z.number().min(0, "Delivery fee cannot be negative"),
+  freeDeliveryThresholdMajor: z.number().min(0, "Threshold cannot be negative"),
 });
 
 type FormValues = z.infer<typeof schema>;
