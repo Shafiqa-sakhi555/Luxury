@@ -3,10 +3,15 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
-import { testimonials } from "@/lib/data";
+import type { StorefrontReview } from "@/types/admin-review";
 
-export function SocialProofStrip() {
-  const avatars = testimonials.slice(0, 4);
+export function SocialProofStrip({ reviews = [] }: { reviews?: StorefrontReview[] }) {
+  const avatars = reviews.slice(0, 4);
+  const avg =
+    reviews.length === 0
+      ? 4.9
+      : Math.round((reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length) * 10) /
+        10;
 
   return (
     <section
@@ -25,7 +30,7 @@ export function SocialProofStrip() {
               <Star key={i} className="h-4 w-4 fill-red text-red sm:h-5 sm:w-5" />
             ))}
           </div>
-          <span className="text-sm font-semibold text-navy sm:text-base">4.9/5</span>
+          <span className="text-sm font-semibold text-navy sm:text-base">{avg}/5</span>
         </motion.div>
 
         <motion.p
@@ -38,25 +43,27 @@ export function SocialProofStrip() {
           Trusted by thousands of homeowners across Pakistan.
         </motion.p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.12 }}
-          className="flex -space-x-2"
-        >
-          {avatars.map((t) => (
-            <div
-              key={t.id}
-              className="relative h-9 w-9 overflow-hidden rounded-full ring-2 ring-white sm:h-10 sm:w-10"
-            >
-              <Image src={t.image} alt={t.name} fill className="object-cover" sizes="40px" />
+        {avatars.length > 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.12 }}
+            className="flex -space-x-2"
+          >
+            {avatars.map((review) => (
+              <div
+                key={review.id}
+                className="relative h-9 w-9 overflow-hidden rounded-full ring-2 ring-white sm:h-10 sm:w-10"
+              >
+                <Image src={review.imageUrl} alt={review.name} fill className="object-cover" sizes="40px" />
+              </div>
+            ))}
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red text-[10px] font-bold text-white ring-2 ring-white sm:h-10 sm:w-10 sm:text-xs">
+              50K+
             </div>
-          ))}
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red text-[10px] font-bold text-white ring-2 ring-white sm:h-10 sm:w-10 sm:text-xs">
-            50K+
-          </div>
-        </motion.div>
+          </motion.div>
+        ) : null}
       </div>
     </section>
   );

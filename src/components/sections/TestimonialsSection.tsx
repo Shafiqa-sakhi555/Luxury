@@ -5,14 +5,18 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Star, Quote } from "lucide-react";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { testimonials } from "@/lib/data";
+import type { StorefrontReview } from "@/types/admin-review";
 
-export function TestimonialsSection() {
+export function TestimonialsSection({ reviews = [] }: { reviews?: StorefrontReview[] }) {
   const [current, setCurrent] = useState(0);
 
-  const next = () => setCurrent((c) => (c + 1) % testimonials.length);
-  const prev = () =>
-    setCurrent((c) => (c - 1 + testimonials.length) % testimonials.length);
+  if (reviews.length === 0) return null;
+
+  const index = current % reviews.length;
+  const review = reviews[index];
+
+  const next = () => setCurrent((c) => (c + 1) % reviews.length);
+  const prev = () => setCurrent((c) => (c - 1 + reviews.length) % reviews.length);
 
   return (
     <section className="relative overflow-hidden section-brand-alt section-spacing-lg">
@@ -31,7 +35,7 @@ export function TestimonialsSection() {
         <div className="relative mx-auto mt-6 max-w-4xl sm:mt-8">
           <AnimatePresence mode="wait">
             <motion.div
-              key={current}
+              key={review.id}
               initial={{ opacity: 0, y: 30, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -30, scale: 0.97 }}
@@ -41,26 +45,21 @@ export function TestimonialsSection() {
               <Quote className="h-7 w-7 text-red/50 sm:h-8 sm:w-8" />
 
               <p className="mt-4 font-display text-lg font-light leading-relaxed text-navy sm:mt-6 sm:text-xl md:text-2xl lg:text-3xl">
-                &ldquo;{testimonials[current].quote}&rdquo;
+                &ldquo;{review.quote}&rdquo;
               </p>
 
               <div className="mt-6 flex flex-col gap-4 sm:mt-8 sm:flex-row sm:items-center">
                 <div className="flex items-center gap-3">
                   <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 ring-blue/30 sm:h-14 sm:w-14">
-                    <Image
-                      src={testimonials[current].image}
-                      alt={testimonials[current].name}
-                      fill
-                      className="object-cover"
-                    />
+                    <Image src={review.imageUrl} alt={review.name} fill className="object-cover" />
                   </div>
                   <div>
-                    <p className="font-medium text-navy">{testimonials[current].name}</p>
-                    <p className="text-sm text-muted">{testimonials[current].role}</p>
+                    <p className="font-medium text-navy">{review.name}</p>
+                    <p className="text-sm text-muted">{review.location}</p>
                   </div>
                 </div>
                 <div className="flex gap-0.5 sm:ml-auto">
-                  {Array.from({ length: testimonials[current].rating }).map((_, i) => (
+                  {Array.from({ length: review.rating }).map((_, i) => (
                     <Star key={i} className="h-4 w-4 fill-red text-red" />
                   ))}
                 </div>
@@ -78,12 +77,12 @@ export function TestimonialsSection() {
             </button>
 
             <div className="flex gap-2">
-              {testimonials.map((_, i) => (
+              {reviews.map((item, i) => (
                 <button
-                  key={i}
+                  key={item.id}
                   onClick={() => setCurrent(i)}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === current ? "w-8 bg-gradient-to-r from-red to-blue" : "w-1.5 bg-navy/20"
+                    i === index ? "w-8 bg-gradient-to-r from-red to-blue" : "w-1.5 bg-navy/20"
                   }`}
                   aria-label={`Go to review ${i + 1}`}
                 />

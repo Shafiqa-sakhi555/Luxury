@@ -22,6 +22,8 @@ import {
   Wallet,
   Scale,
   BarChart3,
+  MapPin,
+  Star,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -34,6 +36,8 @@ const ICONS: Record<string, LucideIcon> = {
   "/admin": LayoutDashboard,
   "/admin/catalog/products": Package,
   "/admin/catalog/categories": Package,
+  "/admin/branches": MapPin,
+  "/admin/reviews": Star,
   "/admin/orders": ShoppingCart,
   "/admin/finance": Landmark,
   "/admin/finance/transactions": ArrowLeftRight,
