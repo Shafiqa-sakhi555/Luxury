@@ -25,6 +25,8 @@ CREATE TRIGGER assistant_handoff_requests_updated_at
 
 ALTER TABLE public.assistant_handoff_requests ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Service role full access assistant_handoff_requests"
+  ON public.assistant_handoff_requests;
 CREATE POLICY "Service role full access assistant_handoff_requests"
   ON public.assistant_handoff_requests FOR ALL
   USING (auth.role() = 'service_role')

@@ -35,12 +35,15 @@ CREATE TRIGGER assistant_sessions_updated_at
 ALTER TABLE public.assistant_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assistant_messages ENABLE ROW LEVEL SECURITY;
 
--- Service role only for now; customer read via authenticated API in Phase 2
+DROP POLICY IF EXISTS "Service role full access assistant_sessions"
+  ON public.assistant_sessions;
 CREATE POLICY "Service role full access assistant_sessions"
   ON public.assistant_sessions FOR ALL
   USING (auth.role() = 'service_role')
   WITH CHECK (auth.role() = 'service_role');
 
+DROP POLICY IF EXISTS "Service role full access assistant_messages"
+  ON public.assistant_messages;
 CREATE POLICY "Service role full access assistant_messages"
   ON public.assistant_messages FOR ALL
   USING (auth.role() = 'service_role')
