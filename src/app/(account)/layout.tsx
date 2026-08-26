@@ -4,15 +4,17 @@ import { PageContainer } from "@/components/ui/page-container";
 import { listShopNavCategories } from "@/server/catalog/products";
 import { buildCanonicalShopCategories } from "@/lib/catalog/shop-categories";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getStoreSettings } from "@/server/settings/store-settings";
 
 export default async function AccountLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [shopCategories, supabase] = await Promise.all([
+  const [shopCategories, supabase, settings] = await Promise.all([
     listShopNavCategories().catch(() => buildCanonicalShopCategories()),
     createSupabaseServerClient(),
+    getStoreSettings(),
   ]);
   const {
     data: { user },
@@ -20,7 +22,10 @@ export default async function AccountLayout({
 
   return (
     <div className="pattern-carpet min-h-screen bg-brand-50 text-ink">
-      <AppShell shopCategories={shopCategories}>
+      <AppShell
+        shopCategories={shopCategories}
+        freeDeliveryThresholdMinor={settings.freeDeliveryThresholdMinor}
+      >
         <PageContainer className="pb-16 pt-28 sm:pt-32">
           <div className="mb-8 flex flex-col gap-1 sm:mb-10">
             <h1 className="font-display text-2xl text-navy sm:text-3xl">My account</h1>

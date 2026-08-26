@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getOrCreateCart, cartTotals, resolveCustomerCart } from "@/server/cart";
+import { getOrCreateCart, getCartTotals, resolveCustomerCart } from "@/server/cart";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatMoney, resolveCartItemPriceMinor } from "@/lib/money";
 import { resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
@@ -22,7 +22,7 @@ export default async function CartPage() {
   }
 
   const cart = await getOrCreateCart(customerId).catch(() => null);
-  const totals = cartTotals(cart);
+  const totals = await getCartTotals(cart);
 
   return (
     <PageContainer width="narrow" className="py-8 sm:py-10">
@@ -103,7 +103,9 @@ export default async function CartPage() {
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted">Delivery</dt>
-                  <dd className="tabular-nums">{formatMoney(totals.deliveryMinor)}</dd>
+                  <dd className="tabular-nums">
+                    {totals.deliveryMinor === 0 ? "Free" : formatMoney(totals.deliveryMinor)}
+                  </dd>
                 </div>
                 <div className="flex justify-between border-t border-navy/10 pt-2 font-medium">
                   <dt>Total</dt>

@@ -58,6 +58,7 @@ const ROLE_DEFAULT_PERMISSIONS: Record<StaffRole, string[]> = {
     "refunds.create",
     "refunds.view",
     "invoices.view",
+    "settings.read",
   ],
   Finance: [
     "order.read",

@@ -1,13 +1,29 @@
 import Link from "next/link";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import { requireAdminPageAccess } from "@/server/admin/page-access";
+import { getStoreSettings } from "@/server/settings/store-settings";
+import { toMajor } from "@/lib/money";
+import { DeliverySettingsForm } from "@/components/admin/settings/DeliverySettingsForm";
 
 export default async function AdminSettingsPage() {
-  await requireAdminPageAccess("*");
+  await requireAdminPageAccess("settings.read", "catalog.write");
+  const settings = await getStoreSettings();
+
   return (
     <div>
       <AdminPageHeader title="Settings" description="Store configuration and catalog help" />
       <div className="grid gap-6 lg:grid-cols-2">
+        <AdminCard className="space-y-4 p-6 text-sm">
+          <h2 className="font-semibold text-navy">Delivery charges</h2>
+          <p className="text-muted leading-relaxed">
+            These amounts are used on cart, checkout, and product shipping information.
+          </p>
+          <DeliverySettingsForm
+            deliveryFeeMajor={toMajor(settings.deliveryFeeMinor)}
+            freeDeliveryThresholdMajor={toMajor(settings.freeDeliveryThresholdMinor)}
+          />
+        </AdminCard>
+
         <AdminCard className="space-y-4 p-6 text-sm">
           <h2 className="font-semibold text-navy">Managing products</h2>
           <p className="text-muted leading-relaxed">
@@ -25,26 +41,21 @@ export default async function AdminSettingsPage() {
             <li>Upload product and category images directly — files are stored in Cloudinary</li>
             <li>Products with order history are archived instead of permanently deleted</li>
           </ul>
-        </AdminCard>
-
-        <AdminCard className="space-y-4 p-6 text-sm">
-          <div>
-            <p className="font-medium text-navy">Currency</p>
-            <p className="text-muted">PKR — enter prices in rupees (e.g. 112 for Rs 112/sq ft)</p>
-          </div>
-          <div>
-            <p className="font-medium text-navy">Payment</p>
-            <p className="text-muted">Cash on delivery enabled. Online gateway — post-launch.</p>
-          </div>
-          <div>
-            <p className="font-medium text-navy">Admin login</p>
-            <p className="text-muted">Sign in at /admin/login with your staff account (not a customer account).</p>
-          </div>
-          <div>
-            <p className="font-medium text-navy">Database</p>
-            <p className="text-muted">
-              PostgreSQL + Supabase. Catalog edits sync automatically for cart and checkout.
-            </p>
+          <div className="space-y-3 border-t border-navy/10 pt-4">
+            <div>
+              <p className="font-medium text-navy">Currency</p>
+              <p className="text-muted">PKR — enter prices in rupees (e.g. 112 for Rs 112/sq ft)</p>
+            </div>
+            <div>
+              <p className="font-medium text-navy">Payment</p>
+              <p className="text-muted">Cash on delivery enabled. Online gateway — post-launch.</p>
+            </div>
+            <div>
+              <p className="font-medium text-navy">Admin login</p>
+              <p className="text-muted">
+                Sign in at /admin/login with your staff account (not a customer account).
+              </p>
+            </div>
           </div>
         </AdminCard>
       </div>

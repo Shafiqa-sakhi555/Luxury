@@ -16,10 +16,14 @@ export function ProductAccordions({
   description,
   productName,
   specs,
+  deliveryFeeLabel = "Rs 2,500",
+  freeDeliveryThresholdLabel = "Rs 50,000",
 }: {
   description?: string | null;
   productName: string;
   specs?: Array<{ label: string; value: string }>;
+  deliveryFeeLabel?: string;
+  freeDeliveryThresholdLabel?: string;
 }) {
   const items: AccordionItem[] = [
     {
@@ -52,8 +56,8 @@ export function ProductAccordions({
       title: "Shipping Information",
       content: (
         <div className="space-y-3 text-sm leading-relaxed text-navy/80">
-          <p>We deliver across Pakistan. Free delivery applies on orders above Rs 50,000.</p>
-          <p>Standard delivery fee is Rs 2,500 for orders below the free delivery threshold.</p>
+          <p>We deliver across Pakistan. Free delivery applies on orders above {freeDeliveryThresholdLabel}.</p>
+          <p>Standard delivery fee is {deliveryFeeLabel} for orders below the free delivery threshold.</p>
           <div className="flex flex-wrap gap-4 pt-2">
             <Link href="/delivery" className="underline underline-offset-2 hover:text-navy">
               Delivery details
