@@ -32,6 +32,7 @@ import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { tryCreateSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ADMIN_NAV } from "@/lib/auth/admin-access";
 import { AdminAccountMenu, type AdminAccount } from "@/components/admin/layout/AdminAccountMenu";
+import { AdminOrderBell } from "@/components/admin/layout/AdminOrderBell";
 
 const ICONS: Record<string, LucideIcon> = {
   "/admin": LayoutDashboard,
@@ -182,7 +183,10 @@ export function AdminShell({ children, allowedHrefs, account }: AdminShellProps)
               <Menu className="h-5 w-5" />
             </button>
             <div className="text-sm text-muted">Operations dashboard</div>
-            <AdminAccountMenu account={account} />
+            <div className="flex items-center gap-1">
+              {account.role === "Super Admin" || account.role === "Admin" ? <AdminOrderBell /> : null}
+              <AdminAccountMenu account={account} />
+            </div>
           </header>
           <main id="main-content" tabIndex={-1} className="flex-1 p-4 sm:p-6 lg:p-8">
             {children}
