@@ -22,7 +22,14 @@ export default async function AdminLayout({
   }
 
   return (
-    <AdminShell allowedHrefs={allowedHrefs} roleLabel={ctx.primaryRole}>
+    <AdminShell
+      allowedHrefs={allowedHrefs}
+      account={{
+        name: ctx.user.name || ctx.primaryRole,
+        email: ctx.user.email || "",
+        role: ctx.primaryRole,
+      }}
+    >
       {children}
     </AdminShell>
   );
