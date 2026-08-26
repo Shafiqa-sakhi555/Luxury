@@ -1,6 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveCartItemPriceMinor } from "@/lib/money";
-import { cartTotals } from "@/server/cart";
+import { getCartTotals } from "@/server/cart";
 import {
   ensureFinancialRecordsForOrder,
   syncFinancialRecordsOnOrderStatusChange,
@@ -34,7 +34,7 @@ export async function placeOrder(input: PlaceOrderInput) {
   const { data: cart } = await supabase.from("carts").select("*, cart_items(*, product_variants(*, products(*, product_images(*))))").eq("id", input.cartId).single();
   if (!cart || cart.cart_items.length === 0) throw new Error("Cart is empty");
 
-  const totals = cartTotals(cart);
+  const totals = await getCartTotals(cart);
   const { subtotalMinor, deliveryMinor, totalMinor } = totals;
 
   // 3. Create Order

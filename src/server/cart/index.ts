@@ -2,6 +2,13 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveCartItemPriceMinor } from "@/lib/money";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
+import {
+  DEFAULT_DELIVERY_FEE_MINOR,
+  DEFAULT_FREE_DELIVERY_THRESHOLD_MINOR,
+  deliveryFeeForSubtotal,
+  getStoreSettings,
+  type StoreSettings,
+} from "@/server/settings/store-settings";
 
 const CART_COOKIE = "jalals_cart_token";
 
@@ -258,20 +265,26 @@ function readProductPrices(product: unknown) {
   };
 }
 
-export function cartTotals(cart: {
-  cart_items?: Array<{
-    quantity: number;
-    price_snapshot_minor?: number | null;
-    product_variants?: {
-      price_minor?: number | null;
-      sale_price_minor?: number | null;
-      products?: {
-        original_price_minor?: number | null;
+export function cartTotals(
+  cart: {
+    cart_items?: Array<{
+      quantity: number;
+      price_snapshot_minor?: number | null;
+      product_variants?: {
+        price_minor?: number | null;
         sale_price_minor?: number | null;
+        products?: {
+          original_price_minor?: number | null;
+          sale_price_minor?: number | null;
+        } | null;
       } | null;
-    } | null;
-  }> | null;
-} | null) {
+    }> | null;
+  } | null,
+  settings: StoreSettings = {
+    deliveryFeeMinor: DEFAULT_DELIVERY_FEE_MINOR,
+    freeDeliveryThresholdMinor: DEFAULT_FREE_DELIVERY_THRESHOLD_MINOR,
+  }
+) {
   if (!cart?.cart_items?.length) {
     return { subtotalMinor: 0, deliveryMinor: 0, totalMinor: 0, itemCount: 0 };
   }
@@ -293,11 +306,18 @@ export function cartTotals(cart: {
     itemCount += item.quantity;
   }
 
-  const deliveryMinor = subtotalMinor >= 5_000_000 ? 0 : 250_000;
+  const deliveryMinor = deliveryFeeForSubtotal(subtotalMinor, settings);
   return {
     subtotalMinor,
     deliveryMinor,
     totalMinor: subtotalMinor + deliveryMinor,
     itemCount,
   };
+}
+
+export async function getCartTotals(
+  cart: Parameters<typeof cartTotals>[0]
+) {
+  const settings = await getStoreSettings();
+  return cartTotals(cart, settings);
 }
