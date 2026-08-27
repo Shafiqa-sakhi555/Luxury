@@ -4,10 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { shopStyles } from "@/lib/marketing";
+import type { ShopStyle } from "@/lib/marketing";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 
-export function ShopStylesSection() {
+export function ShopStylesSection({ styles }: { styles: ShopStyle[] }) {
+  if (styles.length === 0) return null;
   return (
     <section className="relative section-brand-light section-spacing-md">
       <div className="page-container">
@@ -19,7 +20,7 @@ export function ShopStylesSection() {
         />
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-6">
-          {shopStyles.map((style, i) => (
+          {styles.map((style, i) => (
             <motion.div
               key={style.id}
               initial={{ opacity: 0, y: 20 }}
