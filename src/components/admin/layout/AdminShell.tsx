@@ -23,6 +23,7 @@ import {
   Scale,
   BarChart3,
   MapPin,
+  LayoutGrid,
   Star,
   type LucideIcon,
 } from "lucide-react";
@@ -39,6 +40,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/admin/catalog/products": Package,
   "/admin/catalog/categories": Package,
   "/admin/branches": MapPin,
+  "/admin/shop-styles": LayoutGrid,
   "/admin/reviews": Star,
   "/admin/orders": ShoppingCart,
   "/admin/finance": Landmark,
