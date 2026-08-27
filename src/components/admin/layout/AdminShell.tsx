@@ -31,6 +31,8 @@ import { SkipLink } from "@/components/layout/SkipLink";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { tryCreateSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ADMIN_NAV } from "@/lib/auth/admin-access";
+import { AdminAccountMenu, type AdminAccount } from "@/components/admin/layout/AdminAccountMenu";
+import { AdminOrderBell } from "@/components/admin/layout/AdminOrderBell";
 
 const ICONS: Record<string, LucideIcon> = {
   "/admin": LayoutDashboard,
@@ -55,10 +57,10 @@ const ICONS: Record<string, LucideIcon> = {
 type AdminShellProps = {
   children: React.ReactNode;
   allowedHrefs: string[];
-  roleLabel: string;
+  account: AdminAccount;
 };
 
-export function AdminShell({ children, allowedHrefs, roleLabel }: AdminShellProps) {
+export function AdminShell({ children, allowedHrefs, account }: AdminShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
@@ -181,7 +183,10 @@ export function AdminShell({ children, allowedHrefs, roleLabel }: AdminShellProp
               <Menu className="h-5 w-5" />
             </button>
             <div className="text-sm text-muted">Operations dashboard</div>
-            <div className="text-sm font-medium text-navy">{roleLabel}</div>
+            <div className="flex items-center gap-1">
+              {account.role === "Super Admin" || account.role === "Admin" ? <AdminOrderBell /> : null}
+              <AdminAccountMenu account={account} />
+            </div>
           </header>
           <main id="main-content" tabIndex={-1} className="flex-1 p-4 sm:p-6 lg:p-8">
             {children}

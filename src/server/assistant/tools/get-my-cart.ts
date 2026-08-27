@@ -1,4 +1,4 @@
-import { cartTotals, getOrCreateCart } from "@/server/cart";
+import { getCartTotals, getOrCreateCart } from "@/server/cart";
 import { formatMoney, resolveCartItemPriceMinor } from "@/lib/money";
 import type { ToolContext, ToolResult } from "./types";
 
@@ -14,7 +14,7 @@ export async function runGetMyCart(ctx: ToolContext): Promise<ToolResult | null>
 
   const customerId = ctx.userContext?.customerId ?? undefined;
   const cart = await getOrCreateCart(customerId);
-  const totals = cartTotals(cart);
+  const totals = await getCartTotals(cart);
 
   if (!cart?.cart_items?.length) {
     return {

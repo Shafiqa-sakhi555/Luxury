@@ -55,6 +55,7 @@ const permissionsToCreate = [
   { key: 'reconciliation.manage', description: 'Manage reconciliation' },
   { key: 'financial_reports.view', description: 'View financial reports' },
   { key: 'financial_reports.export', description: 'Export financial reports' },
+  { key: 'settings.read', description: 'View store settings' },
 ];
 
 const rolePermissionMap: Record<string, string[]> = {
@@ -73,6 +74,7 @@ const rolePermissionMap: Record<string, string[]> = {
     'refunds.create',
     'refunds.view',
     'invoices.view',
+    'settings.read',
   ],
   Finance: [
     'order.read',

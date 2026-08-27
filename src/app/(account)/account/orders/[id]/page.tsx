@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
-import { getOrderStatusMeta } from "@/lib/orders/status";
+import { getOrderStatusMeta, canCustomerCancelOrder } from "@/lib/orders/status";
 import { CustomerOrderStatusBadge } from "@/components/account/CustomerOrderStatusBadge";
+import { CancelOrderButton } from "@/components/account/CancelOrderButton";
 import { Card } from "@/components/ui/card";
 
 export default async function AccountOrderDetailPage({
@@ -58,6 +59,21 @@ export default async function AccountOrderDetailPage({
         </div>
         <CustomerOrderStatusBadge status={order.status} />
       </div>
+
+      {canCustomerCancelOrder(order.status) ? (
+        <Card padding="md" className="mt-6 border-red/20">
+          <h2 className="text-sm font-semibold text-navy">Need to cancel?</h2>
+          <p className="mt-2 text-sm text-muted">
+            You can cancel this order while it is still awaiting confirmation or packing. After it is
+            packed or shipped, contact us instead.
+          </p>
+          <CancelOrderButton
+            orderId={order.id}
+            orderNumber={order.order_number}
+            className="mt-4"
+          />
+        </Card>
+      ) : null}
 
       <Card padding="md" className="mt-6">
         <h2 className="text-sm font-semibold text-navy">What this means</h2>

@@ -7,7 +7,7 @@ import {
 } from "@/lib/auth/staff";
 
 export type AdminContext = {
-  user: { id: string; email?: string };
+  user: { id: string; email?: string; name?: string };
   permissions: Set<string>;
   roleNames: string[];
   primaryRole: string;
@@ -58,6 +58,7 @@ const ROLE_DEFAULT_PERMISSIONS: Record<StaffRole, string[]> = {
     "refunds.create",
     "refunds.view",
     "invoices.view",
+    "settings.read",
   ],
   Finance: [
     "order.read",
@@ -173,9 +174,25 @@ export async function getAdminContext(): Promise<AdminContext | null> {
   const roleNames = await getUserRoleNames(user.id);
   const metadataRole = getStaffRoleFromMetadata(user.app_metadata as Record<string, unknown>);
   const primaryRole = roleNames[0] ?? metadataRole ?? "Staff";
+  const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const metadataName =
+    (typeof metadata.name === "string" && metadata.name.trim()) ||
+    (typeof metadata.full_name === "string" && metadata.full_name.trim()) ||
+    "";
+
+  let name = metadataName;
+  if (!name) {
+    const admin = createSupabaseAdminClient();
+    const { data: profile } = await admin.from("profiles").select("name").eq("id", user.id).maybeSingle();
+    name = profile?.name?.trim() || "";
+  }
 
   return {
-    user: { id: user.id, email: user.email },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: name || user.email?.split("@")[0] || "Staff",
+    },
     permissions,
     roleNames,
     primaryRole,

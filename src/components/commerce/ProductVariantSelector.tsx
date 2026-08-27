@@ -65,9 +65,13 @@ function buildSpecs(product: CatalogProduct, selected?: CatalogProductVariant) {
 export function ProductVariantSelector({
   product,
   reviews = [],
+  deliveryFeeLabel,
+  freeDeliveryThresholdLabel,
 }: {
   product: CatalogProduct;
   reviews?: ProductReview[];
+  deliveryFeeLabel?: string;
+  freeDeliveryThresholdLabel?: string;
 }) {
   const variants = useMemo(() => product.variants ?? [], [product.variants]);
   const colorOptions = useMemo(() => buildColorOptions(variants), [variants]);
@@ -121,6 +125,8 @@ export function ProductVariantSelector({
           productId={product.id}
           productSlug={product.slug}
           reviews={reviews}
+          deliveryFeeLabel={deliveryFeeLabel}
+          freeDeliveryThresholdLabel={freeDeliveryThresholdLabel}
         />
       </div>
     </div>
@@ -130,9 +136,13 @@ export function ProductVariantSelector({
 export function ProductSimpleDetail({
   product,
   reviews = [],
+  deliveryFeeLabel,
+  freeDeliveryThresholdLabel,
 }: {
   product: CatalogProduct;
   reviews?: ProductReview[];
+  deliveryFeeLabel?: string;
+  freeDeliveryThresholdLabel?: string;
 }) {
   const colorOptions = product.fabric
     ? [{ id: product.fabric, label: product.fabric }]
@@ -178,6 +188,8 @@ export function ProductSimpleDetail({
           productId={product.id}
           productSlug={product.slug}
           reviews={reviews}
+          deliveryFeeLabel={deliveryFeeLabel}
+          freeDeliveryThresholdLabel={freeDeliveryThresholdLabel}
         />
       </div>
     </div>

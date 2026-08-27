@@ -67,7 +67,11 @@ export default async function AdminDashboardPage({
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {canSeeRevenue ? (
-          <StatCard label="Revenue" value={formatMoney(summary.revenueMinor)} />
+          <StatCard
+            label="Revenue"
+            value={formatMoney(summary.revenueMinor)}
+            hint="Delivered orders only"
+          />
         ) : null}
         {canSeeOrders ? (
           <StatCard

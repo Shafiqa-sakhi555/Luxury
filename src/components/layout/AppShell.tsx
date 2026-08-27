@@ -21,9 +21,11 @@ export type ShopNavCategory = {
 export function AppShell({
   children,
   shopCategories = [],
+  freeDeliveryThresholdMinor,
 }: {
   children: React.ReactNode;
   shopCategories?: ShopNavCategory[];
+  freeDeliveryThresholdMinor?: number;
 }) {
   return (
     <LogoIntroProvider>
@@ -33,7 +35,7 @@ export function AppShell({
         <SmoothScrollProvider>
           <SkipLink />
           <div className="fixed top-0 left-0 right-0 z-50">
-            <PromoBar />
+            <PromoBar freeDeliveryThresholdMinor={freeDeliveryThresholdMinor} />
             <Navbar shopCategories={shopCategories} />
           </div>
           <main id="main-content" tabIndex={-1}>

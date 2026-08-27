@@ -1,6 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveCartItemPriceMinor } from "@/lib/money";
-import { cartTotals } from "@/server/cart";
+import { getCartTotals } from "@/server/cart";
 import {
   ensureFinancialRecordsForOrder,
   syncFinancialRecordsOnOrderStatusChange,
@@ -9,6 +9,7 @@ import {
   sendNewOrderStaffNotifications,
   sendOrderStatusChangeNotifications,
 } from "@/server/orders/notifications";
+import { canCustomerCancelOrder } from "@/lib/orders/status";
 export type PlaceOrderInput = {
   customerId: string;
   cartId: string;
@@ -34,7 +35,7 @@ export async function placeOrder(input: PlaceOrderInput) {
   const { data: cart } = await supabase.from("carts").select("*, cart_items(*, product_variants(*, products(*, product_images(*))))").eq("id", input.cartId).single();
   if (!cart || cart.cart_items.length === 0) throw new Error("Cart is empty");
 
-  const totals = cartTotals(cart);
+  const totals = await getCartTotals(cart);
   const { subtotalMinor, deliveryMinor, totalMinor } = totals;
 
   // 3. Create Order
@@ -141,6 +142,36 @@ export async function listCustomerOrders(customerId: string) {
     .order("created_at", { ascending: false });
 
   return data ?? [];
+}
+
+export async function cancelCustomerOrder(input: {
+  orderId: string;
+  customerId: string;
+  customerUserId?: string;
+}) {
+  const supabase = createSupabaseAdminClient();
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, status, customer_id")
+    .eq("id", input.orderId)
+    .maybeSingle();
+
+  if (!order || order.customer_id !== input.customerId) {
+    throw new Error("Order not found.");
+  }
+
+  if (!canCustomerCancelOrder(order.status)) {
+    throw new Error(
+      "This order can no longer be cancelled online. Contact us if you need help."
+    );
+  }
+
+  await updateOrderStatus(
+    order.id,
+    "CANCELLED",
+    "Cancelled by customer",
+    input.customerUserId
+  );
 }
 
 export async function updateOrderStatus(

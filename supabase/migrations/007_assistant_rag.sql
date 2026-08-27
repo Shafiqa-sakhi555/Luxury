@@ -30,6 +30,8 @@ CREATE TRIGGER assistant_knowledge_chunks_updated_at
 
 ALTER TABLE public.assistant_knowledge_chunks ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Service role full access assistant_knowledge_chunks"
+  ON public.assistant_knowledge_chunks;
 CREATE POLICY "Service role full access assistant_knowledge_chunks"
   ON public.assistant_knowledge_chunks FOR ALL
   USING (auth.role() = 'service_role')
