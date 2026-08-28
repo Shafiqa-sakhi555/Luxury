@@ -24,12 +24,38 @@ type ProductImageUploaderProps = {
   draftKey: string;
 };
 
+function dedupeImages(images: AdminProductImage[]): AdminProductImage[] {
+  const seenPublicIds = new Set<string>();
+
+  return images.filter((image) => {
+    const publicId = image.publicId?.trim();
+    if (!publicId) return true;
+    if (seenPublicIds.has(publicId)) return false;
+    seenPublicIds.add(publicId);
+    return true;
+  });
+}
+
 function toUploadItems(images: AdminProductImage[]): UploadItem[] {
-  return images.map((image, index) => ({
-    ...image,
-    clientId: image.publicId || `existing-${index}`,
-    sortOrder: index,
-  }));
+  const seenClientIds = new Set<string>();
+
+  return dedupeImages(images).map((image, index) => {
+    const baseId = image.publicId?.trim() || `existing-${index}`;
+    let clientId = baseId;
+    let suffix = 0;
+
+    while (seenClientIds.has(clientId)) {
+      suffix += 1;
+      clientId = `${baseId}#${suffix}`;
+    }
+    seenClientIds.add(clientId);
+
+    return {
+      ...image,
+      clientId,
+      sortOrder: index,
+    };
+  });
 }
 
 function fromUploadItems(items: UploadItem[]): AdminProductImage[] {
@@ -82,7 +108,7 @@ export function ProductImageUploader({
 
     setError(null);
     onUploadingChange?.(true);
-    let nextIndex = items.filter((item) => item.url && !item.uploading).length;
+    let nextIndex = items.filter((item) => item.url || item.uploading).length;
 
     try {
       for (const file of Array.from(files)) {

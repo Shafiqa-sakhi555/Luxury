@@ -9,6 +9,12 @@ import { getCategorySlugById } from "@/server/catalog/cloudinary-upload-context"
 import { persistProductImages } from "@/server/catalog/product-image-sync";
 import { deleteCloudinaryImage } from "@/lib/cloudinary";
 import { revalidateStorefrontCatalog } from "@/server/catalog/revalidate-storefront";
+import { normalizeAdminProductPricing } from "@/lib/catalog/product-pricing";
+import {
+  checkSkuAvailability,
+  syncProductSizeVariants,
+  validateProductVariants,
+} from "@/server/catalog/product-variant-sync";
 
 function discountPercent(original: number, sale: number) {
   if (original <= 0 || sale >= original) return 0;
@@ -172,29 +178,48 @@ export async function createSupabaseCatalogProduct(
 
   if (!category) return { ok: false, error: "Category not found." };
 
-  const slug = await uniqueProductSlug(input.slug || input.name, async (candidate) => {
+  const normalized = normalizeAdminProductPricing({
+    ...input,
+    pricePerSquareFoot: input.pricePerSquareFoot,
+  });
+  const normalizedInput = { ...input, ...normalized };
+  const usesSizeVariants = Boolean(normalizedInput.variants && normalizedInput.variants.length > 0);
+
+  if (usesSizeVariants) {
+    const variantError = validateProductVariants(normalizedInput.variants);
+    if (variantError) return { ok: false, error: variantError };
+
+    const skuError = await checkSkuAvailability(
+      normalizedInput.variants!.map((v) => v.sku)
+    );
+    if (skuError) return { ok: false, error: skuError };
+  }
+
+  const slug = await uniqueProductSlug(normalizedInput.slug || normalizedInput.name, async (candidate) => {
     const { data } = await supabase.from("products").select("id").eq("slug", candidate).maybeSingle();
     return Boolean(data);
   });
 
-  const sku = input.sku.trim() || slug.toUpperCase().replace(/-/g, "_");
-  const prices = buildProductPrices(input);
+  const sku = normalizedInput.sku.trim() || slug.toUpperCase().replace(/-/g, "_");
+  const prices = buildProductPrices(normalizedInput);
 
   const { data: product, error } = await supabase
     .from("products")
     .insert({
       category_id: category.id,
-      name: input.name.trim(),
+      name: normalizedInput.name.trim(),
       slug,
-      short_description: input.shortDescription.trim() || null,
-      description: input.description.trim() || null,
-      ...prices,
-      sku,
-      selling_unit: input.sellingUnit.trim() || null,
-      status: input.status,
-      is_active: input.status === "ACTIVE",
-      is_featured: input.isFeatured,
-      has_variants: false,
+      short_description: normalizedInput.shortDescription.trim() || null,
+      description: normalizedInput.description.trim() || null,
+      ...(usesSizeVariants ? {} : prices),
+      sku: usesSizeVariants ? null : sku,
+      selling_unit: normalizedInput.sellingUnit.trim() || null,
+      fabric: normalizedInput.fabric?.trim() || null,
+      design: normalizedInput.design?.trim() || null,
+      status: normalizedInput.status,
+      is_active: normalizedInput.status === "ACTIVE",
+      is_featured: normalizedInput.isFeatured,
+      has_variants: usesSizeVariants && (normalizedInput.variants!.length > 1),
     })
     .select("id")
     .single();
@@ -203,8 +228,22 @@ export async function createSupabaseCatalogProduct(
     return { ok: false, error: error?.message ?? "Failed to create product." };
   }
 
-  await createDefaultVariant(product.id, input, sku);
-  await upsertColorsSpecification(product.id, input.colors);
+  if (usesSizeVariants) {
+    const syncResult = await syncProductSizeVariants(
+      product.id,
+      normalizedInput,
+      normalizedInput.status === "ACTIVE"
+    );
+    if (!syncResult.ok) {
+      await supabase.from("products").delete().eq("id", product.id);
+      return syncResult;
+    }
+  } else {
+    await createDefaultVariant(product.id, normalizedInput, sku);
+    await upsertSupabaseInventory(product.id, normalizedInput.stockQuantity);
+  }
+
+  await upsertColorsSpecification(product.id, normalizedInput.colors);
 
   const categorySlug = await getCategorySlugById(category.id);
   if (!categorySlug) {
@@ -214,21 +253,20 @@ export async function createSupabaseCatalogProduct(
   const finalizedImages = await persistProductImages({
     productId: product.id,
     categorySlug,
-    images: input.images,
-    draftKey: input.draftKey,
-    alt: input.name.trim(),
+    images: normalizedInput.images,
+    draftKey: normalizedInput.draftKey,
+    alt: normalizedInput.name.trim(),
   });
-  if (finalizedImages.length === 0 && input.images.some((image) => image.publicId || image.url)) {
+  if (finalizedImages.length === 0 && normalizedInput.images.some((image) => image.publicId || image.url)) {
     return { ok: false, error: "Product images could not be linked. Re-upload and save again." };
   }
-  await upsertSupabaseInventory(product.id, input.stockQuantity);
 
   await writeAuditLog({
     actorId: user.id,
     action: "product.create",
     entityType: "SupabaseProduct",
     entityId: product.id,
-    after: { name: input.name, slug },
+    after: { name: normalizedInput.name, slug },
   });
 
   revalidatePath("/admin/catalog/products");
@@ -270,7 +308,26 @@ export async function updateSupabaseCatalogProduct(
     .maybeSingle();
   if (!category) return { ok: false, error: "Category not found." };
 
-  const slug = await uniqueProductSlug(input.slug || input.name, async (candidate) => {
+  const normalized = normalizeAdminProductPricing({
+    ...input,
+    pricePerSquareFoot: input.pricePerSquareFoot,
+  });
+  const normalizedInput = { ...input, ...normalized };
+  const usesSizeVariants = Boolean(normalizedInput.variants && normalizedInput.variants.length > 0);
+  const isLegacyMultiVariant = existing.has_variants && !usesSizeVariants;
+
+  if (usesSizeVariants) {
+    const variantError = validateProductVariants(normalizedInput.variants);
+    if (variantError) return { ok: false, error: variantError };
+
+    const skuError = await checkSkuAvailability(
+      normalizedInput.variants!.map((v) => v.sku),
+      id
+    );
+    if (skuError) return { ok: false, error: skuError };
+  }
+
+  const slug = await uniqueProductSlug(normalizedInput.slug || normalizedInput.name, async (candidate) => {
     const { data } = await supabase
       .from("products")
       .select("id")
@@ -280,24 +337,28 @@ export async function updateSupabaseCatalogProduct(
     return Boolean(data);
   }, existing.slug);
 
-  const prices = buildProductPrices(input);
+  const prices = buildProductPrices(normalizedInput);
 
   const updatePayload: Record<string, unknown> = {
     category_id: category.id,
-    name: input.name.trim(),
+    name: normalizedInput.name.trim(),
     slug,
-    short_description: input.shortDescription.trim() || null,
-    description: input.description.trim() || null,
-    status: input.status,
-    is_active: input.status === "ACTIVE",
-    is_featured: input.isFeatured,
-    selling_unit: input.sellingUnit.trim() || null,
+    short_description: normalizedInput.shortDescription.trim() || null,
+    description: normalizedInput.description.trim() || null,
+    status: normalizedInput.status,
+    is_active: normalizedInput.status === "ACTIVE",
+    is_featured: normalizedInput.isFeatured,
+    selling_unit: normalizedInput.sellingUnit.trim() || null,
+    fabric: normalizedInput.fabric?.trim() || null,
+    design: normalizedInput.design?.trim() || null,
   };
 
-  if (!existing.has_variants) {
+  if (usesSizeVariants) {
+    // Product-level prices updated by syncProductSizeVariants
+  } else if (!existing.has_variants) {
     Object.assign(updatePayload, prices);
-    if (input.sku.trim()) updatePayload.sku = input.sku.trim();
-  } else {
+    if (normalizedInput.sku.trim()) updatePayload.sku = normalizedInput.sku.trim();
+  } else if (isLegacyMultiVariant) {
     Object.assign(updatePayload, prices);
   }
 
@@ -312,19 +373,26 @@ export async function updateSupabaseCatalogProduct(
   const finalizedImages = await persistProductImages({
     productId: id,
     categorySlug,
-    images: input.images,
-    draftKey: input.draftKey,
-    alt: input.name.trim(),
+    images: normalizedInput.images,
+    draftKey: normalizedInput.draftKey,
+    alt: normalizedInput.name.trim(),
   });
-  if (finalizedImages.length === 0 && input.images.some((image) => image.publicId || image.url)) {
+  if (finalizedImages.length === 0 && normalizedInput.images.some((image) => image.publicId || image.url)) {
     return { ok: false, error: "Product images could not be linked. Re-upload and save again." };
   }
-  await upsertSupabaseInventory(id, input.stockQuantity);
-  await upsertColorsSpecification(id, input.colors);
+  await upsertColorsSpecification(id, normalizedInput.colors);
 
-  if (!existing.has_variants) {
-    await updateDefaultVariantColor(id, input.colors);
-    await syncDefaultVariantPrices(id, input);
+  if (usesSizeVariants) {
+    const syncResult = await syncProductSizeVariants(
+      id,
+      normalizedInput,
+      normalizedInput.status === "ACTIVE"
+    );
+    if (!syncResult.ok) return syncResult;
+  } else if (!existing.has_variants) {
+    await upsertSupabaseInventory(id, normalizedInput.stockQuantity);
+    await updateDefaultVariantColor(id, normalizedInput.colors);
+    await syncDefaultVariantPrices(id, normalizedInput);
   }
 
   await writeAuditLog({
@@ -332,7 +400,7 @@ export async function updateSupabaseCatalogProduct(
     action: "product.update",
     entityType: "SupabaseProduct",
     entityId: id,
-    after: { name: input.name, slug, status: input.status },
+    after: { name: normalizedInput.name, slug, status: normalizedInput.status },
   });
 
   revalidatePath("/admin/catalog/products");

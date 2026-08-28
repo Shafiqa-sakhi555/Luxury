@@ -10,7 +10,7 @@ import { SectionHeading } from "@/components/shared/SectionHeading";
 import { PageContainer } from "@/components/ui/page-container";
 import { EmptyState } from "@/components/ui/empty-state";
 import { normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
-import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
+import { getOptimizedImageUrl, isRenderableImageUrl, resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
 
 export const revalidate = 60;
 
@@ -67,18 +67,24 @@ export default async function CategoryPage({
 
   const { items, total, totalPages } = productResult;
 
-  const heroImage =
-    "heroImage" in category && category.heroImage
-      ? category.heroImage
-      : items[0]?.images[0]?.url ?? null;
+  const heroImageCandidate =
+    ("heroImage" in category && category.heroImage) ||
+    ("heroImagePublicId" in category && category.heroImagePublicId
+      ? resolveCloudinaryImageUrl(null, category.heroImagePublicId)
+      : null) ||
+    items[0]?.images[0]?.url ||
+    null;
+  const heroImageSrc = isRenderableImageUrl(heroImageCandidate)
+    ? getOptimizedImageUrl(heroImageCandidate, { width: 1920, crop: "limit" })
+    : null;
 
   return (
     <div>
       <section className="relative overflow-hidden section-brand-light pt-28">
-        {heroImage && (
+        {heroImageSrc && (
           <div className="absolute inset-0">
             <Image
-              src={getOptimizedImageUrl(heroImage, { width: 1920, crop: "limit" })}
+              src={heroImageSrc}
               alt={category.name}
               fill
               className="object-cover opacity-20"
@@ -88,7 +94,7 @@ export default async function CategoryPage({
             <div className="absolute inset-0 bg-gradient-to-b from-brand-50/80 via-brand-50/95 to-brand-50" />
           </div>
         )}
-        {!heroImage && <div className="blob-red right-0 top-10 h-72 w-72 opacity-40" />}
+        {!heroImageSrc && <div className="blob-red right-0 top-10 h-72 w-72 opacity-40" />}
 
         <PageContainer className="relative pb-12 sm:pb-16">
           <Breadcrumbs

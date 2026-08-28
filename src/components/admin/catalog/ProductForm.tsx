@@ -9,10 +9,15 @@ import { toast } from "sonner";
 import { AdminButton, AdminInput, AdminLabel, AdminSelect, AdminTextarea } from "@/components/admin/ui";
 import { AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import { ProductImageUploader } from "@/components/admin/media/ProductImageUploader";
+import { ProductSizeVariantEditor } from "@/components/admin/catalog/ProductSizeVariantEditor";
 import { saveProductAction } from "@/server/catalog/admin-actions";
+import { getCategorySizesAction } from "@/server/catalog/category-size-actions";
+import { computeDiscountPercentage, salePriceMajorFromDiscount, usesSquareFootSellingUnit } from "@/lib/catalog/product-pricing";
+import { getCategoryVariantProfile } from "@/lib/catalog/category-variant-profiles";
 import { slugify } from "@/lib/slug";
 import type { AdminCategoryOption, AdminProductDetail } from "@/types/admin-catalog";
 import type { AdminProductImage } from "@/types/media";
+import type { AdminCategorySize, AdminProductVariantInput } from "@/types/category-sizes";
 
 type FormValues = {
   mainCategoryId: string;
@@ -29,6 +34,8 @@ type FormValues = {
   status: "ACTIVE" | "DRAFT" | "ARCHIVED";
   isFeatured: boolean;
   sellingUnit?: string;
+  fabric?: string;
+  design?: string;
 };
 
 const productSchema = z.object({
@@ -60,6 +67,22 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   const [images, setImages] = useState<AdminProductImage[]>(product?.images ?? []);
   const imagesRef = useRef<AdminProductImage[]>(product?.images ?? []);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [discountPercentInput, setDiscountPercentInput] = useState(() => {
+    const original = product?.originalPriceMajor ?? 0;
+    const sale = product?.salePriceMajor ?? 0;
+    if (original <= 0 || sale <= 0 || sale >= original) return "";
+    return String(computeDiscountPercentage(Math.round(original * 100), Math.round(sale * 100)));
+  });
+  const [usePerSquareFootPricing, setUsePerSquareFootPricing] = useState(() =>
+    usesSquareFootSellingUnit(product?.sellingUnit)
+  );
+  const [categorySizes, setCategorySizes] = useState<AdminCategorySize[]>([]);
+  const [sizesEnabled, setSizesEnabled] = useState(false);
+  const [sizeVariants, setSizeVariants] = useState<AdminProductVariantInput[]>(
+    product?.variantDetails ?? []
+  );
+  const [loadingSizes, setLoadingSizes] = useState(false);
+  const discountEditRef = useRef(false);
   const draftKeyRef = useRef(crypto.randomUUID());
   const isEdit = Boolean(product);
 
@@ -82,6 +105,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     status: product?.status ?? "ACTIVE",
     isFeatured: product?.isFeatured ?? false,
     sellingUnit: product?.sellingUnit ?? "",
+    fabric: product?.fabric ?? "",
+    design: product?.design ?? "",
   };
 
   const form = useForm<FormValues>({
@@ -92,6 +117,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   const watchName = form.watch("name");
   const watchMainCategoryId = form.watch("mainCategoryId");
   const watchSectionId = form.watch("sectionId");
+  const watchOriginalPrice = form.watch("originalPriceMajor");
+  const watchSalePrice = form.watch("salePriceMajor");
 
   const mainCategories = useMemo(
     () => categories.filter((category) => !category.parentId),
@@ -102,6 +129,75 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     () => categories.filter((category) => category.parentId === watchMainCategoryId),
     [categories, watchMainCategoryId]
   );
+
+  const priceDiscountPercent = useMemo(() => {
+    const original = Number(watchOriginalPrice) || 0;
+    const sale = Number(watchSalePrice) || 0;
+    if (original <= 0 || sale <= 0 || sale >= original) return 0;
+    return computeDiscountPercentage(Math.round(original * 100), Math.round(sale * 100));
+  }, [watchOriginalPrice, watchSalePrice]);
+
+  useEffect(() => {
+    if (!usePerSquareFootPricing) return;
+
+    if (discountEditRef.current) {
+      discountEditRef.current = false;
+      return;
+    }
+
+    const original = Number(watchOriginalPrice) || 0;
+    const sale = Number(watchSalePrice) || 0;
+    if (original <= 0 || sale <= 0 || sale >= original) {
+      setDiscountPercentInput("");
+      return;
+    }
+
+    setDiscountPercentInput(
+      String(computeDiscountPercentage(Math.round(original * 100), Math.round(sale * 100)))
+    );
+  }, [watchOriginalPrice, watchSalePrice, usePerSquareFootPricing]);
+
+  function togglePerSquareFootPricing(enabled: boolean) {
+    setUsePerSquareFootPricing(enabled);
+    if (enabled) {
+      form.setValue("sellingUnit", "per sq ft", { shouldDirty: true });
+      return;
+    }
+
+    if (form.getValues("sellingUnit")?.trim().toLowerCase() === "per sq ft") {
+      form.setValue("sellingUnit", "", { shouldDirty: true });
+    }
+    setDiscountPercentInput("");
+  }
+
+  function applyDiscountPercent(rawValue: string) {
+    setDiscountPercentInput(rawValue);
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return;
+
+    const original = Number(form.getValues("originalPriceMajor")) || 0;
+    if (original <= 0) return;
+
+    discountEditRef.current = true;
+    const sale =
+      parsed <= 0 ? original : salePriceMajorFromDiscount(original, parsed);
+    form.setValue("salePriceMajor", sale, { shouldDirty: true, shouldValidate: true });
+  }
+
+  function handleRegularRateChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const original = Number(event.target.value) || 0;
+    form.setValue("originalPriceMajor", original, { shouldDirty: true, shouldValidate: true });
+
+    const parsedDiscount = Number(discountPercentInput);
+    if (usePerSquareFootPricing && original > 0 && Number.isFinite(parsedDiscount) && parsedDiscount > 0) {
+      discountEditRef.current = true;
+      form.setValue(
+        "salePriceMajor",
+        salePriceMajorFromDiscount(original, parsedDiscount),
+        { shouldDirty: true, shouldValidate: true }
+      );
+    }
+  }
 
   useEffect(() => {
     if (!watchSectionId) return;
@@ -117,6 +213,42 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     categories.find((category) => category.id === watchMainCategoryId);
   const categorySlug = selectedCategory?.slug ?? product?.categorySlug ?? null;
   const categoryId = resolvedCategoryId || null;
+  const variantProfile = getCategoryVariantProfile(categorySlug, selectedCategory?.name);
+  const usesCategorySizes = sizesEnabled && categorySizes.length > 0;
+  const isLegacyImportProduct = Boolean(product?.hasVariants && !product?.usesCategorySizes);
+  const showSizeVariants = usesCategorySizes && !isLegacyImportProduct;
+
+  useEffect(() => {
+    if (!categoryId) {
+      setCategorySizes([]);
+      setSizesEnabled(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingSizes(true);
+    void getCategorySizesAction(categoryId).then((result) => {
+      if (cancelled) return;
+      if (result.ok) {
+        setSizesEnabled(result.sizesEnabled);
+        setCategorySizes(result.sizes.filter((size) => size.isActive));
+      } else {
+        setSizesEnabled(false);
+        setCategorySizes([]);
+      }
+      setLoadingSizes(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [categoryId]);
+
+  useEffect(() => {
+    if (product?.variantDetails?.length && usesCategorySizes) {
+      setSizeVariants(product.variantDetails);
+    }
+  }, [product?.id, product?.variantDetails, usesCategorySizes]);
 
   function handleImagesChange(nextImages: AdminProductImage[]) {
     imagesRef.current = nextImages;
@@ -129,6 +261,11 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     const currentImages = imagesRef.current;
     if (uploadingImages) {
       setError("Wait for image uploads to finish before saving.");
+      return;
+    }
+
+    if (showSizeVariants && sizeVariants.length === 0) {
+      setError(`Select at least one ${variantProfile.optionLabel.toLowerCase()} for this product.`);
       return;
     }
 
@@ -155,7 +292,11 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           stockQuantity: values.stockQuantity,
           status: values.status,
           isFeatured: values.isFeatured,
-          sellingUnit: values.sellingUnit ?? "",
+          sellingUnit: usePerSquareFootPricing ? "per sq ft" : values.sellingUnit ?? "",
+          pricePerSquareFoot: usePerSquareFootPricing,
+          fabric: values.fabric ?? "",
+          design: values.design ?? "",
+          variants: showSizeVariants ? sizeVariants : undefined,
           images: currentImages,
           draftKey: draftKeyRef.current,
         },
@@ -180,11 +321,11 @@ export function ProductForm({ categories, product }: ProductFormProps) {
         </div>
       )}
 
-      {product?.hasVariants && (
+      {isLegacyImportProduct && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          This product has multiple color/design variants. You can update the collection name,
-          description, images, and base pricing here. Individual variant SKUs are managed by the
-          catalog import.
+          This product has imported color/design variants (e.g. carpet collections). You can update
+          the collection name, description, images, and base pricing here. Individual variant SKUs are
+          managed by the catalog import.
         </div>
       )}
 
@@ -287,11 +428,56 @@ export function ProductForm({ categories, product }: ProductFormProps) {
                 placeholder="e.g. Grey, Blue, Cream, White"
               />
               <p className="mt-1 text-xs text-muted">
-                Comma-separated list. The first color is used as the default variant color.
+                Comma-separated list. Used as the default variant color where applicable.
               </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <AdminLabel htmlFor="fabric">
+                  {variantProfile.showFurnitureFields ? "Material (default)" : "Material / fabric"}
+                </AdminLabel>
+                <AdminInput
+                  id="fabric"
+                  {...form.register("fabric")}
+                  placeholder={variantProfile.showFurnitureFields ? "e.g. Solid wood" : "e.g. Wool, Cotton"}
+                />
+              </div>
+              <div>
+                <AdminLabel htmlFor="design">
+                  {variantProfile.showFurnitureFields ? "Style / finish" : "Design"}
+                </AdminLabel>
+                <AdminInput
+                  id="design"
+                  {...form.register("design")}
+                  placeholder={
+                    variantProfile.showFurnitureFields ? "e.g. Modern, Scandinavian" : "e.g. Persian Floral"
+                  }
+                />
+              </div>
             </div>
           </AdminCard>
 
+          {showSizeVariants && (
+            <AdminCard className="space-y-4 p-5">
+              <h2 className="text-sm font-semibold text-navy">
+                {variantProfile.optionLabel} &amp; pricing
+              </h2>
+              {loadingSizes ? (
+                <p className="text-sm text-muted">Loading category {variantProfile.optionLabelPlural.toLowerCase()}...</p>
+              ) : (
+                <ProductSizeVariantEditor
+                  categorySizes={categorySizes}
+                  variants={sizeVariants}
+                  onChange={setSizeVariants}
+                  productSlug={form.watch("slug") || slugify(watchName || "product")}
+                  profile={variantProfile}
+                />
+              )}
+            </AdminCard>
+          )}
+
+          {!showSizeVariants && (
           <AdminCard className="space-y-4 p-5">
             <h2 className="text-sm font-semibold text-navy">Pricing & inventory</h2>
 
@@ -300,37 +486,126 @@ export function ProductForm({ categories, product }: ProductFormProps) {
               <AdminInput id="sku" {...form.register("sku")} placeholder="Optional" />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <AdminLabel htmlFor="originalPriceMajor">Regular price (Rs)</AdminLabel>
-                <AdminInput
-                  id="originalPriceMajor"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  {...form.register("originalPriceMajor", { valueAsNumber: true })}
-                />
-              </div>
-              <div>
-                <AdminLabel htmlFor="salePriceMajor">Sale price (Rs)</AdminLabel>
-                <AdminInput
-                  id="salePriceMajor"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  {...form.register("salePriceMajor", { valueAsNumber: true })}
-                />
-              </div>
-            </div>
-
-            <div>
-              <AdminLabel htmlFor="sellingUnit">Selling unit</AdminLabel>
-              <AdminInput
-                id="sellingUnit"
-                {...form.register("sellingUnit")}
-                placeholder="e.g. per sq ft"
+            <label className="flex items-start gap-2 rounded-lg border border-navy/10 bg-brand-50 px-3 py-3 text-sm text-navy">
+              <input
+                type="checkbox"
+                className="mt-0.5 rounded border-navy/20"
+                checked={usePerSquareFootPricing}
+                onChange={(event) => togglePerSquareFootPricing(event.target.checked)}
               />
-            </div>
+              <span>
+                <span className="font-medium">Price per square foot</span>
+                <span className="mt-1 block text-xs text-muted">
+                  Optional — turn on when the product is priced by room size. Leave off for fixed prices
+                  (curtains, prayer mats, pillows, etc.).
+                </span>
+              </span>
+            </label>
+
+            {usePerSquareFootPricing ? (
+              <>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <AdminLabel htmlFor="sqftRate">Rate per sq ft (Rs)</AdminLabel>
+                    <AdminInput
+                      id="sqftRate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={Number.isFinite(watchOriginalPrice) ? watchOriginalPrice : ""}
+                      onChange={handleRegularRateChange}
+                    />
+                  </div>
+                  <div>
+                    <AdminLabel htmlFor="discountPercent">Discount (%)</AdminLabel>
+                    <AdminInput
+                      id="discountPercent"
+                      type="number"
+                      step="1"
+                      min="0"
+                      max="100"
+                      placeholder="0"
+                      value={discountPercentInput}
+                      onChange={(event) => applyDiscountPercent(event.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <AdminLabel htmlFor="sqftSaleRate">Sale rate per sq ft (Rs)</AdminLabel>
+                    <AdminInput
+                      id="sqftSaleRate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={Number.isFinite(watchSalePrice) ? watchSalePrice : ""}
+                      onChange={(event) =>
+                        form.setValue("salePriceMajor", Number(event.target.value) || 0, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
+                {priceDiscountPercent > 0 ? (
+                  <div className="rounded-lg border border-red/20 bg-red/5 px-3 py-2 text-sm text-navy">
+                    <span className="font-medium text-red">Save {priceDiscountPercent}%</span>
+                    <span>
+                      {" "}
+                      on the per sq ft rate
+                      {watchOriginalPrice > 0 && watchSalePrice > 0 ? (
+                        <> (Rs {watchOriginalPrice} → Rs {watchSalePrice} / sq ft)</>
+                      ) : null}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted">
+                    Set a discount % or enter a sale rate lower than the regular sq ft rate.
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <AdminLabel htmlFor="originalPriceMajor">Regular price (Rs)</AdminLabel>
+                    <AdminInput
+                      id="originalPriceMajor"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      {...form.register("originalPriceMajor", { valueAsNumber: true })}
+                    />
+                  </div>
+                  <div>
+                    <AdminLabel htmlFor="salePriceMajor">Sale price (Rs)</AdminLabel>
+                    <AdminInput
+                      id="salePriceMajor"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      {...form.register("salePriceMajor", { valueAsNumber: true })}
+                    />
+                  </div>
+                </div>
+
+                {priceDiscountPercent > 0 ? (
+                  <div className="rounded-lg border border-red/20 bg-red/5 px-3 py-2 text-sm text-navy">
+                    <span className="font-medium text-red">Save {priceDiscountPercent}%</span>
+                    <span> on the sale price</span>
+                  </div>
+                ) : null}
+
+                <div>
+                  <AdminLabel htmlFor="sellingUnit">Selling unit</AdminLabel>
+                  <AdminInput
+                    id="sellingUnit"
+                    {...form.register("sellingUnit")}
+                    placeholder="e.g. per pair, per piece, sold individually"
+                  />
+                </div>
+              </>
+            )}
 
             <div>
               <AdminLabel htmlFor="stockQuantity">Stock quantity</AdminLabel>
@@ -356,6 +631,25 @@ export function ProductForm({ categories, product }: ProductFormProps) {
               Featured product
             </label>
           </AdminCard>
+          )}
+
+          {showSizeVariants && (
+            <AdminCard className="space-y-4 p-5">
+              <h2 className="text-sm font-semibold text-navy">Status</h2>
+              <div>
+                <AdminLabel htmlFor="status">Status</AdminLabel>
+                <AdminSelect id="status" {...form.register("status")}>
+                  <option value="ACTIVE">Active (visible on storefront)</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="ARCHIVED">Archived / hidden</option>
+                </AdminSelect>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-navy">
+                <input type="checkbox" {...form.register("isFeatured")} className="rounded border-navy/20" />
+                Featured product
+              </label>
+            </AdminCard>
+          )}
 
           <div className="flex flex-col gap-2">
             <AdminButton type="submit" disabled={pending || uploadingImages}>

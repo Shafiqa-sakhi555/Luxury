@@ -86,6 +86,9 @@ export default async function CartPage() {
                         {productRow?.name}
                       </Link>
                       <p className="text-xs text-muted">{item.product_variants?.sku}</p>
+                      {item.product_variants?.size ? (
+                        <p className="text-xs text-muted">Size: {item.product_variants.size}</p>
+                      ) : null}
                       <p className="mt-2 tabular-nums text-navy">{formatMoney(price)}</p>
                       <CartActions itemId={item.id} quantity={item.quantity} />
                     </div>

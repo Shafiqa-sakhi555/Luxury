@@ -6,7 +6,6 @@ import { getStoreSettings } from "@/server/settings/store-settings";
 import { formatMoney } from "@/lib/money";
 import {
   ProductSimpleDetail,
-  ProductVariantSelector,
 } from "@/components/commerce/ProductVariantSelector";
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { PageContainer } from "@/components/ui/page-container";
@@ -42,28 +41,18 @@ export default async function ProductPage({
     listPublishedProductReviews(product.id),
     getStoreSettings(),
   ]);
-  const isCollection = product.hasVariants && (product.variants?.length ?? 0) > 0;
   const deliveryFeeLabel = formatMoney(settings.deliveryFeeMinor);
   const freeDeliveryThresholdLabel = formatMoney(settings.freeDeliveryThresholdMinor);
 
   return (
     <div className="bg-white">
       <PageContainer className="pb-16 pt-site-header">
-        {isCollection ? (
-          <ProductVariantSelector
-            product={product}
-            reviews={reviews}
-            deliveryFeeLabel={deliveryFeeLabel}
-            freeDeliveryThresholdLabel={freeDeliveryThresholdLabel}
-          />
-        ) : (
-          <ProductSimpleDetail
-            product={product}
-            reviews={reviews}
-            deliveryFeeLabel={deliveryFeeLabel}
-            freeDeliveryThresholdLabel={freeDeliveryThresholdLabel}
-          />
-        )}
+        <ProductSimpleDetail
+          product={product}
+          reviews={reviews}
+          deliveryFeeLabel={deliveryFeeLabel}
+          freeDeliveryThresholdLabel={freeDeliveryThresholdLabel}
+        />
 
         {related.length > 0 ? (
           <Section spacing="none" className="mt-16 border-t border-navy/10 pt-14 lg:mt-20 lg:pt-16">

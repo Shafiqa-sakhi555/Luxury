@@ -24,12 +24,12 @@ const POOLER_REGIONS = [
 ];
 
 function buildConnectionCandidates(rawUrl: string): string[] {
-  if (rawUrl.includes("[YOUR-PASSWORD]")) {
+  if (rawUrl.includes("[YOUR-PASSWORD]") || /YOUR_SUPABASE_DB_URL/i.test(rawUrl)) {
     throw new Error(
       [
-        "SUPABASE_DB_URL still contains [YOUR-PASSWORD].",
-        "Replace it with your database password from:",
-        "  Supabase Dashboard → Project Settings → Database → Database password",
+        "SUPABASE_DB_URL is still a placeholder.",
+        "Replace it with your database connection string from:",
+        "  Supabase Dashboard → Project Settings → Database → Connection string (URI)",
       ].join("\n")
     );
   }

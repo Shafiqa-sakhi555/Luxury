@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
     "127.0.0.1",
     "192.168.1.8",
     "192.168.18.108",
-    "192.168.18.147",
+    "192.168.18.85",
   ],
   images: {
     // Avoid server-side Unsplash fetches timing out in slow/offline dev environments.

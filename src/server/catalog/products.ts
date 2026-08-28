@@ -10,6 +10,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatCategoryLabel, normalizeCategorySlug, isDeprecatedCategorySlug, isSupabaseCatalogSlug } from "@/lib/supabase/catalog-categories";
 import { buildCanonicalShopCategories, buildCanonicalShopFilterCategories, shopFilterHref } from "@/lib/catalog/shop-categories";
 import { resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
+import { resolveProductDiscountPercentage } from "@/lib/catalog/product-pricing";
 
 export type ProductListParams = {
   page?: number;
@@ -36,10 +37,11 @@ export async function listProducts(
     .from("products")
     .select(`
       id, name, slug, short_description, description, original_price_minor, sale_price_minor,
+      selling_unit, size,
       is_featured, status, has_variants,
       categories!inner ( id, name, slug ),
       product_images ( id, image_url, cloudinary_public_id, sort_order, is_primary ),
-      product_variants ( id, sku, price_minor, sale_price_minor, is_default )
+      product_variants ( id, sku, price_minor, sale_price_minor, is_default, is_active, size )
     `, { count: 'exact' })
     .eq("status", params.status || "ACTIVE");
 
@@ -73,8 +75,28 @@ export async function listProducts(
   const items: CatalogProduct[] = data.map((row: any) => {
     const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
     const variants = row.product_variants ?? [];
+    const activeVariants = variants.filter(
+      (entry: { is_active?: boolean }) => entry.is_active !== false
+    );
     const defaultVariant =
-      variants.find((entry: { is_default?: boolean }) => entry.is_default) ?? variants[0];
+      activeVariants.find((entry: { is_default?: boolean }) => entry.is_default) ?? activeVariants[0];
+    let originalPriceMinor = row.original_price_minor ?? 0;
+    let salePriceMinor = row.sale_price_minor ?? 0;
+
+    if (row.has_variants && activeVariants.length > 0) {
+      const salePrices = activeVariants
+        .map((entry: { sale_price_minor?: number; price_minor?: number }) => entry.sale_price_minor ?? entry.price_minor ?? 0)
+        .filter((price: number) => price > 0);
+      const originalPrices = activeVariants
+        .map((entry: { price_minor?: number; sale_price_minor?: number }) => entry.price_minor ?? entry.sale_price_minor ?? 0)
+        .filter((price: number) => price > 0);
+      if (salePrices.length > 0) salePriceMinor = Math.min(...salePrices);
+      if (originalPrices.length > 0) originalPriceMinor = Math.min(...originalPrices);
+    } else if (salePriceMinor <= 0 && defaultVariant?.sale_price_minor > 0) {
+      salePriceMinor = defaultVariant.sale_price_minor;
+      originalPriceMinor = defaultVariant.price_minor || defaultVariant.sale_price_minor;
+    }
+
     const sortedImages = [...(row.product_images ?? [])].sort(
       (a: { sort_order?: number }, b: { sort_order?: number }) =>
         (a.sort_order ?? 0) - (b.sort_order ?? 0)
@@ -87,18 +109,25 @@ export async function listProducts(
       slug: row.slug,
       shortDescription: row.short_description,
       description: row.description,
-      originalPriceMinor: row.original_price_minor,
-      salePriceMinor: row.sale_price_minor,
-      discountPercentage: row.original_price_minor > row.sale_price_minor ? Math.round((1 - row.sale_price_minor / row.original_price_minor) * 100) : 0,
+      originalPriceMinor,
+      salePriceMinor,
+      discountPercentage: resolveProductDiscountPercentage({
+        salePriceMinor,
+        originalPriceMinor,
+        sellingUnit: row.selling_unit ?? null,
+        categorySlug: category?.slug,
+        size: row.size ?? null,
+      }),
       currency: "PKR",
-      sellingUnit: null,
+      sellingUnit: row.selling_unit ?? null,
       includedItems: null,
-      size: null,
+      size: row.size ?? null,
       fabric: null,
       design: null,
       sku: defaultVariant?.sku ?? null,
       isFeatured: row.is_featured,
       hasVariants: Boolean(row.has_variants),
+      variantCount: row.has_variants ? activeVariants.length : 0,
       category: {
         id: category?.id ?? "",
         name: category?.name ?? "",
@@ -278,7 +307,7 @@ export async function getCategoryBySlug(slug: string) {
       name: category.name,
       slug: category.slug,
       description: category.description,
-      heroImage: category.imageUrl,
+      heroImage: resolveCloudinaryImageUrl(category.imageUrl, category.cloudinaryPublicId),
       heroImagePublicId: category.cloudinaryPublicId ?? null,
       parentId: null,
       sortOrder: 0,
