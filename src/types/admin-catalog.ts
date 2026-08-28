@@ -1,4 +1,5 @@
 import type { AdminProductImage } from "@/types/media";
+import type { AdminProductVariantDetail, AdminProductVariantInput } from "@/types/category-sizes";
 
 export type CatalogSource = "supabase";
 
@@ -41,6 +42,10 @@ export type AdminProductFormValues = {
   pricePerSquareFoot?: boolean;
   images: AdminProductImage[];
   draftKey?: string;
+  /** When category has configured sizes, one entry per selected size */
+  variants?: AdminProductVariantInput[];
+  fabric?: string;
+  design?: string;
 };
 
 export type AdminProductDetail = AdminProductFormValues & {
@@ -50,6 +55,8 @@ export type AdminProductDetail = AdminProductFormValues & {
   categorySlug: string;
   mainCategoryId: string;
   sectionId: string;
+  variantDetails?: AdminProductVariantDetail[];
+  usesCategorySizes?: boolean;
 };
 
 export type MutationResult = { ok: true; id: string } | { ok: false; error: string };

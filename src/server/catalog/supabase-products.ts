@@ -19,11 +19,25 @@ type SupabaseVariantRow = {
   color: string | null;
   quality: string | null;
   size: string | null;
+  category_size_id: string | null;
+  custom_width: number | null;
+  custom_length: number | null;
+  custom_width_unit: string | null;
+  custom_length_unit: string | null;
+  weight: string | null;
+  dimensions: string | null;
+  attributes: Record<string, string> | null;
   price_minor: number;
   sale_price_minor: number;
+  original_price: number;
+  sale_price: number;
   sort_order: number;
   is_default: boolean;
   is_active: boolean;
+  product_variant_inventory: Array<{
+    stock_quantity: number | null;
+    stock_status: string;
+  }> | null;
   product_images: Array<{
     id: string;
     image_url: string;
@@ -125,6 +139,14 @@ const PRODUCT_SELECT = `
     color,
     quality,
     size,
+    category_size_id,
+    custom_width,
+    custom_length,
+    custom_width_unit,
+    custom_length_unit,
+    weight,
+    dimensions,
+    attributes,
     original_price,
     sale_price,
     price_minor,
@@ -132,6 +154,10 @@ const PRODUCT_SELECT = `
     sort_order,
     is_default,
     is_active,
+    product_variant_inventory (
+      stock_quantity,
+      stock_status
+    ),
     product_images (
       id,
       image_url,
@@ -176,11 +202,26 @@ async function mapVariants(
     (a, b) => a.sort_order - b.sort_order
   );
 
-  return rows.map((row) => {
+  return rows
+    .filter((row) => row.is_active)
+    .map((row) => {
     const images =
       row.product_images?.length > 0
         ? row.product_images
         : product.product_images.filter((img) => img.variant_id === row.id);
+
+    const inventory = Array.isArray(row.product_variant_inventory)
+      ? row.product_variant_inventory[0]
+      : row.product_variant_inventory;
+
+    const originalPriceMinor =
+      row.price_minor > 0
+        ? row.price_minor
+        : Math.round(Number(row.original_price ?? 0) * 100);
+    const salePriceMinor =
+      row.sale_price_minor > 0
+        ? row.sale_price_minor
+        : Math.round(Number(row.sale_price ?? 0) * 100);
 
     return {
       id: row.id,
@@ -190,17 +231,22 @@ async function mapVariants(
       color: row.color,
       quality: row.quality,
       size: row.size,
-      originalPriceMinor:
-        row.price_minor > 0
-          ? row.price_minor
-          : Math.round(Number(row.original_price ?? 0) * 100),
-      salePriceMinor:
-        row.sale_price_minor > 0
-          ? row.sale_price_minor
-          : Math.round(Number(row.sale_price ?? 0) * 100),
-      discountPercentage: row.price_minor > row.sale_price_minor ? Math.round((1 - row.sale_price_minor / row.price_minor) * 100) : 0,
-      stockQuantity: null, // Simplified
-      stockStatus: null,
+      categorySizeId: row.category_size_id,
+      customWidth: row.custom_width ? Number(row.custom_width) : null,
+      customLength: row.custom_length ? Number(row.custom_length) : null,
+      customWidthUnit: row.custom_width_unit,
+      customLengthUnit: row.custom_length_unit,
+      weight: row.weight,
+      dimensions: row.dimensions,
+      attributes: row.attributes ?? {},
+      originalPriceMinor,
+      salePriceMinor,
+      discountPercentage:
+        originalPriceMinor > salePriceMinor
+          ? Math.round((1 - salePriceMinor / originalPriceMinor) * 100)
+          : 0,
+      stockQuantity: inventory?.stock_quantity ?? null,
+      stockStatus: inventory?.stock_status ?? null,
       isDefault: row.is_default,
       variantId: row.id,
       images: [...images]
@@ -220,11 +266,16 @@ export async function mapSupabaseProduct(
   row: SupabaseProductRow
 ): Promise<CatalogProduct> {
   const inventory = row.inventory?.[0] ?? null;
-  const variants = row.has_variants ? await mapVariants(row) : undefined;
+  const variantRows = row.product_variants ?? [];
+  const hasSizeVariants = variantRows.some((v) => v.category_size_id);
+  const usesVariantPricing = row.has_variants || hasSizeVariants;
+  const variants = usesVariantPricing ? await mapVariants(row) : undefined;
   const defaultVariant = variants?.find((v) => v.isDefault) ?? variants?.[0];
   const defaultVariantRow =
     row.product_variants?.find((v) => v.is_default) ?? row.product_variants?.[0];
-  const cartVariantId = row.has_variants ? defaultVariant?.variantId ?? null : defaultVariantRow?.id ?? null;
+  const cartVariantId = usesVariantPricing
+    ? defaultVariant?.variantId ?? defaultVariantRow?.id ?? null
+    : defaultVariantRow?.id ?? null;
   
   const categoryData = Array.isArray(row.categories) ? row.categories[0] : row.categories;
   const category: CatalogCategory = {
@@ -235,15 +286,17 @@ export async function mapSupabaseProduct(
     imageUrl: categoryData?.image_url ?? null,
   };
 
-  const originalPriceMinor = row.has_variants
-    ? defaultVariant?.originalPriceMinor ?? row.original_price_minor
+  const variantPrices = variants?.map((v) => v.originalPriceMinor).filter((p) => p > 0) ?? [];
+  const variantSalePrices = variants?.map((v) => v.salePriceMinor).filter((p) => p > 0) ?? [];
+  const originalPriceMinor = usesVariantPricing
+    ? (variantPrices.length > 0 ? Math.min(...variantPrices) : row.original_price_minor)
     : row.original_price_minor;
-  const salePriceMinor = row.has_variants
-    ? defaultVariant?.salePriceMinor ?? row.sale_price_minor
+  const salePriceMinor = usesVariantPricing
+    ? (variantSalePrices.length > 0 ? Math.min(...variantSalePrices) : row.sale_price_minor)
     : row.sale_price_minor;
   const discountPercentage = originalPriceMinor > salePriceMinor ? Math.round((1 - salePriceMinor / originalPriceMinor) * 100) : 0;
 
-  const galleryImages = row.has_variants
+  const galleryImages = usesVariantPricing
     ? mapImages(row.product_images, null)
     : mapImages(row.product_images);
 
@@ -276,14 +329,15 @@ export async function mapSupabaseProduct(
     category,
     images: galleryImages.length > 0 ? galleryImages : defaultVariant?.images ?? [],
     specifications,
-    stockQuantity: row.has_variants
+    stockQuantity: usesVariantPricing
       ? defaultVariant?.stockQuantity ?? null
       : inventory?.stock_quantity ?? null,
-    stockStatus: row.has_variants
+    stockStatus: usesVariantPricing
       ? defaultVariant?.stockStatus ?? null
       : inventory?.stock_status ?? null,
-    hasVariants: row.has_variants,
+    hasVariants: row.has_variants || hasSizeVariants,
     variants,
+    variantCount: variants?.length ?? 0,
     variantId: cartVariantId,
     brand: null,
   };

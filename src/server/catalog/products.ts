@@ -41,7 +41,7 @@ export async function listProducts(
       is_featured, status, has_variants,
       categories!inner ( id, name, slug ),
       product_images ( id, image_url, cloudinary_public_id, sort_order, is_primary ),
-      product_variants ( id, sku, price_minor, sale_price_minor, is_default )
+      product_variants ( id, sku, price_minor, sale_price_minor, is_default, is_active, size )
     `, { count: 'exact' })
     .eq("status", params.status || "ACTIVE");
 
@@ -75,12 +75,24 @@ export async function listProducts(
   const items: CatalogProduct[] = data.map((row: any) => {
     const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
     const variants = row.product_variants ?? [];
+    const activeVariants = variants.filter(
+      (entry: { is_active?: boolean }) => entry.is_active !== false
+    );
     const defaultVariant =
-      variants.find((entry: { is_default?: boolean }) => entry.is_default) ?? variants[0];
+      activeVariants.find((entry: { is_default?: boolean }) => entry.is_default) ?? activeVariants[0];
     let originalPriceMinor = row.original_price_minor ?? 0;
     let salePriceMinor = row.sale_price_minor ?? 0;
 
-    if (salePriceMinor <= 0 && defaultVariant?.sale_price_minor > 0) {
+    if (row.has_variants && activeVariants.length > 0) {
+      const salePrices = activeVariants
+        .map((entry: { sale_price_minor?: number; price_minor?: number }) => entry.sale_price_minor ?? entry.price_minor ?? 0)
+        .filter((price: number) => price > 0);
+      const originalPrices = activeVariants
+        .map((entry: { price_minor?: number; sale_price_minor?: number }) => entry.price_minor ?? entry.sale_price_minor ?? 0)
+        .filter((price: number) => price > 0);
+      if (salePrices.length > 0) salePriceMinor = Math.min(...salePrices);
+      if (originalPrices.length > 0) originalPriceMinor = Math.min(...originalPrices);
+    } else if (salePriceMinor <= 0 && defaultVariant?.sale_price_minor > 0) {
       salePriceMinor = defaultVariant.sale_price_minor;
       originalPriceMinor = defaultVariant.price_minor || defaultVariant.sale_price_minor;
     }
@@ -115,6 +127,7 @@ export async function listProducts(
       sku: defaultVariant?.sku ?? null,
       isFeatured: row.is_featured,
       hasVariants: Boolean(row.has_variants),
+      variantCount: row.has_variants ? activeVariants.length : 0,
       category: {
         id: category?.id ?? "",
         name: category?.name ?? "",

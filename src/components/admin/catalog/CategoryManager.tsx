@@ -20,6 +20,9 @@ import {
 } from "@/components/admin/ui";
 import { AdminCard, AdminPageHeader } from "@/components/admin/layout/AdminPageHeader";
 import { saveCategoryAction, removeCategoryAction } from "@/server/catalog/admin-category-actions";
+import { getCategorySizesAction } from "@/server/catalog/category-size-actions";
+import { CategorySizeEditor } from "@/components/admin/catalog/CategorySizeEditor";
+import { getCategoryVariantProfile } from "@/lib/catalog/category-variant-profiles";
 import { slugify } from "@/lib/slug";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import type {
@@ -27,6 +30,7 @@ import type {
   AdminCategoryFormValues,
   AdminCategoryRow,
 } from "@/types/admin-category";
+import type { AdminCategorySizeInput } from "@/types/category-sizes";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -38,6 +42,16 @@ const categorySchema = z.object({
 });
 
 type FormValues = z.infer<typeof categorySchema>;
+
+function cleanSizesForSave(sizes: AdminCategorySizeInput[]): AdminCategorySizeInput[] {
+  return sizes
+    .filter((size) => size.label.trim().length > 0)
+    .map((size, index) => ({
+      ...size,
+      label: size.label.trim(),
+      sortOrder: index,
+    }));
+}
 
 type CategoryManagerProps = {
   categories: AdminCategoryRow[];
@@ -62,6 +76,8 @@ function CategoryFormModal({
   useFocusTrap(dialogRef, open, onClose);
 
   const [heroImage, setHeroImage] = useState<AdminHeroImage>(null);
+  const [sizes, setSizes] = useState<AdminCategorySizeInput[]>([]);
+  const [sizesEnabled, setSizesEnabled] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -73,6 +89,34 @@ function CategoryFormModal({
           }
         : null
     );
+    setSizes([]);
+    setSizesEnabled(false);
+
+    if (category?.id) {
+      void getCategorySizesAction(category.id)
+        .then((result) => {
+          if (!result.ok) {
+            toast.error(result.error ?? "Could not load category sizes.");
+            return;
+          }
+          if (result.migrationHint) {
+            toast.warning("Size options need a database migration. Category can still be saved without sizes.");
+          }
+          setSizes(
+            result.sizes.map((size, index) => ({
+              id: size.id,
+              label: size.label,
+              sortOrder: size.sortOrder ?? index,
+              isActive: size.isActive,
+              isCustom: size.isCustom,
+            }))
+          );
+          setSizesEnabled(result.sizesEnabled);
+        })
+        .catch(() => {
+          toast.error("Could not load category sizes. Check your connection and try again.");
+        });
+    }
   }, [open, category?.id, category?.heroImage, category?.heroImagePublicId]);
 
   const defaultValues: FormValues = {
@@ -93,10 +137,20 @@ function CategoryFormModal({
   const watchName = form.watch("name");
   const watchSlug = form.watch("slug");
   const categorySlug = (watchSlug?.trim() || slugify(watchName || "category")).trim();
+  const variantProfile = getCategoryVariantProfile(categorySlug, watchName);
 
   if (!open) return null;
 
   function onSubmit(values: FormValues) {
+    const cleanedSizes = cleanSizesForSave(sizes);
+
+    if (sizesEnabled && cleanedSizes.length === 0) {
+      toast.error(
+        `Add at least one ${variantProfile.optionLabel.toLowerCase()} with a name, or turn off Enable ${variantProfile.optionLabelPlural.toLowerCase()}.`
+      );
+      return;
+    }
+
     const payload: AdminCategoryFormValues = {
       name: values.name,
       slug: values.slug?.trim() || slugify(values.name),
@@ -106,22 +160,28 @@ function CategoryFormModal({
       parentId: values.parentId || null,
       sortOrder: values.sortOrder,
       status: values.status,
+      sizes: sizesEnabled ? cleanedSizes : undefined,
+      sizesEnabled,
     };
 
     startTransition(async () => {
-      const result = await saveCategoryAction({
-        id: category?.id,
-        values: payload,
-      });
+      try {
+        const result = await saveCategoryAction({
+          id: category?.id,
+          values: payload,
+        });
 
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+
+        toast.success(isEdit ? "Category updated" : "Category created");
+        onClose();
+        router.refresh();
+      } catch {
+        toast.error("Could not save category. Check your connection and try again.");
       }
-
-      toast.success(isEdit ? "Category updated" : "Category created");
-      onClose();
-      router.refresh();
     });
   }
 
@@ -138,9 +198,9 @@ function CategoryFormModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="category-form-title"
-        className="relative z-10 w-full max-w-lg rounded-xl border border-navy/10 bg-white p-6 shadow-xl"
+        className="relative z-10 flex max-h-[min(92vh,880px)] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-navy/10 bg-white shadow-xl"
       >
-        <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-navy/10 px-6 py-5">
           <div>
             <h2 id="category-form-title" className="text-lg font-semibold text-navy">
               {isEdit ? "Edit category" : "New category"}
@@ -159,7 +219,12 @@ function CategoryFormModal({
           </button>
         </div>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          id="category-form"
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
           <div>
             <AdminLabel htmlFor="category-name">Name</AdminLabel>
             <AdminInput id="category-name" {...form.register("name")} placeholder="Carpets" />
@@ -181,6 +246,7 @@ function CategoryFormModal({
             <AdminLabel htmlFor="category-description">Description</AdminLabel>
             <AdminTextarea
               id="category-description"
+              rows={3}
               {...form.register("description")}
               placeholder="Optional short description"
             />
@@ -221,7 +287,31 @@ function CategoryFormModal({
             </AdminSelect>
           </div>
 
-          <div className="flex justify-end gap-2 border-t border-navy/10 pt-4">
+          <label className="flex items-start gap-2 rounded-lg border border-navy/10 bg-brand-50 px-3 py-3 text-sm text-navy">
+            <input
+              type="checkbox"
+              className="mt-0.5 rounded border-navy/20"
+              checked={sizesEnabled}
+              onChange={(event) => setSizesEnabled(event.target.checked)}
+            />
+            <span>
+              <span className="font-medium">
+                Enable {variantProfile.optionLabelPlural.toLowerCase()}
+              </span>
+              <span className="mt-1 block text-xs text-muted">
+                Optional — turn on for categories where customers pick a size or configuration (rugs,
+                blankets, tables, dining sets, furniture). Each option can have its own price, stock,
+                and details on the product form.
+              </span>
+            </span>
+          </label>
+
+          {sizesEnabled ? (
+            <CategorySizeEditor value={sizes} onChange={setSizes} profile={variantProfile} />
+          ) : null}
+          </div>
+
+          <div className="flex shrink-0 justify-end gap-2 border-t border-navy/10 bg-white px-6 py-4">
             <AdminButton type="button" variant="outline" onClick={onClose} disabled={pending}>
               Cancel
             </AdminButton>

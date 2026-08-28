@@ -10,6 +10,11 @@ import { persistProductImages } from "@/server/catalog/product-image-sync";
 import { deleteCloudinaryImage } from "@/lib/cloudinary";
 import { revalidateStorefrontCatalog } from "@/server/catalog/revalidate-storefront";
 import { normalizeAdminProductPricing } from "@/lib/catalog/product-pricing";
+import {
+  checkSkuAvailability,
+  syncProductSizeVariants,
+  validateProductVariants,
+} from "@/server/catalog/product-variant-sync";
 
 function discountPercent(original: number, sale: number) {
   if (original <= 0 || sale >= original) return 0;
@@ -178,6 +183,17 @@ export async function createSupabaseCatalogProduct(
     pricePerSquareFoot: input.pricePerSquareFoot,
   });
   const normalizedInput = { ...input, ...normalized };
+  const usesSizeVariants = Boolean(normalizedInput.variants && normalizedInput.variants.length > 0);
+
+  if (usesSizeVariants) {
+    const variantError = validateProductVariants(normalizedInput.variants);
+    if (variantError) return { ok: false, error: variantError };
+
+    const skuError = await checkSkuAvailability(
+      normalizedInput.variants!.map((v) => v.sku)
+    );
+    if (skuError) return { ok: false, error: skuError };
+  }
 
   const slug = await uniqueProductSlug(normalizedInput.slug || normalizedInput.name, async (candidate) => {
     const { data } = await supabase.from("products").select("id").eq("slug", candidate).maybeSingle();
@@ -195,13 +211,15 @@ export async function createSupabaseCatalogProduct(
       slug,
       short_description: normalizedInput.shortDescription.trim() || null,
       description: normalizedInput.description.trim() || null,
-      ...prices,
-      sku,
+      ...(usesSizeVariants ? {} : prices),
+      sku: usesSizeVariants ? null : sku,
       selling_unit: normalizedInput.sellingUnit.trim() || null,
+      fabric: normalizedInput.fabric?.trim() || null,
+      design: normalizedInput.design?.trim() || null,
       status: normalizedInput.status,
       is_active: normalizedInput.status === "ACTIVE",
       is_featured: normalizedInput.isFeatured,
-      has_variants: false,
+      has_variants: usesSizeVariants && (normalizedInput.variants!.length > 1),
     })
     .select("id")
     .single();
@@ -210,7 +228,21 @@ export async function createSupabaseCatalogProduct(
     return { ok: false, error: error?.message ?? "Failed to create product." };
   }
 
-  await createDefaultVariant(product.id, normalizedInput, sku);
+  if (usesSizeVariants) {
+    const syncResult = await syncProductSizeVariants(
+      product.id,
+      normalizedInput,
+      normalizedInput.status === "ACTIVE"
+    );
+    if (!syncResult.ok) {
+      await supabase.from("products").delete().eq("id", product.id);
+      return syncResult;
+    }
+  } else {
+    await createDefaultVariant(product.id, normalizedInput, sku);
+    await upsertSupabaseInventory(product.id, normalizedInput.stockQuantity);
+  }
+
   await upsertColorsSpecification(product.id, normalizedInput.colors);
 
   const categorySlug = await getCategorySlugById(category.id);
@@ -228,7 +260,6 @@ export async function createSupabaseCatalogProduct(
   if (finalizedImages.length === 0 && normalizedInput.images.some((image) => image.publicId || image.url)) {
     return { ok: false, error: "Product images could not be linked. Re-upload and save again." };
   }
-  await upsertSupabaseInventory(product.id, normalizedInput.stockQuantity);
 
   await writeAuditLog({
     actorId: user.id,
@@ -282,6 +313,19 @@ export async function updateSupabaseCatalogProduct(
     pricePerSquareFoot: input.pricePerSquareFoot,
   });
   const normalizedInput = { ...input, ...normalized };
+  const usesSizeVariants = Boolean(normalizedInput.variants && normalizedInput.variants.length > 0);
+  const isLegacyMultiVariant = existing.has_variants && !usesSizeVariants;
+
+  if (usesSizeVariants) {
+    const variantError = validateProductVariants(normalizedInput.variants);
+    if (variantError) return { ok: false, error: variantError };
+
+    const skuError = await checkSkuAvailability(
+      normalizedInput.variants!.map((v) => v.sku),
+      id
+    );
+    if (skuError) return { ok: false, error: skuError };
+  }
 
   const slug = await uniqueProductSlug(normalizedInput.slug || normalizedInput.name, async (candidate) => {
     const { data } = await supabase
@@ -305,12 +349,16 @@ export async function updateSupabaseCatalogProduct(
     is_active: normalizedInput.status === "ACTIVE",
     is_featured: normalizedInput.isFeatured,
     selling_unit: normalizedInput.sellingUnit.trim() || null,
+    fabric: normalizedInput.fabric?.trim() || null,
+    design: normalizedInput.design?.trim() || null,
   };
 
-  if (!existing.has_variants) {
+  if (usesSizeVariants) {
+    // Product-level prices updated by syncProductSizeVariants
+  } else if (!existing.has_variants) {
     Object.assign(updatePayload, prices);
     if (normalizedInput.sku.trim()) updatePayload.sku = normalizedInput.sku.trim();
-  } else {
+  } else if (isLegacyMultiVariant) {
     Object.assign(updatePayload, prices);
   }
 
@@ -332,10 +380,17 @@ export async function updateSupabaseCatalogProduct(
   if (finalizedImages.length === 0 && normalizedInput.images.some((image) => image.publicId || image.url)) {
     return { ok: false, error: "Product images could not be linked. Re-upload and save again." };
   }
-  await upsertSupabaseInventory(id, normalizedInput.stockQuantity);
   await upsertColorsSpecification(id, normalizedInput.colors);
 
-  if (!existing.has_variants) {
+  if (usesSizeVariants) {
+    const syncResult = await syncProductSizeVariants(
+      id,
+      normalizedInput,
+      normalizedInput.status === "ACTIVE"
+    );
+    if (!syncResult.ok) return syncResult;
+  } else if (!existing.has_variants) {
+    await upsertSupabaseInventory(id, normalizedInput.stockQuantity);
     await updateDefaultVariantColor(id, normalizedInput.colors);
     await syncDefaultVariantPrices(id, normalizedInput);
   }

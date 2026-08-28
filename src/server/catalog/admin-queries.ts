@@ -8,6 +8,8 @@ import type {
   AdminProductListItem,
   CatalogSource,
 } from "@/types/admin-catalog";
+import type { AdminProductVariantDetail } from "@/types/category-sizes";
+import { listCategorySizes, getCategorySizesConfig } from "@/server/catalog/category-sizes";
 
 function parseImageUrls(raw: string): string[] {
   return raw
@@ -60,7 +62,8 @@ async function adminListSupabaseProducts(params: {
       is_featured,
       updated_at,
       categories!inner ( name, slug ),
-      product_images ( image_url, cloudinary_public_id, alt_text, sort_order, is_primary )
+      product_images ( image_url, cloudinary_public_id, alt_text, sort_order, is_primary ),
+      product_variants ( id, price_minor, sale_price_minor, is_default, is_active )
     `, { count: 'exact' }
     );
 
@@ -91,6 +94,20 @@ async function adminListSupabaseProducts(params: {
       (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
     );
     const primary = images.find((img) => img.is_primary) ?? images[0];
+    const variants = asArray(row.product_variants as Array<{
+      id: string;
+      price_minor: number;
+      sale_price_minor: number;
+      is_default: boolean;
+      is_active: boolean;
+    }>).filter((v) => v.is_active !== false);
+
+    let priceFromMinor = effectivePriceMinor(row.original_price_minor, row.sale_price_minor);
+    if (row.has_variants && variants.length > 0) {
+      priceFromMinor = Math.min(
+        ...variants.map((v) => effectivePriceMinor(v.price_minor, v.sale_price_minor))
+      );
+    }
 
     return {
       id: row.id,
@@ -99,8 +116,8 @@ async function adminListSupabaseProducts(params: {
       slug: row.slug,
       categoryName: category?.name ?? "—",
       categorySlug: category?.slug ?? "",
-      skuCount: row.has_variants ? 2 : 1, // Simplified for now
-      priceFromMinor: effectivePriceMinor(row.original_price_minor, row.sale_price_minor),
+      skuCount: row.has_variants ? variants.length : 1,
+      priceFromMinor,
       status: row.status as any,
       isFeatured: row.is_featured,
       imageUrl: resolveCloudinaryImageUrl(primary?.image_url, primary?.cloudinary_public_id),
@@ -205,6 +222,8 @@ export async function adminGetProduct(
       sale_price_minor,
       sku,
       selling_unit,
+      fabric,
+      design,
       has_variants,
       status,
       is_featured,
@@ -212,7 +231,29 @@ export async function adminGetProduct(
       product_images ( image_url, cloudinary_public_id, alt_text, sort_order ),
       inventory ( stock_quantity ),
       product_specifications ( spec_key, spec_value, sort_order ),
-      product_variants ( color, is_default )
+      product_variants (
+        id,
+        sku,
+        color,
+        size,
+        category_size_id,
+        custom_width,
+        custom_length,
+        custom_width_unit,
+        custom_length_unit,
+        weight,
+        dimensions,
+        attributes,
+        original_price,
+        sale_price,
+        price_minor,
+        sale_price_minor,
+        is_default,
+        is_active,
+        sort_order,
+        category_sizes ( label, is_custom ),
+        product_variant_inventory ( stock_quantity, stock_status )
+      )
     `
     )
     .eq("id", id)
@@ -223,9 +264,41 @@ export async function adminGetProduct(
   const category = unwrapRelation(data.categories as any);
   const specs = asArray(data.product_specifications as Array<{ spec_key: string; spec_value: string }>);
   const colorsSpec = specs.find((spec) => spec.spec_key === "colors")?.spec_value ?? "";
-  const variants = asArray(data.product_variants as Array<{ color: string | null; is_default: boolean }>);
-  const defaultVariant = variants.find((variant) => variant.is_default) ?? variants[0];
-  const colors = colorsSpec || defaultVariant?.color || "";
+  const variantRows = asArray(data.product_variants as Array<Record<string, unknown>>);
+  const defaultVariant = variantRows.find((variant) => variant.is_default) ?? variantRows[0];
+  const colors = colorsSpec || (defaultVariant?.color as string | null) || "";
+
+  const sizeLinkedVariants = variantRows.filter((v) => v.category_size_id);
+  const sizesConfig = await getCategorySizesConfig(data.category_id);
+  const usesCategorySizes = sizesConfig.sizesEnabled && sizeLinkedVariants.length > 0;
+  const variantDetails: AdminProductVariantDetail[] = sizeLinkedVariants
+    .sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0))
+    .map((row) => {
+      const categorySize = unwrapRelation(row.category_sizes as { label?: string; is_custom?: boolean } | null);
+      const inventory = unwrapRelation(
+        row.product_variant_inventory as { stock_quantity?: number } | null
+      );
+      const isCustom = Boolean(categorySize?.is_custom);
+      return {
+        id: row.id as string,
+        categorySizeId: row.category_size_id as string,
+        sizeLabel: (categorySize?.label ?? row.size ?? "") as string,
+        isCustom,
+        sku: (row.sku as string) ?? "",
+        originalPriceMajor: Number(row.original_price ?? (row.price_minor as number) / 100),
+        salePriceMajor: Number(row.sale_price ?? (row.sale_price_minor as number) / 100),
+        stockQuantity: inventory?.stock_quantity ?? 0,
+        weight: (row.weight as string) ?? "",
+        dimensions: (row.dimensions as string) ?? "",
+        color: (row.color as string) ?? "",
+        customWidth: row.custom_width ? Number(row.custom_width) : undefined,
+        customLength: row.custom_length ? Number(row.custom_length) : undefined,
+        customWidthUnit: (row.custom_width_unit as AdminProductVariantDetail["customWidthUnit"]) ?? undefined,
+        customLengthUnit: (row.custom_length_unit as AdminProductVariantDetail["customLengthUnit"]) ?? undefined,
+        attributes: (row.attributes as Record<string, string>) ?? {},
+        isDefault: Boolean(row.is_default),
+      };
+    });
 
   const parentId = category?.parent_id ?? null;
   const mainCategoryId = parentId ?? data.category_id;
@@ -266,6 +339,10 @@ export async function adminGetProduct(
     sellingUnit: data.selling_unit ?? "",
     images,
     hasVariants: data.has_variants,
+    fabric: data.fabric ?? "",
+    design: data.design ?? "",
+    usesCategorySizes,
+    variantDetails: variantDetails.length > 0 ? variantDetails : undefined,
   };
 }
 

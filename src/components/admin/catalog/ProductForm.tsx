@@ -9,11 +9,15 @@ import { toast } from "sonner";
 import { AdminButton, AdminInput, AdminLabel, AdminSelect, AdminTextarea } from "@/components/admin/ui";
 import { AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import { ProductImageUploader } from "@/components/admin/media/ProductImageUploader";
+import { ProductSizeVariantEditor } from "@/components/admin/catalog/ProductSizeVariantEditor";
 import { saveProductAction } from "@/server/catalog/admin-actions";
+import { getCategorySizesAction } from "@/server/catalog/category-size-actions";
 import { computeDiscountPercentage, salePriceMajorFromDiscount, usesSquareFootSellingUnit } from "@/lib/catalog/product-pricing";
+import { getCategoryVariantProfile } from "@/lib/catalog/category-variant-profiles";
 import { slugify } from "@/lib/slug";
 import type { AdminCategoryOption, AdminProductDetail } from "@/types/admin-catalog";
 import type { AdminProductImage } from "@/types/media";
+import type { AdminCategorySize, AdminProductVariantInput } from "@/types/category-sizes";
 
 type FormValues = {
   mainCategoryId: string;
@@ -30,6 +34,8 @@ type FormValues = {
   status: "ACTIVE" | "DRAFT" | "ARCHIVED";
   isFeatured: boolean;
   sellingUnit?: string;
+  fabric?: string;
+  design?: string;
 };
 
 const productSchema = z.object({
@@ -70,6 +76,12 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   const [usePerSquareFootPricing, setUsePerSquareFootPricing] = useState(() =>
     usesSquareFootSellingUnit(product?.sellingUnit)
   );
+  const [categorySizes, setCategorySizes] = useState<AdminCategorySize[]>([]);
+  const [sizesEnabled, setSizesEnabled] = useState(false);
+  const [sizeVariants, setSizeVariants] = useState<AdminProductVariantInput[]>(
+    product?.variantDetails ?? []
+  );
+  const [loadingSizes, setLoadingSizes] = useState(false);
   const discountEditRef = useRef(false);
   const draftKeyRef = useRef(crypto.randomUUID());
   const isEdit = Boolean(product);
@@ -93,6 +105,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     status: product?.status ?? "ACTIVE",
     isFeatured: product?.isFeatured ?? false,
     sellingUnit: product?.sellingUnit ?? "",
+    fabric: product?.fabric ?? "",
+    design: product?.design ?? "",
   };
 
   const form = useForm<FormValues>({
@@ -199,6 +213,42 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     categories.find((category) => category.id === watchMainCategoryId);
   const categorySlug = selectedCategory?.slug ?? product?.categorySlug ?? null;
   const categoryId = resolvedCategoryId || null;
+  const variantProfile = getCategoryVariantProfile(categorySlug, selectedCategory?.name);
+  const usesCategorySizes = sizesEnabled && categorySizes.length > 0;
+  const isLegacyImportProduct = Boolean(product?.hasVariants && !product?.usesCategorySizes);
+  const showSizeVariants = usesCategorySizes && !isLegacyImportProduct;
+
+  useEffect(() => {
+    if (!categoryId) {
+      setCategorySizes([]);
+      setSizesEnabled(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingSizes(true);
+    void getCategorySizesAction(categoryId).then((result) => {
+      if (cancelled) return;
+      if (result.ok) {
+        setSizesEnabled(result.sizesEnabled);
+        setCategorySizes(result.sizes.filter((size) => size.isActive));
+      } else {
+        setSizesEnabled(false);
+        setCategorySizes([]);
+      }
+      setLoadingSizes(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [categoryId]);
+
+  useEffect(() => {
+    if (product?.variantDetails?.length && usesCategorySizes) {
+      setSizeVariants(product.variantDetails);
+    }
+  }, [product?.id, product?.variantDetails, usesCategorySizes]);
 
   function handleImagesChange(nextImages: AdminProductImage[]) {
     imagesRef.current = nextImages;
@@ -211,6 +261,11 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     const currentImages = imagesRef.current;
     if (uploadingImages) {
       setError("Wait for image uploads to finish before saving.");
+      return;
+    }
+
+    if (showSizeVariants && sizeVariants.length === 0) {
+      setError(`Select at least one ${variantProfile.optionLabel.toLowerCase()} for this product.`);
       return;
     }
 
@@ -239,6 +294,9 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           isFeatured: values.isFeatured,
           sellingUnit: usePerSquareFootPricing ? "per sq ft" : values.sellingUnit ?? "",
           pricePerSquareFoot: usePerSquareFootPricing,
+          fabric: values.fabric ?? "",
+          design: values.design ?? "",
+          variants: showSizeVariants ? sizeVariants : undefined,
           images: currentImages,
           draftKey: draftKeyRef.current,
         },
@@ -263,11 +321,11 @@ export function ProductForm({ categories, product }: ProductFormProps) {
         </div>
       )}
 
-      {product?.hasVariants && (
+      {isLegacyImportProduct && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          This product has multiple color/design variants. You can update the collection name,
-          description, images, and base pricing here. Individual variant SKUs are managed by the
-          catalog import.
+          This product has imported color/design variants (e.g. carpet collections). You can update
+          the collection name, description, images, and base pricing here. Individual variant SKUs are
+          managed by the catalog import.
         </div>
       )}
 
@@ -370,11 +428,56 @@ export function ProductForm({ categories, product }: ProductFormProps) {
                 placeholder="e.g. Grey, Blue, Cream, White"
               />
               <p className="mt-1 text-xs text-muted">
-                Comma-separated list. The first color is used as the default variant color.
+                Comma-separated list. Used as the default variant color where applicable.
               </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <AdminLabel htmlFor="fabric">
+                  {variantProfile.showFurnitureFields ? "Material (default)" : "Material / fabric"}
+                </AdminLabel>
+                <AdminInput
+                  id="fabric"
+                  {...form.register("fabric")}
+                  placeholder={variantProfile.showFurnitureFields ? "e.g. Solid wood" : "e.g. Wool, Cotton"}
+                />
+              </div>
+              <div>
+                <AdminLabel htmlFor="design">
+                  {variantProfile.showFurnitureFields ? "Style / finish" : "Design"}
+                </AdminLabel>
+                <AdminInput
+                  id="design"
+                  {...form.register("design")}
+                  placeholder={
+                    variantProfile.showFurnitureFields ? "e.g. Modern, Scandinavian" : "e.g. Persian Floral"
+                  }
+                />
+              </div>
             </div>
           </AdminCard>
 
+          {showSizeVariants && (
+            <AdminCard className="space-y-4 p-5">
+              <h2 className="text-sm font-semibold text-navy">
+                {variantProfile.optionLabel} &amp; pricing
+              </h2>
+              {loadingSizes ? (
+                <p className="text-sm text-muted">Loading category {variantProfile.optionLabelPlural.toLowerCase()}...</p>
+              ) : (
+                <ProductSizeVariantEditor
+                  categorySizes={categorySizes}
+                  variants={sizeVariants}
+                  onChange={setSizeVariants}
+                  productSlug={form.watch("slug") || slugify(watchName || "product")}
+                  profile={variantProfile}
+                />
+              )}
+            </AdminCard>
+          )}
+
+          {!showSizeVariants && (
           <AdminCard className="space-y-4 p-5">
             <h2 className="text-sm font-semibold text-navy">Pricing & inventory</h2>
 
@@ -528,6 +631,25 @@ export function ProductForm({ categories, product }: ProductFormProps) {
               Featured product
             </label>
           </AdminCard>
+          )}
+
+          {showSizeVariants && (
+            <AdminCard className="space-y-4 p-5">
+              <h2 className="text-sm font-semibold text-navy">Status</h2>
+              <div>
+                <AdminLabel htmlFor="status">Status</AdminLabel>
+                <AdminSelect id="status" {...form.register("status")}>
+                  <option value="ACTIVE">Active (visible on storefront)</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="ARCHIVED">Archived / hidden</option>
+                </AdminSelect>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-navy">
+                <input type="checkbox" {...form.register("isFeatured")} className="rounded border-navy/20" />
+                Featured product
+              </label>
+            </AdminCard>
+          )}
 
           <div className="flex flex-col gap-2">
             <AdminButton type="submit" disabled={pending || uploadingImages}>

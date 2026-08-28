@@ -130,7 +130,7 @@ export function ProductPurchasePanel({
 
         {colorOptions.length > 0 && onColorChange ? (
           <ProductOptionSelector
-            label="Color"
+            label="Available colors"
             options={colorOptions}
             value={selectedColorId}
             onChange={onColorChange}
@@ -139,7 +139,7 @@ export function ProductPurchasePanel({
 
         {sizeOptions.length > 0 && onSizeChange ? (
           <ProductOptionSelector
-            label="Size"
+            label="Available sizes"
             options={sizeOptions}
             value={selectedSizeId}
             onChange={onSizeChange}

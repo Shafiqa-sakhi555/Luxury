@@ -165,6 +165,11 @@ export function ProductCard({
         {subtitle && (
           <p className="mt-0.5 text-[11px] text-muted sm:text-xs">{subtitle}</p>
         )}
+        {product.hasVariants && (product.variantCount ?? 0) > 1 && (
+          <p className="mt-0.5 text-[11px] text-muted sm:text-xs">
+            {product.variantCount} sizes available
+          </p>
+        )}
 
         <div className="mt-auto flex items-end justify-between gap-2 pt-3">
           <div className="flex flex-wrap items-baseline gap-1.5">
