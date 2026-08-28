@@ -11,6 +11,7 @@ export type AdminCategoryRow = {
   sortOrder: number;
   status: AdminCategoryStatus;
   productCount: number;
+  sizesEnabled?: boolean;
   children: AdminCategoryChildRow[];
 };
 
@@ -25,7 +26,10 @@ export type AdminCategoryChildRow = {
   sortOrder: number;
   status: AdminCategoryStatus;
   productCount: number;
+  sizesEnabled?: boolean;
 };
+
+import type { AdminCategorySizeInput } from "@/types/category-sizes";
 
 export type AdminCategoryFormValues = {
   name: string;
@@ -36,4 +40,10 @@ export type AdminCategoryFormValues = {
   parentId?: string | null;
   sortOrder: number;
   status: AdminCategoryStatus;
+  sizes?: AdminCategorySizeInput[];
+  sizesEnabled?: boolean;
+};
+
+export type AdminCategoryRowWithSizes = AdminCategoryRow & {
+  sizes: import("@/types/category-sizes").AdminCategorySize[];
 };

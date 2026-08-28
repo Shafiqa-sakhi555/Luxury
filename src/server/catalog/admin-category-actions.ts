@@ -9,6 +9,13 @@ import { slugify } from "@/lib/slug";
 import { deleteCloudinaryImage } from "@/lib/cloudinary";
 import { writeAuditLog } from "@/server/audit";
 import { revalidateStorefrontCatalog } from "@/server/catalog/revalidate-storefront";
+import { syncCategorySizes, sanitizeCategorySizeInputs } from "@/server/catalog/category-sizes";
+import {
+  CATEGORY_SIZES_MIGRATION_HINT,
+  isCategorySizesSchemaReady,
+  isMissingSchemaError,
+} from "@/server/catalog/category-size-schema";
+import type { AdminCategorySizeInput } from "@/types/category-sizes";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
@@ -19,11 +26,26 @@ const categorySchema = z.object({
   parentId: z.string().nullable().optional(),
   sortOrder: z.coerce.number().int().min(0),
   status: z.enum(["ACTIVE", "DRAFT", "ARCHIVED"]),
+  sizesEnabled: z.boolean().optional(),
+  sizes: z
+    .array(
+      z.object({
+        id: z.string().uuid().optional(),
+        label: z.string().max(120),
+        sortOrder: z.coerce.number().int().min(0),
+        isActive: z.boolean(),
+        isCustom: z.boolean(),
+      })
+    )
+    .optional(),
 });
 
 function parseCategoryValues(values: AdminCategoryFormValues) {
+  const cleanedSizes = sanitizeCategorySizeInputs(values.sizes);
+
   return categorySchema.parse({
     ...values,
+    sizes: cleanedSizes.length > 0 ? cleanedSizes : undefined,
     parentId: values.parentId || null,
     slug: values.slug?.trim() || undefined,
     description: values.description?.trim() || undefined,
@@ -40,6 +62,11 @@ export async function saveCategoryAction(input: {
     const user = await requirePermission("catalog.write");
     const values = parseCategoryValues(input.values);
     const supabase = createSupabaseAdminClient();
+    const schemaReady = await isCategorySizesSchemaReady();
+
+    if (values.sizesEnabled && values.sizes?.length && !schemaReady) {
+      return { ok: false as const, error: CATEGORY_SIZES_MIGRATION_HINT };
+    }
 
     let slug = values.slug;
     if (!slug) {
@@ -57,7 +84,7 @@ export async function saveCategoryAction(input: {
       counter++;
     }
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       name: values.name,
       slug: finalSlug,
       description: values.description || null,
@@ -68,6 +95,10 @@ export async function saveCategoryAction(input: {
       is_active: values.status === "ACTIVE",
     };
 
+    if (schemaReady) {
+      payload.sizes_enabled = values.sizesEnabled ?? false;
+    }
+
     if (input.id) {
       const { data: existingCategory } = await supabase
         .from("categories")
@@ -76,7 +107,19 @@ export async function saveCategoryAction(input: {
         .maybeSingle();
 
       const { error } = await supabase.from("categories").update(payload).eq("id", input.id);
-      if (error) throw new Error(error.message);
+      if (error) {
+        throw new Error(
+          isMissingSchemaError(error.message) ? CATEGORY_SIZES_MIGRATION_HINT : error.message
+        );
+      }
+
+      if (schemaReady && values.sizes) {
+        const sizeResult = await syncCategorySizes(input.id, values.sizes as AdminCategorySizeInput[]);
+        if (!sizeResult.ok) return { ok: false as const, error: sizeResult.error };
+      } else if (schemaReady && values.sizesEnabled === false) {
+        const sizeResult = await syncCategorySizes(input.id, []);
+        if (!sizeResult.ok) return { ok: false as const, error: sizeResult.error };
+      }
 
       const oldPublicId = existingCategory?.cloudinary_public_id;
       if (
@@ -102,8 +145,17 @@ export async function saveCategoryAction(input: {
       });
     } else {
       const { data, error } = await supabase.from("categories").insert(payload).select("id").single();
-      if (error) throw new Error(error.message);
-      
+      if (error) {
+        throw new Error(
+          isMissingSchemaError(error.message) ? CATEGORY_SIZES_MIGRATION_HINT : error.message
+        );
+      }
+
+      if (schemaReady && values.sizes?.length) {
+        const sizeResult = await syncCategorySizes(data.id, values.sizes as AdminCategorySizeInput[]);
+        if (!sizeResult.ok) return { ok: false as const, error: sizeResult.error };
+      }
+
       await writeAuditLog({
         actorId: user.id,
         action: "category.create",

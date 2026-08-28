@@ -14,6 +14,16 @@ export function getOptimizedImageUrl(
   return url.replace("/upload/", `/upload/${transforms.join(",")}/`);
 }
 
+export function isRenderableImageUrl(url: string | null | undefined): url is string {
+  if (!url?.trim()) return false;
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function readCloudName() {
   const raw = process.env.CLOUDINARY_CLOUD_NAME?.trim().replace(/^['"]|['"]$/g, "");
   return raw || null;

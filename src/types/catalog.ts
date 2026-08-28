@@ -20,6 +20,14 @@ export type CatalogProductVariant = {
   color: string | null;
   quality: string | null;
   size: string | null;
+  categorySizeId: string | null;
+  customWidth: number | null;
+  customLength: number | null;
+  customWidthUnit: string | null;
+  customLengthUnit: string | null;
+  weight: string | null;
+  dimensions: string | null;
+  attributes: Record<string, string>;
   originalPriceMinor: number;
   salePriceMinor: number;
   discountPercentage: number;
@@ -64,6 +72,7 @@ export type CatalogProduct = {
   stockStatus: string | null;
   hasVariants?: boolean;
   variants?: CatalogProductVariant[];
+  variantCount?: number;
   /** Prisma variant ID — required for add-to-cart on Supabase-sourced products */
   variantId: string | null;
   brand: { name: string; slug: string } | null;
