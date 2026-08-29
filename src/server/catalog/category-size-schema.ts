@@ -31,11 +31,7 @@ export async function isCategorySizesSchemaReady(force = false): Promise<boolean
     supabase.from("categories").select("sizes_enabled").limit(1),
   ]);
 
-  const ready =
-    !sizeTableError &&
-    !columnError &&
-    !isMissingSchemaError(sizeTableError?.message) &&
-    !isMissingSchemaError(columnError?.message);
+  const ready = !sizeTableError && !columnError;
 
   schemaCache = { ready, checkedAt: now };
   return ready;
