@@ -1,12 +1,12 @@
 import { formatMoney } from "@/lib/money";
+import { extractOrderNumber, ORDER_NUMBER_PATTERN } from "@/lib/orders/number";
+import { getPublicOrderTracking } from "@/server/orders/public-tracking";
 import {
   formatOrderForAssistant,
   getCustomerOrderByNumber,
   listCustomerOrdersDetailed,
 } from "../orders";
 import type { ToolContext, ToolResult } from "./types";
-
-const ORDER_NUMBER_PATTERN = /\b(JHS-\d+-[A-Z0-9]+)\b/i;
 
 export async function runGetMyOrders(ctx: ToolContext): Promise<ToolResult | null> {
   const lower = ctx.message.toLowerCase();
@@ -21,7 +21,7 @@ export async function runGetMyOrders(ctx: ToolContext): Promise<ToolResult | nul
       data: {
         authenticated: false,
         loginUrl: "/login",
-        instruction: "Ask the customer to log in at /login to view their orders.",
+        instruction: "Ask the customer to paste their order ID (JHS-…) in the homepage search, or log in at /login to see all orders.",
       },
     };
   }
@@ -64,46 +64,65 @@ export async function runGetOrderStatus(ctx: ToolContext): Promise<ToolResult | 
   const lower = ctx.message.toLowerCase();
   const wantsStatus =
     Boolean(orderMatch) ||
-    /\b(order status|track order|where is my order|my order)\b/i.test(lower);
+    /\b(order status|track order|where is my order|my order|trace order)\b/i.test(lower);
 
   if (!wantsStatus) return null;
 
-  const user = ctx.userContext;
-  if (!user?.isAuthenticated || !user.customerId) {
-    return {
-      tool: "get_order_status",
-      summary: "Order status requires login.",
-      data: {
-        authenticated: false,
-        loginUrl: "/login",
-        instruction: "Customer must log in to check order status. Do not guess order details.",
-      },
-    };
-  }
-
   if (orderMatch) {
-    const orderNumber = orderMatch[1].toUpperCase();
-    const order = await getCustomerOrderByNumber(user.customerId, orderNumber);
+    const orderNumber = extractOrderNumber(ctx.message) ?? orderMatch[1].toUpperCase();
+    const user = ctx.userContext;
 
-    if (!order) {
+    if (user?.isAuthenticated && user.customerId) {
+      const order = await getCustomerOrderByNumber(user.customerId, orderNumber);
+      if (order) {
+        return {
+          tool: "get_order_status",
+          summary: `Order ${orderNumber} is ${order.status}.`,
+          data: {
+            authenticated: true,
+            found: true,
+            order: await formatOrderForAssistant(order),
+            trackUrl: `/track/${orderNumber}`,
+          },
+        };
+      }
+    }
+
+    const publicOrder = await getPublicOrderTracking(orderNumber);
+    if (!publicOrder) {
       return {
         tool: "get_order_status",
-        summary: `Order ${orderNumber} not found on this account.`,
-        data: {
-          authenticated: true,
-          found: false,
-          orderNumber,
-        },
+        summary: `Order ${orderNumber} was not found.`,
+        data: { found: false, orderNumber, trackUrl: `/track/${orderNumber}` },
       };
     }
 
     return {
       tool: "get_order_status",
-      summary: `Order ${orderNumber} is ${order.status}.`,
+      summary: `Order ${publicOrder.orderNumber} is ${publicOrder.status}.`,
       data: {
-        authenticated: true,
         found: true,
-        order: await formatOrderForAssistant(order),
+        orderNumber: publicOrder.orderNumber,
+        status: publicOrder.status,
+        total: formatMoney(publicOrder.totalMinor),
+        city: publicOrder.shippingCity,
+        items: publicOrder.items.map((item) => `${item.name} × ${item.quantity}`),
+        trackUrl: `/track/${publicOrder.orderNumber}`,
+        instruction: "Share the status and the track URL. Do not invent extra details.",
+      },
+    };
+  }
+
+  const user = ctx.userContext;
+  if (!user?.isAuthenticated || !user.customerId) {
+    return {
+      tool: "get_order_status",
+      summary: "Ask for the order ID (JHS-…) or send them to the homepage search to trace the order.",
+      data: {
+        authenticated: false,
+        trackUrl: "/track",
+        instruction:
+          "Guest checkout does not require login. Ask for the order ID from the confirmation page, or send them to /track or the homepage search.",
       },
     };
   }
