@@ -107,7 +107,7 @@ export function AdminShell({ children, allowedHrefs, account }: AdminShellProps)
           <X className="h-5 w-5" />
         </button>
       </div>
-      <nav className="flex-1 space-y-1 p-3" aria-label="Admin">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3" aria-label="Admin">
         {nav.map(({ href, label }) => {
           const Icon = ICONS[href] ?? LayoutDashboard;
           const active =
@@ -152,16 +152,17 @@ export function AdminShell({ children, allowedHrefs, account }: AdminShellProps)
   );
 
   return (
-    <div className="min-h-screen bg-[#F7F9FC] text-ink">
+    <div className="flex h-svh flex-col overflow-hidden bg-[#F7F9FC] text-ink">
       <SkipLink />
-      <div className="brand-accent-bar" />
-      <div className="flex min-h-[calc(100vh-4px)]">
+      <div className="brand-accent-bar shrink-0" />
+      <div className="flex min-h-0 flex-1">
         <aside
           ref={mobileNavRef}
           className={cn(
-            "fixed inset-y-0 left-0 z-40 hidden border-r border-navy/10 bg-white transition-all lg:static lg:block",
+            "z-40 hidden border-r border-navy/10 bg-white transition-all",
+            "fixed inset-y-0 left-0 lg:static lg:flex lg:h-full lg:shrink-0",
             collapsed ? "w-[72px]" : "w-[260px]",
-            mobileOpen && "block w-[260px] shadow-xl"
+            mobileOpen && "flex w-[260px] shadow-xl"
           )}
         >
           {sidebar}
@@ -174,8 +175,8 @@ export function AdminShell({ children, allowedHrefs, account }: AdminShellProps)
             aria-label="Close overlay"
           />
         )}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-navy/10 bg-white/95 px-4 backdrop-blur">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <header className="z-20 flex h-16 shrink-0 items-center justify-between border-b border-navy/10 bg-white px-4">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -190,7 +191,11 @@ export function AdminShell({ children, allowedHrefs, account }: AdminShellProps)
               <AdminAccountMenu account={account} />
             </div>
           </header>
-          <main id="main-content" tabIndex={-1} className="flex-1 p-4 sm:p-6 lg:p-8">
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8"
+          >
             {children}
           </main>
         </div>
