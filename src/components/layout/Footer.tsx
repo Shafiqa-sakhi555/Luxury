@@ -18,6 +18,7 @@ const footerColumns = {
   ],
   Services: [
     { label: "Store Locator", href: "/stores" },
+    { label: "Track order", href: "/track" },
     { label: "Delivery Information", href: "/delivery" },
     { label: "Installation Services", href: "/contact" },
     { label: "Warranty", href: "/warranty" },

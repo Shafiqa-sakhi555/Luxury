@@ -4,9 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Search,
   MapPin,
-  ChevronDown,
   ArrowRight,
   Shield,
   Truck,
@@ -18,9 +16,9 @@ import { Button } from "@/components/ui/button";
 import { OpenAssistantButton } from "@/components/assistant/OpenAssistantButton";
 import { MagneticButton } from "@/components/shared/MagneticButton";
 import { TextReveal } from "@/components/shared/TextReveal";
-import { categories } from "@/lib/categories";
 import { images } from "@/lib/data";
 import { heroContent, heroTrustBadges } from "@/lib/homeContent";
+import { HeroSearchBar } from "@/components/sections/HeroSearchBar";
 import { useLogoIntroSafe } from "@/contexts/LogoIntroContext";
 
 const badgeIcons = {
@@ -143,52 +141,7 @@ export function HeroSection() {
           transition={{ duration: 0.8, delay: d + 0.85 }}
           className="mx-auto mt-10 max-w-4xl sm:mt-12"
         >
-          <form
-            role="search"
-            aria-label="Search products"
-            className="flex flex-col gap-3 rounded-2xl border border-white/20 bg-white p-3 shadow-2xl shadow-ink/20 sm:gap-0 sm:rounded-full sm:p-2 sm:pl-5 md:flex-row md:items-center"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <div className="flex flex-1 items-center gap-3 px-2 sm:px-3 md:border-r md:border-navy/10 md:pr-4">
-              <Search className="h-5 w-5 shrink-0 text-red" aria-hidden />
-              <input
-                type="search"
-                placeholder={heroContent.searchPlaceholder}
-                className="h-12 w-full min-w-0 bg-transparent text-sm text-ink placeholder:text-muted outline-none sm:h-14 sm:text-base"
-                aria-label="Search products"
-              />
-            </div>
-            <div className="relative flex flex-1 items-center gap-3 px-2 sm:px-3">
-              <label htmlFor="hero-category" className="sr-only">
-                {heroContent.categoryLabel}
-              </label>
-              <ChevronDown
-                className="pointer-events-none absolute right-5 h-4 w-4 text-muted sm:right-6"
-                aria-hidden
-              />
-              <select
-                id="hero-category"
-                className="h-12 w-full appearance-none rounded-xl bg-luxury-cream/80 px-3 text-sm text-ink outline-none sm:h-14 sm:rounded-full sm:bg-transparent sm:pl-0 sm:text-base"
-                defaultValue=""
-              >
-                <option value="">{heroContent.categoryLabel}</option>
-                {categories.map((cat) => (
-                  <option key={cat.slug} value={cat.slug}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Button
-              type="submit"
-              variant="default"
-              size="lg"
-              className="h-12 w-full shrink-0 sm:h-14 md:w-auto md:rounded-full md:px-8"
-            >
-              <Search className="h-4 w-4" />
-              {heroContent.searchButton}
-            </Button>
-          </form>
+          <HeroSearchBar />
         </motion.div>
       </div>
     </section>

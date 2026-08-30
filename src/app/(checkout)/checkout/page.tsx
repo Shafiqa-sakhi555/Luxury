@@ -11,15 +11,9 @@ export default async function CheckoutPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login?callbackUrl=/checkout");
-  }
-
-  let customerId: string;
-  try {
-    customerId = await resolveCustomerCart(user.id);
-  } catch {
-    redirect("/register?callbackUrl=/checkout");
+  let customerId: string | undefined;
+  if (user) {
+    customerId = await resolveCustomerCart(user.id).catch(() => undefined);
   }
 
   const cart = await getOrCreateCart(customerId);
@@ -78,7 +72,7 @@ export default async function CheckoutPage() {
     <CheckoutForm
       totals={totals}
       lineItems={lineItems}
-      userEmail={user.email ?? ""}
+      userEmail={user?.email ?? ""}
     />
   );
 }

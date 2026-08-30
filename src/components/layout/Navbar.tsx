@@ -247,8 +247,10 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
-            <Button variant="ghost" size="icon" aria-label="Search">
-              <Search className="h-4.5 w-4.5" />
+            <Button variant="ghost" size="icon" aria-label="Search" asChild>
+              <Link href="/#hero-search">
+                <Search className="h-4.5 w-4.5" />
+              </Link>
             </Button>
             <Button variant="ghost" size="icon" aria-label="Wishlist" className="hidden sm:inline-flex">
               <Heart className="h-4.5 w-4.5" />

@@ -133,6 +133,21 @@ export async function resolveCustomerCart(userId: string) {
   return customerId;
 }
 
+export async function createGuestCustomer(phone: string) {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("customers")
+    .insert({ phone: phone.trim() || null })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Could not start guest checkout.");
+  }
+
+  return data.id;
+}
+
 export async function getOrCreateCart(customerId?: string) {
   if (customerId) {
     await mergeGuestCartIntoCustomerCart(customerId);

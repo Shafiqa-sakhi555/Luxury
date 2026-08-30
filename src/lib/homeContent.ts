@@ -6,9 +6,9 @@ export const heroContent = {
   headlineAlt: "Transform Your Home with Premium Carpets, Rugs & Furniture",
   subtitle:
     "Discover handcrafted carpets, luxury rugs, elegant furniture, flooring, curtains, and home décor. Shop over 1,000 premium products with custom sizing, expert installation, and nationwide delivery across Pakistan.",
-  searchPlaceholder: "Search carpets, rugs, furniture...",
-  categoryLabel: "Browse Categories",
-  searchButton: "Find Products",
+  searchPlaceholder: "Paste your order ID, e.g. JHS-853457-Q5QNGL",
+  trackPlaceholder: "Paste your order ID, e.g. JHS-853457-Q5QNGL",
+  trackButton: "Trace order",
   primaryCta: { label: "Explore Collection", href: "/shop" },
   secondaryCta: {
     label: "Book Free Consultation",

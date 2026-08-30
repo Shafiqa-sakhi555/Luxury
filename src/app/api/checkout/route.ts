@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getOrCreateCart, resolveCustomerCart } from "@/server/cart";
+import { createGuestCustomer, getOrCreateCart, resolveCustomerCart } from "@/server/cart";
 import { placeOrder } from "@/server/orders";
 
 const schema = z.object({
+  email: z.string().email(),
   fulfilmentType: z.enum(["DELIVERY", "BRANCH_PICKUP"]).default("DELIVERY"),
   storeId: z.string().optional(),
   paymentMethod: z.enum(["COD", "CARD"]).default("COD"),
@@ -27,13 +28,12 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user?.id) {
-      return NextResponse.json({ error: "Sign in required" }, { status: 401 });
-    }
-
-    const customerId = await resolveCustomerCart(user.id);
     const body = schema.parse(await request.json());
-    const cart = await getOrCreateCart(customerId);
+
+    const customerId = user?.id
+      ? await resolveCustomerCart(user.id)
+      : await createGuestCustomer(body.shipping.phone);
+    const cart = await getOrCreateCart(user?.id ? customerId : undefined);
 
     if (!cart?.cart_items?.length) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
@@ -54,6 +54,7 @@ export async function POST(request: Request) {
       paymentMethod: body.paymentMethod,
       shipping: body.shipping,
       notes: body.notes,
+      guestEmail: user?.email ? undefined : body.email,
     });
 
     return NextResponse.json({ orderNumber: order.order_number, id: order.id });
