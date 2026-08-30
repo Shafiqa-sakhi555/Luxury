@@ -42,6 +42,23 @@ function wrapEmailHtml(title: string, body: string): string {
 </html>`;
 }
 
+type OrderEmailRow = {
+  id: string;
+  order_number: string;
+  status: string;
+  total_minor: number;
+  shipping_name: string | null;
+  shipping_line1: string | null;
+  shipping_city: string | null;
+  shipping_phone: string | null;
+  guest_email?: string | null;
+  order_items: Array<{ product_name: string; quantity: number }> | null;
+  customers:
+    | { profiles: { name: string | null; email: string | null } | { name: string | null; email: string | null }[] | null }
+    | Array<{ profiles: { name: string | null; email: string | null } | { name: string | null; email: string | null }[] | null }>
+    | null;
+};
+
 async function loadOrderEmailContext(orderId: string): Promise<OrderEmailContext | null> {
   const supabase = createSupabaseAdminClient();
   const selectWithGuest =
@@ -49,11 +66,13 @@ async function loadOrderEmailContext(orderId: string): Promise<OrderEmailContext
   const selectWithoutGuest =
     "id, order_number, status, total_minor, shipping_name, shipping_line1, shipping_city, shipping_phone, order_items(product_name, quantity), customers(profiles(name, email))";
 
-  let { data, error } = await supabase.from("orders").select(selectWithGuest).eq("id", orderId).maybeSingle();
+  const first = await supabase.from("orders").select(selectWithGuest).eq("id", orderId).maybeSingle();
+  let data = first.data as OrderEmailRow | null;
+  let error = first.error;
 
   if (error && /guest_email/i.test(error.message)) {
     const retry = await supabase.from("orders").select(selectWithoutGuest).eq("id", orderId).maybeSingle();
-    data = retry.data;
+    data = retry.data as OrderEmailRow | null;
     error = retry.error;
   }
 
@@ -64,8 +83,7 @@ async function loadOrderEmailContext(orderId: string): Promise<OrderEmailContext
 
   const customer = Array.isArray(data.customers) ? data.customers[0] : data.customers;
   const profile = Array.isArray(customer?.profiles) ? customer?.profiles[0] : customer?.profiles;
-  const guestEmail =
-    "guest_email" in data && typeof data.guest_email === "string" ? data.guest_email : null;
+  const guestEmail = typeof data.guest_email === "string" ? data.guest_email : null;
 
   const items = (data.order_items ?? []) as Array<{ product_name: string; quantity: number }>;
   const itemSummary =
