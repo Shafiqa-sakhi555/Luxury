@@ -30,14 +30,11 @@ export default async function CartPage() {
       <h1 className="font-display text-3xl text-navy">Your cart</h1>
       {!user && cart?.cart_items?.length ? (
         <p className="mt-2 text-sm text-muted">
+          You can checkout as a guest.{" "}
           <Link href="/login?callbackUrl=/checkout" className="text-navy hover:underline">
             Sign in
           </Link>{" "}
-          or{" "}
-          <Link href="/register?callbackUrl=/checkout" className="text-navy hover:underline">
-            create an account
-          </Link>{" "}
-          to save your cart and checkout.
+          if you want this cart saved to your account.
         </p>
       ) : null}
       {!cart?.cart_items?.length ? (
@@ -116,7 +113,7 @@ export default async function CartPage() {
                 </div>
               </dl>
               <Link
-                href={user ? "/checkout" : "/login?callbackUrl=/checkout"}
+                href="/checkout"
                 className="mt-6 block rounded-full bg-red py-3 text-center text-sm font-medium text-white hover:bg-red/90"
               >
                 Proceed to checkout

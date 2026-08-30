@@ -44,11 +44,18 @@ function wrapEmailHtml(title: string, body: string): string {
 
 async function loadOrderEmailContext(orderId: string): Promise<OrderEmailContext | null> {
   const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
-    .from("orders")
-    .select("id, order_number, status, total_minor, shipping_name, shipping_line1, shipping_city, shipping_phone, order_items(product_name, quantity), customers(profiles(name, email))")
-    .eq("id", orderId)
-    .maybeSingle();
+  const selectWithGuest =
+    "id, order_number, status, total_minor, shipping_name, shipping_line1, shipping_city, shipping_phone, guest_email, order_items(product_name, quantity), customers(profiles(name, email))";
+  const selectWithoutGuest =
+    "id, order_number, status, total_minor, shipping_name, shipping_line1, shipping_city, shipping_phone, order_items(product_name, quantity), customers(profiles(name, email))";
+
+  let { data, error } = await supabase.from("orders").select(selectWithGuest).eq("id", orderId).maybeSingle();
+
+  if (error && /guest_email/i.test(error.message)) {
+    const retry = await supabase.from("orders").select(selectWithoutGuest).eq("id", orderId).maybeSingle();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error || !data) {
     console.error("loadOrderEmailContext failed:", error?.message ?? "Order not found");
@@ -57,6 +64,8 @@ async function loadOrderEmailContext(orderId: string): Promise<OrderEmailContext
 
   const customer = Array.isArray(data.customers) ? data.customers[0] : data.customers;
   const profile = Array.isArray(customer?.profiles) ? customer?.profiles[0] : customer?.profiles;
+  const guestEmail =
+    "guest_email" in data && typeof data.guest_email === "string" ? data.guest_email : null;
 
   const items = (data.order_items ?? []) as Array<{ product_name: string; quantity: number }>;
   const itemSummary =
@@ -74,7 +83,7 @@ async function loadOrderEmailContext(orderId: string): Promise<OrderEmailContext
     shipping_city: data.shipping_city,
     shipping_phone: data.shipping_phone,
     customerName: profile?.name ?? data.shipping_name ?? "Customer",
-    customerEmail: profile?.email ?? null,
+    customerEmail: profile?.email ?? guestEmail ?? null,
     itemSummary,
   };
 }
@@ -178,7 +187,7 @@ export async function sendOrderStatusChangeNotifications(
   if (!order) return;
 
   const statusMeta = getOrderStatusMeta(newStatus);
-  const accountUrl = `${getSiteUrl()}/account/orders/${order.id}`;
+  const trackUrl = `${getSiteUrl()}/track/${encodeURIComponent(order.order_number)}`;
   const adminUrl = `${getSiteUrl()}/admin/orders/${order.id}`;
 
   if (newStatus === "CONFIRMED" || newStatus === "SHIPPED" || newStatus === "CANCELLED") {
@@ -198,7 +207,7 @@ ${statusMeta.meaning}
 ${statusMeta.nextSteps}
 ${reason ? `\nNote: ${reason}` : ""}
 
-Track your order: ${accountUrl}
+Track your order: ${trackUrl}
 
 Thank you for shopping with Jalal's Home Solution.`;
 
@@ -210,7 +219,7 @@ Thank you for shopping with Jalal's Home Solution.`;
 <p style="margin:0 0 12px;">${escapeHtml(statusMeta.nextSteps)}</p>
 ${reason ? `<p style="margin:0 0 12px;"><strong>Note:</strong> ${escapeHtml(reason)}</p>` : ""}
 ${orderDetailsBlock(order)}
-<p style="margin:16px 0 0;"><a href="${accountUrl}" style="display:inline-block;background:#1f2937;color:#ffffff;padding:12px 18px;border-radius:999px;text-decoration:none;font-size:14px;">View your order</a></p>`
+<p style="margin:16px 0 0;"><a href="${trackUrl}" style="display:inline-block;background:#1f2937;color:#ffffff;padding:12px 18px;border-radius:999px;text-decoration:none;font-size:14px;">Trace your order</a></p>`
       );
 
       await notifyCustomer(order.customerEmail, customerSubject, customerHtml, customerText);

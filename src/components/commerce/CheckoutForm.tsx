@@ -112,6 +112,7 @@ export function CheckoutForm({
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
       body: JSON.stringify({
+        email: form.email,
         shipping: {
           name: `${form.firstName} ${form.lastName}`.trim(),
           line1: form.line1,
@@ -169,6 +170,12 @@ export function CheckoutForm({
                 <HelpIcon />
               </span>
             </div>
+            {!userEmail ? (
+              <p className="mt-2 text-xs text-neutral-500">
+                No account needed. After you place the order you will get an ID like JHS-853457-Q5QNGL
+                to trace it from the homepage search.
+              </p>
+            ) : null}
             <label className="mt-3 flex items-center gap-2 text-sm text-neutral-700">
               <input
                 type="checkbox"

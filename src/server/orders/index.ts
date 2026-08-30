@@ -16,6 +16,7 @@ export type PlaceOrderInput = {
   fulfilmentType: string;
   storeId?: string;
   paymentMethod?: string;
+  guestEmail?: string;
   shipping: {
     name: string;
     line1: string;
@@ -41,23 +42,44 @@ export async function placeOrder(input: PlaceOrderInput) {
   // 3. Create Order
   const orderNumber = `JHS-${Date.now().toString().slice(-6)}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
   
-  const { data: order, error: orderError } = await supabase.from("orders").insert({
+  const orderPayload: Record<string, unknown> = {
     order_number: orderNumber,
     customer_id: input.customerId,
     status: "PENDING",
     payment_method: input.paymentMethod ?? "COD",
     fulfilment_type: input.fulfilmentType,
+    store_id: input.storeId || null,
     subtotal_minor: subtotalMinor,
     delivery_minor: deliveryMinor,
     total_minor: totalMinor,
     shipping_name: input.shipping.name,
     shipping_line1: input.shipping.line1,
+    shipping_line2: input.shipping.line2 || null,
     shipping_city: input.shipping.city,
+    shipping_region: input.shipping.region || null,
+    shipping_postal: input.shipping.postal || null,
     shipping_phone: input.shipping.phone,
     notes: input.notes,
-  }).select().single();
+  };
 
-  if (orderError) throw new Error(orderError.message);
+  if (input.guestEmail) {
+    orderPayload.guest_email = input.guestEmail.trim().toLowerCase();
+  }
+
+  let { data: order, error: orderError } = await supabase
+    .from("orders")
+    .insert(orderPayload)
+    .select()
+    .single();
+
+  if (orderError && input.guestEmail && /guest_email/i.test(orderError.message)) {
+    delete orderPayload.guest_email;
+    const retry = await supabase.from("orders").insert(orderPayload).select().single();
+    order = retry.data;
+    orderError = retry.error;
+  }
+
+  if (orderError || !order) throw new Error(orderError?.message ?? "Could not place order");
 
   // 4. Create Order Items
   const orderItems = cart.cart_items.map((item: any) => {
@@ -127,7 +149,7 @@ export async function getOrderByNumber(orderNumber: string) {
   const { data } = await supabase
     .from("orders")
     .select("*, order_items(*), order_status_history(*), customers(profiles(name, email))")
-    .eq("order_number", orderNumber)
+    .ilike("order_number", orderNumber)
     .maybeSingle();
 
   return data;
