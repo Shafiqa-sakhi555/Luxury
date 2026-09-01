@@ -21,7 +21,7 @@ export default async function StoresPage() {
 
   return (
     <div>
-      <section className="border-b border-navy/10 bg-white pt-28 pb-10">
+      <section className="border-b border-navy/10 bg-white pb-12 pt-[calc(var(--site-header-height)+2.5rem)] sm:pb-16 sm:pt-[calc(var(--site-header-height-sm)+3rem)]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-red">Visit us</p>
           <h1 className="mt-2 font-display text-4xl text-navy sm:text-5xl">
