@@ -45,7 +45,7 @@ export function OrderTrackingView({ order }: { order: PublicOrderTracking }) {
             <div>
               <p className="font-medium text-navy">{item.name}</p>
               <p className="text-xs text-muted">
-                {item.sku} × {item.quantity}
+                {[item.color, item.size, item.sku].filter(Boolean).join(" · ")} × {item.quantity}
               </p>
             </div>
             <span className="tabular-nums">{formatMoney(item.lineTotalMinor)}</span>

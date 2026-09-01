@@ -27,6 +27,8 @@ export default async function CheckoutPage() {
     price_snapshot_minor?: number | null;
     product_variants?: {
       sku?: string | null;
+      color?: string | null;
+      size?: string | null;
       price_minor?: number | null;
       sale_price_minor?: number | null;
       products?: {
@@ -65,6 +67,8 @@ export default async function CheckoutPage() {
       quantity: item.quantity,
       unitPriceMinor,
       sku: item.product_variants?.sku ?? undefined,
+      color: item.product_variants?.color?.trim() || undefined,
+      size: item.product_variants?.size?.trim() || undefined,
     };
   });
 

@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseOrderNumber } from "@/lib/orders/number";
+import { variantDisplayFromOrderItem } from "@/lib/orders/line-item";
 
 export type PublicOrderTracking = {
   orderNumber: string;
@@ -14,6 +15,8 @@ export type PublicOrderTracking = {
   items: Array<{
     name: string;
     sku: string;
+    color: string | null;
+    size: string | null;
     quantity: number;
     lineTotalMinor: number;
   }>;
@@ -35,7 +38,7 @@ export async function getPublicOrderTracking(
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "order_number, status, created_at, total_minor, payment_method, fulfilment_type, shipping_city, shipping_name, order_items(product_name, variant_sku, quantity, line_total_minor), order_status_history(to_status, reason, created_at)"
+      "order_number, status, created_at, total_minor, payment_method, fulfilment_type, shipping_city, shipping_name, order_items(product_name, variant_sku, variant_name, customization, quantity, line_total_minor, product_variants(color, size, name)), order_status_history(to_status, reason, created_at)"
     )
     .ilike("order_number", orderNumber)
     .maybeSingle();
@@ -48,8 +51,11 @@ export async function getPublicOrderTracking(
   const items = (data.order_items ?? []) as Array<{
     product_name: string;
     variant_sku: string;
+    variant_name?: string | null;
+    customization?: { color?: string | null; size?: string | null } | null;
     quantity: number;
     line_total_minor: number;
+    product_variants?: { color?: string | null; size?: string | null; name?: string | null } | null;
   }>;
 
   const history = [...((data.order_status_history ?? []) as Array<{
@@ -67,12 +73,17 @@ export async function getPublicOrderTracking(
     fulfilmentType: data.fulfilment_type ?? "DELIVERY",
     shippingCity: data.shipping_city ?? null,
     shippingName: data.shipping_name ?? null,
-    items: items.map((item) => ({
-      name: item.product_name,
-      sku: item.variant_sku,
-      quantity: item.quantity,
-      lineTotalMinor: item.line_total_minor,
-    })),
+    items: items.map((item) => {
+      const variant = variantDisplayFromOrderItem(item);
+      return {
+        name: item.product_name,
+        sku: item.variant_sku,
+        color: variant.color,
+        size: variant.size,
+        quantity: item.quantity,
+        lineTotalMinor: item.line_total_minor,
+      };
+    }),
     history: history.map((entry) => ({
       status: entry.to_status,
       at: entry.created_at,
