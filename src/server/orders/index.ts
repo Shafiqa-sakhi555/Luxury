@@ -10,6 +10,7 @@ import {
   sendOrderStatusChangeNotifications,
 } from "@/server/orders/notifications";
 import { canCustomerCancelOrder } from "@/lib/orders/status";
+import { variantDisplayFromCart } from "@/lib/orders/line-item";
 export type PlaceOrderInput = {
   customerId: string;
   cartId: string;
@@ -85,6 +86,7 @@ export async function placeOrder(input: PlaceOrderInput) {
   const orderItems = cart.cart_items.map((item: any) => {
     const variant = item.product_variants;
     const product = Array.isArray(variant?.products) ? variant.products[0] : variant?.products;
+    const display = variantDisplayFromCart(variant);
     const unitPrice = resolveCartItemPriceMinor({
       priceSnapshotMinor: item.price_snapshot_minor,
       variantPriceMinor: variant?.price_minor,
@@ -96,11 +98,16 @@ export async function placeOrder(input: PlaceOrderInput) {
     return {
       order_id: order.id,
       variant_id: item.variant_id,
-      product_name: item.product_variants.products.name,
-      variant_sku: item.product_variants.sku,
+      product_name: product?.name ?? "Product",
+      variant_sku: variant?.sku ?? "",
+      variant_name: display.label,
       unit_price_minor: unitPrice,
       quantity: item.quantity,
       line_total_minor: unitPrice * item.quantity,
+      customization: {
+        color: display.color,
+        size: display.size,
+      },
     };
   });
 
@@ -148,7 +155,7 @@ export async function getOrderByNumber(orderNumber: string) {
   const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("orders")
-    .select("*, order_items(*), order_status_history(*), customers(profiles(name, email))")
+    .select("*, order_items(*, product_variants(color, size, name)), order_status_history(*), customers(profiles(name, email))")
     .ilike("order_number", orderNumber)
     .maybeSingle();
 
@@ -227,7 +234,7 @@ export async function adminGetOrderById(orderId: string) {
   const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("orders")
-    .select("*, order_items(*), order_status_history(*), customers(phone, profiles(name, email))")
+    .select("*, order_items(*, product_variants(color, size, name, sku)), order_status_history(*), customers(phone, profiles(name, email))")
     .eq("id", orderId)
     .maybeSingle();
 

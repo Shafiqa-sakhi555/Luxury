@@ -19,6 +19,7 @@ import { formatStatusLabel } from "@/lib/admin/status-badges";
 import { OrderStatusForm } from "@/components/admin/orders/OrderStatusForm";
 import { CreateRefundRequestForm } from "@/components/admin/finance/CreateRefundRequestForm";
 import { formatMoney } from "@/lib/money";
+import { variantDisplayFromOrderItem } from "@/lib/orders/line-item";
 
 function profileFromOrder(order: {
   customers?: {
@@ -78,6 +79,8 @@ export default async function AdminOrderDetailPage({
               <AdminTableHeader>
                 <tr>
                   <AdminTableHead>Product</AdminTableHead>
+                  <AdminTableHead>Color</AdminTableHead>
+                  <AdminTableHead>Size</AdminTableHead>
                   <AdminTableHead>SKU</AdminTableHead>
                   <AdminTableHead>Qty</AdminTableHead>
                   <AdminTableHead align="right">Total</AdminTableHead>
@@ -88,18 +91,26 @@ export default async function AdminOrderDetailPage({
                   id: string;
                   product_name: string;
                   variant_sku: string;
+                  variant_name?: string | null;
                   quantity: number;
                   line_total_minor: number;
-                }) => (
+                  customization?: { color?: string | null; size?: string | null } | null;
+                  product_variants?: { color?: string | null; size?: string | null; name?: string | null } | null;
+                }) => {
+                  const variant = variantDisplayFromOrderItem(item);
+                  return (
                   <AdminTableRow key={item.id}>
                     <AdminTableCell>{item.product_name}</AdminTableCell>
+                    <AdminTableCell className="text-muted">{variant.color ?? "—"}</AdminTableCell>
+                    <AdminTableCell className="text-muted">{variant.size ?? "—"}</AdminTableCell>
                     <AdminTableCell className="text-muted">{item.variant_sku}</AdminTableCell>
                     <AdminTableCell className="tabular-nums">{item.quantity}</AdminTableCell>
                     <AdminTableCell align="right" className="tabular-nums">
                       {formatMoney(item.line_total_minor)}
                     </AdminTableCell>
                   </AdminTableRow>
-                ))}
+                  );
+                })}
               </AdminTableBody>
             </AdminTable>
           </AdminCard>
