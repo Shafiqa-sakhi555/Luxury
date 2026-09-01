@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Phone, Clock, ArrowLeft } from "lucide-react";
+import { MapPin, Phone, Clock, ArrowLeft, Navigation, ExternalLink } from "lucide-react";
 import { getStorefrontBranchBySlug } from "@/server/stores/queries";
+import { toStoreLocatorBranch } from "@/lib/store-locator";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function StoreDetailPage({ params }: PageProps) {
   const branch = await getStorefrontBranchBySlug(slug).catch(() => null);
   if (!branch) notFound();
 
-  const mapsQuery = encodeURIComponent(branch.address || `${branch.name}, ${branch.city}`);
+  const locator = toStoreLocatorBranch(branch);
 
   return (
     <div>
@@ -58,52 +59,63 @@ export default async function StoreDetailPage({ params }: PageProps) {
           All showrooms
         </Link>
 
-        <div className="mt-8 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="mt-8 grid gap-8 lg:grid-cols-2">
           <div>
             <h2 className="font-display text-2xl text-navy">About this branch</h2>
             <p className="mt-4 text-base leading-relaxed text-ink">
               {branch.description ||
                 `Visit our ${branch.name} showroom in ${branch.region} for carpets, rugs, furniture, and home décor.`}
             </p>
+
+            <aside className="mt-8 rounded-2xl border border-navy/10 bg-white p-6 shadow-sm">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-navy">Location</h2>
+              <ul className="mt-4 space-y-4 text-sm">
+                <li className="flex gap-3">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red" />
+                  <span>{branch.address}</span>
+                </li>
+                {branch.phone && branch.phone !== "—" ? (
+                  <li className="flex gap-3">
+                    <Phone className="mt-0.5 h-4 w-4 shrink-0 text-red" />
+                    <a href={`tel:${branch.phone.replace(/\s/g, "")}`} className="hover:underline">
+                      {branch.phone}
+                    </a>
+                  </li>
+                ) : null}
+                {branch.hours ? (
+                  <li className="flex gap-3">
+                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-red" />
+                    <span>{branch.hours}</span>
+                  </li>
+                ) : null}
+              </ul>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button asChild size="sm">
+                  <a href={locator.directionsUrl} target="_blank" rel="noopener noreferrer">
+                    <Navigation className="mr-2 h-4 w-4" />
+                    Get directions
+                  </a>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <a href={locator.placeUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View on Google Maps
+                  </a>
+                </Button>
+              </div>
+            </aside>
           </div>
 
-          <aside className="rounded-2xl border border-navy/10 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-navy">Location</h2>
-            <ul className="mt-4 space-y-4 text-sm">
-              <li className="flex gap-3">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-red" />
-                <span>{branch.address}</span>
-              </li>
-              {branch.phone && branch.phone !== "—" ? (
-                <li className="flex gap-3">
-                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-red" />
-                  <a href={`tel:${branch.phone.replace(/\s/g, "")}`} className="hover:underline">
-                    {branch.phone}
-                  </a>
-                </li>
-              ) : null}
-              {branch.hours ? (
-                <li className="flex gap-3">
-                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-red" />
-                  <span>{branch.hours}</span>
-                </li>
-              ) : null}
-            </ul>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild size="sm">
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Open in Google Maps
-                </a>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link href="/contact">Contact us</Link>
-              </Button>
-            </div>
-          </aside>
+          <div className="relative min-h-[360px] overflow-hidden rounded-2xl bg-mist shadow-sm ring-1 ring-navy/8 sm:min-h-[480px]">
+            <iframe
+              title={`Map of ${branch.name}`}
+              src={locator.embedUrl}
+              className="absolute inset-0 h-full w-full border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
+          </div>
         </div>
       </div>
     </div>
