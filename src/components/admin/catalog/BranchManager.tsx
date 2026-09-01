@@ -246,7 +246,7 @@ export function BranchManager({ branches }: { branches: AdminStoreRow[] }) {
     <div>
       <AdminPageHeader
         title="Branches"
-        description="Showrooms on the homepage carousel. Clicking a card opens the branch page."
+        description="Showrooms on the homepage carousel and the Stores page. The branch photo appears on the left; the map uses the address."
         actions={
           <AdminButton
             type="button"
