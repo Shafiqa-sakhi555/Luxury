@@ -39,7 +39,7 @@ export function FeaturedCategoriesSection({ categories }: { categories: ShopCate
             >
               <Link
                 href={cat.href}
-                className="group relative block aspect-[4/5] overflow-hidden rounded-2xl shadow-md ring-1 ring-navy/8 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:ring-red/25 sm:aspect-[3/4]"
+                className="group relative block aspect-[4/5] overflow-hidden rounded-3xl shadow-md ring-1 ring-navy/8 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl hover:ring-red/25 sm:aspect-[3/4]"
               >
                 {cat.imageUrl ? (
                   <Image
@@ -64,7 +64,7 @@ export function FeaturedCategoriesSection({ categories }: { categories: ShopCate
                       </p>
                     ) : null}
                   </div>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/90 opacity-0 shadow transition-all group-hover:opacity-100">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/90 opacity-80 shadow transition-all group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                     <ArrowUpRight className="h-4 w-4 text-red" />
                   </span>
                 </div>

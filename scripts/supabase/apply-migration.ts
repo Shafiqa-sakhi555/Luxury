@@ -58,7 +58,7 @@ async function connectAndMigrate(connectionString: string) {
   const migrationsDir = path.join(process.cwd(), "supabase/migrations");
   const files = fs
     .readdirSync(migrationsDir)
-    .filter((file) => file.endsWith(".sql"))
+    .filter((file) => file.endsWith(".sql") && !file.startsWith("APPLY_"))
     .sort();
 
   const client = new pg.Client({

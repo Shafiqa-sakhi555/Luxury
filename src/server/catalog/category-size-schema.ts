@@ -38,4 +38,4 @@ export async function isCategorySizesSchemaReady(force = false): Promise<boolean
 }
 
 export const CATEGORY_SIZES_MIGRATION_HINT =
-  "Category sizes need a database update. In Supabase Dashboard → SQL Editor, run the SQL from supabase/migrations/015_category_sizes_and_variant_extensions.sql and 016_category_sizes_enabled.sql, or set SUPABASE_DB_URL and run: npm run supabase:migrate";
+  "Category sizes need a database update. In Supabase Dashboard → SQL Editor, run supabase/migrations/APPLY_CATEGORY_SIZES_MANUAL.sql (or migrations 015 + 016). Until then, save categories with size options turned off.";

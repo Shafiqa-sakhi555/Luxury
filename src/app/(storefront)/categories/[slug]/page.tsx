@@ -1,12 +1,11 @@
-import Image from "next/image";
 import type { Metadata } from "next";
 import { Package } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { listProducts, getCategoryBySlug } from "@/server/catalog/products";
 import { ProductCard } from "@/components/commerce/ProductCard";
-import { Breadcrumbs } from "@/components/commerce/Breadcrumbs";
+import { ProductGrid } from "@/components/commerce/ProductGrid";
+import { CatalogHero } from "@/components/commerce/CatalogHero";
 import { CatalogPagination } from "@/components/commerce/CatalogPagination";
-import { SectionHeading } from "@/components/shared/SectionHeading";
 import { PageContainer } from "@/components/ui/page-container";
 import { EmptyState } from "@/components/ui/empty-state";
 import { normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
@@ -78,52 +77,28 @@ export default async function CategoryPage({
     ? getOptimizedImageUrl(heroImageCandidate, { width: 1920, crop: "limit" })
     : null;
 
+  const countLabel =
+    total > 0
+      ? `${total} product${total !== 1 ? "s" : ""} available${totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}`
+      : undefined;
+
   return (
     <div>
-      <section className="relative overflow-hidden section-brand-light pt-28">
-        {heroImageSrc && (
-          <div className="absolute inset-0">
-            <Image
-              src={heroImageSrc}
-              alt={category.name}
-              fill
-              className="object-cover opacity-20"
-              priority
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-brand-50/80 via-brand-50/95 to-brand-50" />
-          </div>
-        )}
-        {!heroImageSrc && <div className="blob-red right-0 top-10 h-72 w-72 opacity-40" />}
-
-        <PageContainer className="relative pb-12 sm:pb-16">
-          <Breadcrumbs
-            className="mb-6"
-            items={[
-              { label: "Home", href: "/" },
-              { label: "Shop", href: "/shop" },
-              { label: category.name },
-            ]}
-          />
-
-          <SectionHeading
-            eyebrow="Collection"
-            title={category.name}
-            description={
-              category.description ??
-              `Premium ${category.name.toLowerCase()} — quality craftsmanship for your home.`
-            }
-            className="mb-0"
-          />
-
-          {total > 0 && (
-            <p className="mt-6 text-sm text-muted">
-              {total} product{total !== 1 ? "s" : ""} available
-              {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
-            </p>
-          )}
-        </PageContainer>
-      </section>
+      <CatalogHero
+        eyebrow="Collection"
+        title={category.name}
+        description={
+          category.description ??
+          `Premium ${category.name.toLowerCase()} — quality craftsmanship for your home.`
+        }
+        countLabel={countLabel}
+        breadcrumbs={[
+          { label: "Home", href: "/" },
+          { label: "Shop", href: "/shop" },
+          { label: category.name },
+        ]}
+        heroImageSrc={heroImageSrc}
+      />
 
       <PageContainer className="py-10 sm:py-12">
         {items.length === 0 ? (
@@ -135,7 +110,7 @@ export default async function CategoryPage({
             action={{ label: "Browse all products", href: "/shop" }}
           />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
+          <ProductGrid>
             {items.map((product, i) => (
               <ProductCard
                 key={`${product.source}-${product.id}`}
@@ -144,7 +119,7 @@ export default async function CategoryPage({
                 priorityImage={i < 4}
               />
             ))}
-          </div>
+          </ProductGrid>
         )}
 
         <CatalogPagination

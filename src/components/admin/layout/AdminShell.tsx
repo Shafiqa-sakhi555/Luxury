@@ -83,17 +83,22 @@ export function AdminShell({ children, allowedHrefs, account }: AdminShellProps)
   };
 
   const sidebar = (
-    <div className="flex h-full flex-col">
-      <div className="flex h-16 items-center justify-between border-b border-navy/10 px-4">
+    <div className="flex h-full flex-col bg-[#0e1024] text-white">
+      <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
         {!collapsed && (
-          <Link href="/admin" className="font-display text-lg text-navy">
+          <Link href="/admin" className="font-display text-lg tracking-tight">
             <span className="text-red">J</span>alal&apos;s Admin
+          </Link>
+        )}
+        {collapsed && (
+          <Link href="/admin" className="font-display text-xl text-red" aria-label="Admin home">
+            J
           </Link>
         )}
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
-          className="hidden rounded-md p-2 text-muted hover:bg-navy/5 lg:inline-flex"
+          className="hidden rounded-lg p-2 text-white/60 hover:bg-white/8 hover:text-white lg:inline-flex"
           aria-label="Toggle sidebar"
         >
           <ChevronLeft className={cn("h-4 w-4 transition", collapsed && "rotate-180")} />
@@ -101,7 +106,7 @@ export function AdminShell({ children, allowedHrefs, account }: AdminShellProps)
         <button
           type="button"
           onClick={() => setMobileOpen(false)}
-          className="rounded-md p-2 text-muted hover:bg-navy/5 lg:hidden"
+          className="rounded-lg p-2 text-white/60 hover:bg-white/8 hover:text-white lg:hidden"
           aria-label="Close menu"
         >
           <X className="h-5 w-5" />
@@ -119,30 +124,38 @@ export function AdminShell({ children, allowedHrefs, account }: AdminShellProps)
               href={href}
               onClick={() => setMobileOpen(false)}
               aria-current={active ? "page" : undefined}
+              title={collapsed ? label : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+                collapsed && "justify-center px-0",
                 active
-                  ? "bg-navy text-white"
-                  : "text-navy/70 hover:bg-navy/5 hover:text-navy"
+                  ? "bg-white/12 text-white shadow-sm ring-1 ring-white/10"
+                  : "text-white/65 hover:bg-white/8 hover:text-white"
               )}
             >
-              <Icon className="h-4 w-4 shrink-0" />
+              <Icon className={cn("h-4 w-4 shrink-0", active && "text-red")} />
               {!collapsed && <span>{label}</span>}
             </Link>
           );
         })}
       </nav>
-      <div className="border-t border-navy/10 p-3">
+      <div className="border-t border-white/10 p-3">
         <Link
           href="/"
-          className="mb-2 block rounded-lg px-3 py-2 text-sm text-navy/70 hover:bg-navy/5"
+          className={cn(
+            "mb-1 block rounded-xl px-3 py-2 text-sm text-white/65 hover:bg-white/8 hover:text-white",
+            collapsed && "text-center"
+          )}
         >
-          View storefront
+          {collapsed ? "Shop" : "View storefront"}
         </Link>
         <button
           type="button"
           onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red hover:bg-red/5"
+          className={cn(
+            "flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-red/90 hover:bg-red/10",
+            collapsed && "justify-center px-0"
+          )}
         >
           <LogOut className="h-4 w-4" />
           {!collapsed && "Sign out"}
@@ -152,17 +165,17 @@ export function AdminShell({ children, allowedHrefs, account }: AdminShellProps)
   );
 
   return (
-    <div className="flex h-svh flex-col overflow-hidden bg-[#F7F9FC] text-ink">
+    <div className="flex h-svh flex-col overflow-hidden bg-[#F4F6FB] text-ink">
       <SkipLink />
       <div className="brand-accent-bar shrink-0" />
       <div className="flex min-h-0 flex-1">
         <aside
           ref={mobileNavRef}
           className={cn(
-            "z-40 hidden border-r border-navy/10 bg-white transition-all",
+            "z-40 hidden overflow-hidden transition-all",
             "fixed inset-y-0 left-0 lg:static lg:flex lg:h-full lg:shrink-0",
             collapsed ? "w-[72px]" : "w-[260px]",
-            mobileOpen && "flex w-[260px] shadow-xl"
+            mobileOpen && "flex w-[260px] shadow-2xl"
           )}
         >
           {sidebar}
@@ -170,13 +183,13 @@ export function AdminShell({ children, allowedHrefs, account }: AdminShellProps)
         {mobileOpen && (
           <button
             type="button"
-            className="fixed inset-0 z-30 bg-black/30 lg:hidden"
+            className="fixed inset-0 z-30 bg-black/40 lg:hidden"
             onClick={() => setMobileOpen(false)}
             aria-label="Close overlay"
           />
         )}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <header className="z-20 flex h-16 shrink-0 items-center justify-between border-b border-navy/10 bg-white px-4">
+          <header className="z-20 flex h-16 shrink-0 items-center justify-between border-b border-navy/8 bg-white/90 px-4 backdrop-blur-md">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -185,7 +198,12 @@ export function AdminShell({ children, allowedHrefs, account }: AdminShellProps)
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="text-sm text-muted">Operations dashboard</div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
+                Staff portal
+              </p>
+              <p className="hidden text-sm text-navy sm:block">Jalal&apos;s Home Solution</p>
+            </div>
             <div className="flex items-center gap-1">
               {account.role === "Super Admin" || account.role === "Admin" ? <AdminOrderBell /> : null}
               <AdminAccountMenu account={account} />

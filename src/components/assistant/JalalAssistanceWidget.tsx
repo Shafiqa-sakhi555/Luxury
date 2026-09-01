@@ -43,11 +43,11 @@ export function JalalAssistanceWidget() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="assistant-panel-title"
-              initial={{ opacity: 0, y: 24, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 24, scale: 0.96 }}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 16 }}
               transition={{ type: "spring", stiffness: 380, damping: 28 }}
-              className="assistant-shell fixed bottom-20 right-4 z-[70] flex w-[min(100vw-2rem,400px)] flex-col overflow-hidden rounded-2xl pb-[env(safe-area-inset-bottom)] sm:bottom-24 sm:right-6"
+              className="assistant-shell fixed bottom-20 right-4 z-[70] flex h-[min(78vh,580px)] w-[min(100vw-2rem,400px)] flex-col overflow-hidden rounded-2xl pb-[env(safe-area-inset-bottom)] sm:bottom-24 sm:right-6"
             >
               <button
                 type="button"
@@ -60,7 +60,7 @@ export function JalalAssistanceWidget() {
               <AssistantChatPanel
                 compact
                 titleId="assistant-panel-title"
-                className="min-h-[420px] rounded-none border-0 shadow-none"
+                className="h-full min-h-0 rounded-none border-0 shadow-none"
                 pendingPrompt={pendingPrompt}
                 onPendingPromptConsumed={consumePendingPrompt}
               />

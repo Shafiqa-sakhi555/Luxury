@@ -28,7 +28,7 @@ export function AdminFilterPills({
             key={item.href}
             href={item.href}
             className={cn(
-              "shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition sm:text-sm",
+              "shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition sm:text-sm",
               isActive
                 ? "bg-navy text-white shadow-sm"
                 : "border border-navy/10 bg-white text-navy/70 hover:bg-navy/5 hover:text-navy"

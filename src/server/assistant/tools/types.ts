@@ -5,6 +5,7 @@ export type AssistantToolName =
   | "get_branches"
   | "search_faq"
   | "get_policy"
+  | "get_site_info"
   | "design_consultation"
   | "get_my_orders"
   | "get_order_status"

@@ -192,7 +192,7 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.18 }}
-                      className="overflow-hidden rounded-xl border border-navy/10 bg-white py-2 shadow-xl"
+                      className="overflow-hidden rounded-2xl border border-navy/10 bg-white py-2 shadow-xl"
                     >
                       <div className="brand-accent-bar absolute inset-x-0 top-0" />
                       <div className="relative flex flex-col py-1">

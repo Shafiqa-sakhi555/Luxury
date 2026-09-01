@@ -8,7 +8,7 @@ export default function CheckoutLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-white text-ink">
+    <div className="flex min-h-screen flex-col bg-luxury-cream text-ink">
       <SkipLink />
       <FlowSiteHeader badge="Secure checkout" />
       <main id="main-content" tabIndex={-1} className="flex-1">

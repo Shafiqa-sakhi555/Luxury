@@ -1,18 +1,54 @@
 import { loadFaqKnowledge } from "../knowledge/loader";
 import type { ToolContext, ToolResult } from "./types";
 
-export async function runSearchFaq(ctx: ToolContext): Promise<ToolResult | null> {
-  const lower = ctx.message.toLowerCase();
-  const triggers = [
-    "faq", "how do", "how long", "can i", "do you", "what is your",
-    "who is jalal", "when was", "founded", "established", "free delivery",
-    "custom size", "showroom",
+  const TRIGGERS = [
+    "faq",
+    "how do",
+    "how long",
+    "how can",
+    "can i",
+    "do you",
+    "does jalal",
+    "what is your",
+    "what are your",
+    "who is jalal",
+    "when was",
+    "founded",
+    "established",
+    "free delivery",
+    "deliver",
+    "custom size",
+    "showroom",
+    "payment",
+    "cod",
+    "cash on delivery",
+    "account",
+    "track",
+    "return",
+    "install",
+    "delivery",
+    "warranty",
   ];
 
-  if (!triggers.some((t) => lower.includes(t))) return null;
+function looksLikeQuestion(message: string) {
+  const trimmed = message.trim();
+  return (
+    trimmed.includes("?") ||
+    /^(who|what|when|where|why|how|can|do|does|is|are|will)\b/i.test(trimmed)
+  );
+}
+
+export async function runSearchFaq(ctx: ToolContext): Promise<ToolResult | null> {
+  const lower = ctx.message.toLowerCase();
+  if (!looksLikeQuestion(ctx.message) && !TRIGGERS.some((t) => lower.includes(t))) {
+    return null;
+  }
 
   const faq = await loadFaqKnowledge();
-  const terms = lower.split(/\s+/).filter((w) => w.length > 3);
+  const terms = lower
+    .split(/\s+/)
+    .map((w) => w.replace(/[^\w-]/g, ""))
+    .filter((w) => w.length > 2);
 
   const scored = faq.faqs
     .filter((f) => f.verified !== false)

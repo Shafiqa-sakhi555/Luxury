@@ -4,27 +4,41 @@ import { requireAdminPageAccess } from "@/server/admin/page-access";
 import { getStoreSettings } from "@/server/settings/store-settings";
 import { toMajor } from "@/lib/money";
 import { DeliverySettingsForm } from "@/components/admin/settings/DeliverySettingsForm";
+import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
+import { canWriteCatalog } from "@/server/rbac";
 
 export default async function AdminSettingsPage() {
-  await requireAdminPageAccess("settings.read", "catalog.write");
-  const settings = await getStoreSettings();
+  const ctx = await requireAdminPageAccess();
+  const canEditStore = canWriteCatalog(ctx.permissions);
+  const settings = canEditStore ? await getStoreSettings() : null;
 
   return (
     <div>
-      <AdminPageHeader title="Settings" description="Store configuration and catalog help" />
+      <AdminPageHeader title="Settings" description="Your account, store configuration, and catalog help" />
       <div className="grid gap-6 lg:grid-cols-2">
         <AdminCard className="space-y-4 p-6 text-sm">
-          <h2 className="font-semibold text-navy">Delivery charges</h2>
+          <h2 className="font-semibold text-navy">Change password</h2>
           <p className="text-muted leading-relaxed">
-            These amounts are used on cart, checkout, and product shipping information.
+            Update the password for <span className="font-medium text-navy">{ctx.user.email}</span>.
+            You will stay signed in after saving.
           </p>
-          <DeliverySettingsForm
-            deliveryFeeMajor={toMajor(settings.deliveryFeeMinor)}
-            freeDeliveryThresholdMajor={toMajor(settings.freeDeliveryThresholdMinor)}
-          />
+          <ChangePasswordForm variant="admin" />
         </AdminCard>
 
-        <AdminCard className="space-y-4 p-6 text-sm">
+        {canEditStore && settings ? (
+          <AdminCard className="space-y-4 p-6 text-sm">
+            <h2 className="font-semibold text-navy">Delivery charges</h2>
+            <p className="text-muted leading-relaxed">
+              These amounts are used on cart, checkout, and product shipping information.
+            </p>
+            <DeliverySettingsForm
+              deliveryFeeMajor={toMajor(settings.deliveryFeeMinor)}
+              freeDeliveryThresholdMajor={toMajor(settings.freeDeliveryThresholdMinor)}
+            />
+          </AdminCard>
+        ) : null}
+
+        <AdminCard className="space-y-4 p-6 text-sm lg:col-span-2">
           <h2 className="font-semibold text-navy">Managing products</h2>
           <p className="text-muted leading-relaxed">
             Use{" "}

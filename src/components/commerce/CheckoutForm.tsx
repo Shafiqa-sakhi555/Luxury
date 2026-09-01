@@ -26,10 +26,10 @@ type PaymentMethod = "card" | "cod";
 type BillingMode = "same" | "different";
 
 const inputClassName =
-  "h-11 rounded-lg border-neutral-300 bg-white text-sm shadow-none focus-visible:ring-neutral-400";
+  "h-11 rounded-xl border-navy/15 bg-white text-sm shadow-none focus-visible:ring-violet/30";
 
 const selectClassName =
-  "flex h-11 w-full rounded-lg border border-neutral-300 bg-white px-3 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400";
+  "flex h-11 w-full rounded-xl border border-navy/15 bg-white px-3 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet/30";
 
 function SectionHeading({
   title,
@@ -40,7 +40,7 @@ function SectionHeading({
 }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-4">
-      <h2 className="text-lg font-semibold text-ink">{title}</h2>
+      <h2 className="font-display text-xl font-normal text-navy">{title}</h2>
       {action}
     </div>
   );
@@ -144,7 +144,7 @@ export function CheckoutForm({
 
   return (
     <div className="grid lg:min-h-[calc(100vh-4.25rem)] lg:grid-cols-[minmax(0,1fr)_minmax(420px,480px)]">
-      <div className="border-b border-neutral-200 px-4 py-8 sm:px-6 lg:border-b-0 lg:border-r lg:px-10 lg:py-10 xl:px-16">
+      <div className="border-b border-navy/10 px-4 py-8 sm:px-6 lg:border-b-0 lg:border-r lg:px-10 lg:py-10 xl:px-16">
         <form onSubmit={handleSubmit} className="mx-auto max-w-xl space-y-8">
           <section>
             <SectionHeading
@@ -548,7 +548,7 @@ export function CheckoutForm({
               type="submit"
               disabled={loading}
               aria-busy={loading}
-              className="h-14 w-full rounded-lg bg-neutral-900 text-base font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-60"
+              className="h-14 w-full rounded-full bg-red text-base font-semibold text-white shadow-lg shadow-red/20 transition hover:bg-red/90 disabled:opacity-60"
             >
               {loading ? "Processing..." : submitLabel}
             </button>
@@ -569,7 +569,7 @@ export function CheckoutForm({
         </form>
       </div>
 
-      <aside className="bg-neutral-100 px-4 py-8 sm:px-6 lg:px-10 lg:py-10 xl:px-12">
+      <aside className="bg-luxury-cream px-4 py-8 sm:px-6 lg:px-10 lg:py-10 xl:px-12">
         <div className="mx-auto max-w-md lg:sticky lg:top-8">
           <ul className="space-y-4">
             {lineItems.map((item) => (

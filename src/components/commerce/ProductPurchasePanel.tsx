@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RotateCcw, Shield, Truck } from "lucide-react";
 import {
   formatProductPriceDisplay,
   isNumericRateValue,
@@ -98,33 +99,40 @@ export function ProductPurchasePanel({
   return (
     <div className="flex flex-col">
       <div className="space-y-5">
-        <header className="space-y-2">
-          <h1 className="font-display text-2xl leading-tight text-navy sm:text-3xl lg:text-[2rem]">
+        <header className="space-y-2.5">
+          <p className="eyebrow-pill">{categoryName}</p>
+          <h1 className="font-display text-3xl leading-[1.15] tracking-tight text-navy sm:text-4xl">
             {productName}
           </h1>
-          {sku ? <p className="text-xs tracking-wide text-muted">{sku}</p> : null}
-          <p className="text-sm text-navy/70">{brandName ?? categoryName}</p>
+          <p className="text-sm text-navy/65">{brandName ?? categoryName}</p>
+          {sku ? <p className="text-xs tracking-wide text-muted">SKU {sku}</p> : null}
         </header>
 
-        <div className="space-y-1">
+        <div className="rounded-2xl border border-navy/8 bg-luxury-cream/80 px-4 py-4 sm:px-5">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             {priceDisplay.showFromPrefix ? (
-              <span className="text-sm font-medium uppercase tracking-wide text-muted">From</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                From
+              </span>
             ) : null}
             {hasDiscount && priceDisplay.compareAt ? (
               <span className="text-base text-muted line-through">{priceDisplay.compareAt}</span>
             ) : null}
-            <span className="text-xl font-medium text-red sm:text-2xl">{priceDisplay.primary}</span>
+            <span className="font-display text-3xl font-medium text-navy sm:text-4xl">
+              {priceDisplay.primary}
+            </span>
             {hasDiscount ? (
-              <span className="text-sm font-medium text-red">
+              <span className="rounded-full bg-red/10 px-2.5 py-0.5 text-xs font-semibold text-red">
                 Save {priceDisplay.discountPercentage}%
               </span>
             ) : null}
           </div>
           {unitSubtitle && !isNumericRateValue(sellingUnit) ? (
-            <p className="text-sm text-muted">{unitSubtitle}</p>
+            <p className="mt-1.5 text-sm text-muted">{unitSubtitle}</p>
           ) : priceDisplay.unitLabel && isNumericRateValue(sellingUnit) ? (
-            <p className="text-sm text-muted">Final price depends on room size · sold per sq ft</p>
+            <p className="mt-1.5 text-sm text-muted">
+              Final price depends on room size · sold per sq ft
+            </p>
           ) : null}
         </div>
 
@@ -149,7 +157,7 @@ export function ProductPurchasePanel({
         {variantId && inStock ? (
           <ProductActions variantId={variantId} productName={productName} className="pt-1" />
         ) : !inStock ? (
-          <div className="border border-navy/10 bg-brand-50 px-4 py-4 text-sm text-muted">
+          <div className="rounded-2xl border border-navy/10 bg-brand-50 px-4 py-4 text-sm text-muted">
             This item is currently unavailable online.{" "}
             <OpenAssistantButton
               variant="ghost"
@@ -161,6 +169,21 @@ export function ProductPurchasePanel({
             </OpenAssistantButton>
           </div>
         ) : null}
+
+        <ul className="grid grid-cols-3 gap-2 text-center text-[11px] text-navy/70 sm:text-xs">
+          <li className="flex flex-col items-center gap-1.5 rounded-xl border border-navy/8 bg-white px-2 py-3">
+            <Truck className="h-4 w-4 text-red" aria-hidden />
+            <span>Pakistan-wide delivery</span>
+          </li>
+          <li className="flex flex-col items-center gap-1.5 rounded-xl border border-navy/8 bg-white px-2 py-3">
+            <Shield className="h-4 w-4 text-red" aria-hidden />
+            <span>Quality guaranteed</span>
+          </li>
+          <li className="flex flex-col items-center gap-1.5 rounded-xl border border-navy/8 bg-white px-2 py-3">
+            <RotateCcw className="h-4 w-4 text-red" aria-hidden />
+            <span>Easy returns</span>
+          </li>
+        </ul>
 
         {productId && productSlug ? (
           <ProductFeedback productId={productId} productSlug={productSlug} reviews={reviews} />
@@ -176,14 +199,14 @@ export function ProductPurchasePanel({
       />
 
       <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-navy/70">
-        <span className="font-medium uppercase tracking-[0.12em]">Share</span>
+        <span className="font-semibold uppercase tracking-[0.14em]">Share</span>
         <a
           href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
           target="_blank"
           rel="noopener noreferrer"
           className="hover:text-navy hover:underline"
         >
-          Share
+          Facebook
         </a>
         <a
           href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`}
@@ -191,7 +214,7 @@ export function ProductPurchasePanel({
           rel="noopener noreferrer"
           className="hover:text-navy hover:underline"
         >
-          Tweet
+          X
         </a>
       </div>
     </div>

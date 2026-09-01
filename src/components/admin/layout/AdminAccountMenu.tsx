@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Mail, Shield, UserRound } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, KeyRound, Mail, Shield, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type AdminAccount = {
@@ -91,6 +92,14 @@ export function AdminAccountMenu({ account }: { account: AdminAccount }) {
               </div>
             </div>
           </dl>
+          <Link
+            href="/admin/settings#change-password"
+            onClick={() => setOpen(false)}
+            className="mt-3 flex items-center gap-2 rounded-lg border border-navy/10 px-3 py-2 text-sm font-medium text-navy transition hover:bg-navy/5"
+          >
+            <KeyRound className="h-4 w-4 text-muted" />
+            Change password
+          </Link>
         </div>
       ) : null}
     </div>

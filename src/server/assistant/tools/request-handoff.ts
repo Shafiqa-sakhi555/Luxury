@@ -2,7 +2,7 @@ import { createHandoffRequest } from "../sessions";
 import type { ToolContext, ToolResult } from "./types";
 
 const HANDOFF_TRIGGERS =
-  /\b(speak to (a )?(human|person|agent|someone)|talk to (a )?(human|person|agent|staff)|call me back|human help|real person|manager|complaint|escalate)\b/i;
+  /\b(speak to (a )?(human|person|agent|someone)|talk to (a )?(human|person|agent|staff|someone)|call me back|human help|real person|customer (service|support)|manager|complaint|escalate)\b/i;
 
 function buildIssueSummary(message: string, messages?: ToolContext["messages"]) {
   const recentUser = (messages ?? [])

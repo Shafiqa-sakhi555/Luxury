@@ -22,7 +22,7 @@ export type ConsultationResult = {
 };
 
 const REPLY_SUGGESTIONS: Record<string, string[]> = {
-  room: ["Living room", "Bedroom", "Prayer space", "Office"],
+  room: ["Living room", "Bedroom", "Dining room", "Prayer space"],
   preferred_style: ["Modern", "Traditional", "Luxury", "Minimal", "Cozy"],
   preferred_colors: ["Light colours", "Dark colours", "Warm tones", "Cool tones"],
 };
