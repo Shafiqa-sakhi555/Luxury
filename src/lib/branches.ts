@@ -153,16 +153,39 @@ export const branches: Branch[] = [
 export const TOTAL_BRANCHES = branches.length;
 
 export function googleMapsDirectionsUrl(branch: Branch): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${branch.lat},${branch.lng}`;
+  return googleMapsDirectionsFromQuery(branch.googleMapsQuery, branch.lat, branch.lng);
 }
 
 export function googleMapsPlaceUrl(branch: Branch): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(branch.googleMapsQuery)}`;
+  return googleMapsPlaceFromQuery(branch.googleMapsQuery);
 }
 
 export function googleMapsEmbedUrl(branch: Branch): string {
-  const q = encodeURIComponent(`${branch.lat},${branch.lng}`);
-  return `https://maps.google.com/maps?q=${q}&hl=en&z=16&output=embed`;
+  return googleMapsEmbedFromQuery(branch.googleMapsQuery, branch.lat, branch.lng);
+}
+
+export function googleMapsEmbedFromQuery(query: string, lat?: number | null, lng?: number | null) {
+  if (lat != null && lng != null) {
+    return `https://maps.google.com/maps?q=${encodeURIComponent(`${lat},${lng}`)}&hl=en&z=16&output=embed`;
+  }
+  return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&hl=en&z=16&output=embed`;
+}
+
+export function googleMapsDirectionsFromQuery(query: string, lat?: number | null, lng?: number | null) {
+  const dest = lat != null && lng != null ? `${lat},${lng}` : encodeURIComponent(query);
+  return `https://www.google.com/maps/dir/?api=1&destination=${dest}`;
+}
+
+export function googleMapsPlaceFromQuery(query: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+export function findStaticBranch(slug: string, city?: string): Branch | undefined {
+  const key = slug.toLowerCase().replace(/-branch$/, "").trim();
+  const bySlug = branches.find((branch) => branch.id.replace(/-branch$/, "") === key);
+  if (bySlug) return bySlug;
+  if (!city) return undefined;
+  return branches.find((branch) => branch.city.toLowerCase() === city.toLowerCase());
 }
 
 export const regions = [...new Set(branches.map((b) => b.region))].sort();
