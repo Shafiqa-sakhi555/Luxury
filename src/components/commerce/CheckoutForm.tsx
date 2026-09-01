@@ -18,6 +18,8 @@ export type CheckoutLineItem = {
   quantity: number;
   unitPriceMinor: number;
   sku?: string;
+  color?: string;
+  size?: string;
 };
 
 type PaymentMethod = "card" | "cod";
@@ -587,6 +589,13 @@ export function CheckoutForm({
                     <p className="text-sm font-medium text-ink">{item.name}</p>
                   )}
                   {item.sku ? <p className="mt-0.5 text-xs text-neutral-500">{item.sku}</p> : null}
+                  {item.color || item.size ? (
+                    <p className="mt-0.5 text-xs text-neutral-500">
+                      {[item.color ? `Color: ${item.color}` : null, item.size ? `Size: ${item.size}` : null]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  ) : null}
                 </div>
                 <p className="text-sm font-medium text-ink">
                   {formatMoney(item.unitPriceMinor * item.quantity)}

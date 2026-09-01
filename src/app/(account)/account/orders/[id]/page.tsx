@@ -6,6 +6,7 @@ import { getOrderStatusMeta, canCustomerCancelOrder } from "@/lib/orders/status"
 import { CustomerOrderStatusBadge } from "@/components/account/CustomerOrderStatusBadge";
 import { CancelOrderButton } from "@/components/account/CancelOrderButton";
 import { Card } from "@/components/ui/card";
+import { variantDisplayFromOrderItem } from "@/lib/orders/line-item";
 
 export default async function AccountOrderDetailPage({
   params,
@@ -28,7 +29,7 @@ export default async function AccountOrderDetailPage({
   const { id } = await params;
   const { data: order } = await supabase
     .from("orders")
-    .select("*, order_items(*), order_status_history(*)")
+    .select("*, order_items(*, product_variants(color, size, name)), order_status_history(*)")
     .eq("id", id)
     .eq("customer_id", customer.id)
     .maybeSingle();
@@ -86,9 +87,14 @@ export default async function AccountOrderDetailPage({
           id: string;
           product_name: string;
           variant_sku: string;
+          variant_name?: string | null;
           quantity: number;
           line_total_minor: number;
-        }) => (
+          customization?: { color?: string | null; size?: string | null } | null;
+          product_variants?: { color?: string | null; size?: string | null; name?: string | null } | null;
+        }) => {
+          const variant = variantDisplayFromOrderItem(item);
+          return (
           <li
             key={item.id}
             className="flex justify-between rounded-xl border border-navy/10 bg-white p-4 text-sm"
@@ -96,12 +102,16 @@ export default async function AccountOrderDetailPage({
             <div>
               <p className="font-medium text-navy">{item.product_name}</p>
               <p className="text-xs text-muted">
-                {item.variant_sku} × {item.quantity}
+                {[variant.color ? `Color: ${variant.color}` : null, variant.size ? `Size: ${variant.size}` : null, item.variant_sku]
+                  .filter(Boolean)
+                  .join(" · ")}{" "}
+                × {item.quantity}
               </p>
             </div>
             <span className="tabular-nums">{formatMoney(item.line_total_minor)}</span>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       <div className="mt-6 flex items-center justify-between border-t border-navy/10 pt-4">
