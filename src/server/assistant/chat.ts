@@ -92,7 +92,7 @@ async function prepareRun(
   });
   const handoffCreated = toolResults.some((r) => r.tool === "request_handoff");
 
-  const consultationMeta =
+  const consultationMeta: AssistantChatResult["consultation"] =
     consultationState.mode !== "not_consultation"
       ? {
           mode: consultationState.mode,
@@ -115,7 +115,15 @@ async function prepareRun(
   if (consultationMeta) {
     consultationMeta.suggestedReplies = suggestedReplies;
     if (products.length && !consultationMeta.recommendations?.length) {
-      consultationMeta.recommendations = products;
+      consultationMeta.recommendations = products.map((product, index) => ({
+        ...product,
+        categorySlug: product.categorySlug ?? "",
+        priceMinor: product.priceMinor ?? 0,
+        imageUrl: product.imageUrl ?? null,
+        reason: product.reason ?? "",
+        score: products.length - index,
+        inStock: product.inStock ?? true,
+      }));
     }
   }
 
