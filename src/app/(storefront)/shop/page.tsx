@@ -10,6 +10,7 @@ import { CatalogPagination } from "@/components/commerce/CatalogPagination";
 import { PageContainer } from "@/components/ui/page-container";
 import { EmptyState } from "@/components/ui/empty-state";
 import { normalizeCategorySlug, formatCategoryLabel } from "@/lib/supabase/catalog-categories";
+import { STOREFRONT_PRODUCT_PAGE_SIZE } from "@/lib/catalog/storefront-pagination";
 
 export const revalidate = 60;
 
@@ -35,8 +36,14 @@ export default async function ShopPage({
       categorySlug: requestedCategorySlug ?? undefined,
       search: params.q,
       page,
-      pageSize: 24,
-    }).catch(() => ({ items: [], total: 0, page: 1, pageSize: 24, totalPages: 0 })),
+      pageSize: STOREFRONT_PRODUCT_PAGE_SIZE,
+    }).catch(() => ({
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: STOREFRONT_PRODUCT_PAGE_SIZE,
+      totalPages: 0,
+    })),
     listShopFilterCategories().catch(() => []),
     resolvedCategorySlug
       ? getCategoryBySlug(resolvedCategorySlug).catch(() => null)
@@ -110,20 +117,15 @@ export default async function ShopPage({
           </ProductGrid>
         )}
 
-        {totalPages > 1 && (
+        {items.length > 0 ? (
           <CatalogPagination
             className="mt-12"
-            page={page}
+            page={Math.min(page, Math.max(totalPages, 1))}
             totalPages={totalPages}
-            buildHref={(p) => {
-              const query = new URLSearchParams();
-              if (params.category) query.set("category", params.category);
-              if (params.q) query.set("q", params.q);
-              if (p > 1) query.set("page", String(p));
-              return query.size ? `/shop?${query.toString()}` : "/shop";
-            }}
+            pathname="/shop"
+            query={{ category: params.category, q: params.q }}
           />
-        )}
+        ) : null}
       </PageContainer>
     </div>
   );

@@ -13,6 +13,7 @@ import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
 import { homeJsonLd } from "@/lib/seo";
 import { shopStyles } from "@/lib/marketing";
 import { listProducts, listShopFilterCategories, listShopCategoryCards } from "@/server/catalog/products";
+import { HOMEPAGE_PRODUCT_FETCH_SIZE } from "@/lib/catalog/storefront-pagination";
 import { listActiveStorefrontBranches } from "@/server/stores/queries";
 import { listActiveStorefrontReviews } from "@/server/reviews/queries";
 import { listActiveStorefrontShopStyles } from "@/server/shop-styles/queries";
@@ -22,11 +23,11 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const [{ items }, filterCategories, categoryCards, branches, reviews, dbShopStyles] =
     await Promise.all([
-      listProducts({ pageSize: 12 }).catch(() => ({
+      listProducts({ pageSize: HOMEPAGE_PRODUCT_FETCH_SIZE }).catch(() => ({
         items: [],
         total: 0,
         page: 1,
-        pageSize: 12,
+        pageSize: HOMEPAGE_PRODUCT_FETCH_SIZE,
         totalPages: 0,
       })),
       listShopFilterCategories().catch(() => []),

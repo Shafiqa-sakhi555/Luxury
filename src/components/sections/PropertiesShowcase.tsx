@@ -6,8 +6,10 @@ import { ArrowRight } from "lucide-react";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { ProductCard } from "@/components/commerce/ProductCard";
 import { ProductGrid } from "@/components/commerce/ProductGrid";
+import { CatalogPagination } from "@/components/commerce/CatalogPagination";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { HOMEPAGE_PRODUCT_PAGE_SIZE, paginateItems } from "@/lib/catalog/storefront-pagination";
 import type { CatalogProduct } from "@/types/catalog";
 
 type FilterItem = {
@@ -27,6 +29,7 @@ export function PropertiesShowcase({
   showViewAllLink?: boolean;
 }) {
   const [activeSlug, setActiveSlug] = useState<string | undefined>(initialCategorySlug);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     setActiveSlug(initialCategorySlug);
@@ -41,6 +44,24 @@ export function PropertiesShowcase({
     if (!activeSlug) return products;
     return products.filter((product) => product.category.slug === activeSlug);
   }, [activeSlug, products]);
+
+  const paged = useMemo(
+    () => paginateItems(filtered, page, HOMEPAGE_PRODUCT_PAGE_SIZE),
+    [filtered, page]
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeSlug]);
+
+  useEffect(() => {
+    if (page !== paged.page) setPage(paged.page);
+  }, [page, paged.page]);
+
+  function goToPage(next: number) {
+    setPage(next);
+    document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <section id="products" className="relative overflow-hidden section-brand-light section-spacing-md">
@@ -70,7 +91,10 @@ export function PropertiesShowcase({
               <button
                 key={filter.slug ?? "all"}
                 type="button"
-                onClick={() => setActiveSlug(filter.slug)}
+                onClick={() => {
+                  setActiveSlug(filter.slug);
+                  setPage(1);
+                }}
                 className={cn(
                   "shrink-0 rounded-full px-4 py-2 text-xs transition-all duration-300 sm:px-5 sm:text-sm",
                   activeSlug === filter.slug || (!activeSlug && !filter.slug)
@@ -96,16 +120,29 @@ export function PropertiesShowcase({
             </Link>
           </div>
         ) : (
-          <ProductGrid>
-            {filtered.map((product, index) => (
-              <ProductCard
-                key={`${product.source}-${product.id}`}
-                product={product}
-                index={index}
-                priorityImage={index < 4}
-              />
-            ))}
-          </ProductGrid>
+          <>
+            <ProductGrid>
+              {paged.items.map((product, index) => (
+                <ProductCard
+                  key={`${product.source}-${product.id}`}
+                  product={product}
+                  index={index}
+                  priorityImage={index < 4}
+                />
+              ))}
+            </ProductGrid>
+            <CatalogPagination
+              className="mt-10"
+              page={paged.page}
+              totalPages={paged.totalPages}
+              onPageChange={goToPage}
+            />
+            {paged.totalPages > 1 ? (
+              <p className="mt-4 text-center text-sm text-navy/50">
+                Page {paged.page} of {paged.totalPages} · {filtered.length} products
+              </p>
+            ) : null}
+          </>
         )}
       </div>
     </section>

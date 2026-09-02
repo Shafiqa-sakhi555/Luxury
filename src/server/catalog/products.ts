@@ -156,7 +156,8 @@ export async function listProducts(
     };
   });
 
-  const total = count ?? 0;
+  const fetched = (page - 1) * pageSize + items.length;
+  const total = Math.max(count ?? 0, fetched);
   return {
     items,
     total,

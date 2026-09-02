@@ -42,8 +42,12 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
   }
 
   function isCollectionsActive() {
-    return shopCategories.some(
-      (cat) => pathname === cat.href || pathname.startsWith(`${cat.href}/`)
+    return (
+      pathname === "/categories" ||
+      pathname.startsWith("/categories/") ||
+      shopCategories.some(
+        (cat) => pathname === cat.href || pathname.startsWith(`${cat.href}/`)
+      )
     );
   }
 
@@ -196,6 +200,18 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
                     >
                       <div className="brand-accent-bar absolute inset-x-0 top-0" />
                       <div className="relative flex flex-col py-1">
+                        <Link
+                          href="/categories"
+                          role="menuitem"
+                          aria-current={pathname === "/categories" ? "page" : undefined}
+                          className={cn(
+                            "px-4 py-2.5 text-sm font-medium transition-colors hover:bg-luxury-cream hover:text-red",
+                            pathname === "/categories" ? "text-red" : "text-navy"
+                          )}
+                          onClick={() => setCollectionsOpen(false)}
+                        >
+                          All collections
+                        </Link>
                         {shopCategories.map((category) => (
                           <Link
                             key={category.slug}
@@ -341,6 +357,13 @@ export function Navbar({ shopCategories = [] }: { shopCategories?: ShopNavCatego
                         className="overflow-hidden"
                       >
                         <div className="mt-3 ml-2 flex flex-col gap-2 border-l-2 border-red/20 pl-4">
+                          <Link
+                            href="/categories"
+                            onClick={() => setMobileOpen(false)}
+                            className="text-lg text-navy/75 hover:text-red"
+                          >
+                            All collections
+                          </Link>
                           {shopCategories.map((category) => (
                             <Link
                               key={category.slug}
