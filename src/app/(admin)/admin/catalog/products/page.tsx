@@ -65,7 +65,7 @@ export default async function AdminProductsPage({
               <RepairProductImagesButton />
               <Link
                 href="/admin/catalog/products/new"
-                className="inline-flex h-9 items-center rounded-lg bg-navy px-4 text-sm font-medium text-white hover:bg-navy/90"
+                className="inline-flex h-9 items-center rounded-full bg-navy px-4 text-sm font-medium text-white hover:bg-navy/90"
               >
                 New product
               </Link>

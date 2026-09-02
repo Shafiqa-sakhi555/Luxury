@@ -28,7 +28,7 @@ const capabilities = [
 
 const quickPrompts = [
   "Help me design my living room",
-  "Show me curtain options",
+  "Show dining tables",
   "Where is my nearest showroom?",
 ];
 
@@ -48,7 +48,7 @@ export function JalalAssistanceSection() {
             <SectionHeading
               eyebrow="Jalal Assistance"
               title="Your Personal Design Consultant"
-              description="Get tailored recommendations for curtains, carpets, and prayer mats — powered by live catalog data, not generic chatbot replies."
+              description="Chat like you would in our showroom. Get honest answers from the website — products, prices, stores, delivery, and orders — plus room-by-room design help."
               light
               className="mb-0"
             />
@@ -127,7 +127,7 @@ export function JalalAssistanceSection() {
                   </div>
                   <div>
                     <p className="font-medium text-text-on-dark">Jalal Assistance</p>
-                    <p className="text-xs text-text-on-dark/60">Live catalog · design · support</p>
+                    <p className="text-xs text-text-on-dark/60">Friendly chat · live catalog · stores</p>
                   </div>
                   <Sparkles className="ml-auto h-4 w-4 text-accent" />
                 </div>
@@ -138,7 +138,7 @@ export function JalalAssistanceSection() {
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <p className="text-sm leading-relaxed text-text-on-dark/85">
                   &ldquo;Tell me about your room — style, colours, and budget — and I&apos;ll recommend
-                  curtains, carpets, or prayer mats from our live catalog with real prices.&rdquo;
+                  carpets, curtains, furniture, or dining sets from our live catalog with real prices.&rdquo;
                 </p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-accent/10 p-4">

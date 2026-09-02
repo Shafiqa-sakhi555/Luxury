@@ -21,10 +21,11 @@ export default async function StoresPage() {
 
   return (
     <div>
-      <section className="border-b border-navy/10 bg-white pb-12 pt-[calc(var(--site-header-height)+2.5rem)] sm:pb-16 sm:pt-[calc(var(--site-header-height-sm)+3rem)]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-red">Visit us</p>
-          <h1 className="mt-2 font-display text-4xl text-navy sm:text-5xl">
+      <section className="relative overflow-hidden border-b border-navy/10 section-brand-light pb-12 pt-[calc(var(--site-header-height)+2.5rem)] sm:pb-16 sm:pt-[calc(var(--site-header-height-sm)+3rem)]">
+        <div className="blob-red left-0 top-10 h-64 w-64 opacity-30" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <p className="eyebrow-pill">Visit us</p>
+          <h1 className="mt-4 font-display text-4xl tracking-tight text-navy sm:text-5xl">
             {locatorBranches.length} Showrooms Across Gilgit-Baltistan
           </h1>
           <p className="mt-4 max-w-2xl text-muted">

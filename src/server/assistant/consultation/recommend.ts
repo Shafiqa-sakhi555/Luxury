@@ -1,5 +1,4 @@
 import { listProducts } from "@/server/catalog/products";
-import { SUPABASE_CATALOG_SLUGS } from "@/lib/supabase/catalog-categories";
 import { formatMoney } from "@/lib/money";
 import type { MatchedConsultationRule } from "./rules";
 import type { ConsultationProfile } from "./profile";
@@ -83,7 +82,7 @@ export async function recommendConsultationProducts(input: {
 
   const categories =
     topRule.search.categories ??
-    (input.profile.categorySlug ? [input.profile.categorySlug] : [...SUPABASE_CATALOG_SLUGS]);
+    (input.profile.categorySlug ? [input.profile.categorySlug] : ["curtains", "carpets", "prayer-mats", "furniture", "table"]);
 
   const colorHints = [
     ...(topRule.search.color_hints ?? []),
@@ -99,8 +98,6 @@ export async function recommendConsultationProducts(input: {
   const collected: ConsultationRecommendation[] = [];
 
   for (const categorySlug of categories) {
-    if (!(SUPABASE_CATALOG_SLUGS as readonly string[]).includes(categorySlug)) continue;
-
     const result = await listProducts({
       categorySlug,
       pageSize: 20,
@@ -135,7 +132,6 @@ export async function recommendConsultationProducts(input: {
 
   if (collected.length === 0) {
     for (const categorySlug of categories) {
-      if (!(SUPABASE_CATALOG_SLUGS as readonly string[]).includes(categorySlug)) continue;
       const result = await listProducts({ categorySlug, pageSize: 3, sort: "name" });
       for (const product of result.items) {
         if (input.profile.budgetMaxMinor && product.salePriceMinor > input.profile.budgetMaxMinor) {

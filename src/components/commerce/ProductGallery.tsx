@@ -25,7 +25,7 @@ export function ProductGallery({
 
   if (!active) {
     return (
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-brand-50">
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl bg-luxury-cream ring-1 ring-navy/8">
         <div className="flex h-full items-center justify-center">
           <span className="font-display text-lg text-navy/30">{productName}</span>
         </div>
@@ -36,17 +36,17 @@ export function ProductGallery({
   return (
     <div className="flex gap-3 sm:gap-4">
       {sorted.length > 1 ? (
-        <div className="hidden shrink-0 flex-col gap-2 sm:flex">
+        <div className="hidden shrink-0 flex-col gap-2.5 sm:flex">
           {sorted.map((img, index) => (
             <button
               key={img.id}
               type="button"
               onClick={() => setActiveIndex(index)}
               className={cn(
-                "relative h-16 w-16 overflow-hidden border transition lg:h-[72px] lg:w-[72px]",
+                "relative h-16 w-16 overflow-hidden rounded-xl ring-1 transition lg:h-[76px] lg:w-[76px]",
                 index === activeIndex
-                  ? "border-navy ring-1 ring-navy"
-                  : "border-navy/15 hover:border-navy/40"
+                  ? "ring-2 ring-navy"
+                  : "ring-navy/12 hover:ring-navy/40"
               )}
               aria-label={`View image ${index + 1}`}
               aria-current={index === activeIndex}
@@ -56,7 +56,7 @@ export function ProductGallery({
                 alt={img.alt ?? `${productName} ${index + 1}`}
                 fill
                 className="object-cover"
-                sizes="72px"
+                sizes="76px"
                 loading="lazy"
               />
             </button>
@@ -65,12 +65,12 @@ export function ProductGallery({
       ) : null}
 
       <div className="relative min-w-0 flex-1">
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-white">
+        <div className="group relative aspect-[4/5] w-full overflow-hidden rounded-3xl bg-luxury-cream ring-1 ring-navy/8">
           <Image
             src={getOptimizedImageUrl(active.url, { width: 1200, crop: "limit" })}
             alt={active.alt ?? productName}
             fill
-            className="object-cover"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
             priority
             sizes="(max-width: 1024px) 100vw, 45vw"
           />
@@ -84,10 +84,8 @@ export function ProductGallery({
                 type="button"
                 onClick={() => setActiveIndex(index)}
                 className={cn(
-                  "relative h-16 w-16 shrink-0 overflow-hidden border transition",
-                  index === activeIndex
-                    ? "border-navy ring-1 ring-navy"
-                    : "border-navy/15"
+                  "relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 transition",
+                  index === activeIndex ? "ring-2 ring-navy" : "ring-navy/15"
                 )}
                 aria-label={`View image ${index + 1}`}
               >

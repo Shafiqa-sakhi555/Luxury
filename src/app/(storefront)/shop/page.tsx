@@ -3,9 +3,10 @@ import { listProducts, listShopFilterCategories, getCategoryBySlug, resolveShopC
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { SupabaseSetupNotice } from "@/components/shared/SupabaseSetupNotice";
 import { ProductCard } from "@/components/commerce/ProductCard";
+import { ProductGrid } from "@/components/commerce/ProductGrid";
+import { CatalogHero } from "@/components/commerce/CatalogHero";
 import { CatalogFilterPills } from "@/components/commerce/CatalogFilterPills";
 import { CatalogPagination } from "@/components/commerce/CatalogPagination";
-import { SectionHeading } from "@/components/shared/SectionHeading";
 import { PageContainer } from "@/components/ui/page-container";
 import { EmptyState } from "@/components/ui/empty-state";
 import { normalizeCategorySlug, formatCategoryLabel } from "@/lib/supabase/catalog-categories";
@@ -57,41 +58,37 @@ export default async function ShopPage({
     })),
   ];
 
+  const countLabel =
+    total > 0
+      ? `${total} product${total !== 1 ? "s" : ""}${totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}`
+      : undefined;
+
   return (
     <div>
-      <section className="relative overflow-hidden section-brand-light pt-28 pb-12 sm:pb-16">
-        <div className="blob-red left-0 top-10 h-64 w-64 opacity-40" />
-        <PageContainer className="relative">
-          <SectionHeading
-            eyebrow="Shop"
-            title={activeCategory ? activeCategory.name : "Full Catalog"}
-            description={
-              activeCategory
-                ? `Browse our ${activeCategory.name.toLowerCase()} collection — premium quality with transparent pricing.`
-                : "Browse carpets, rugs, curtains, furniture, flooring and home décor — curated for elegant living."
-            }
-            className="mb-0"
-          />
-          {total > 0 && (
-            <p className="mt-4 text-sm text-muted">
-              {total} product{total !== 1 ? "s" : ""}
-              {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
-            </p>
-          )}
-        </PageContainer>
-      </section>
+      <CatalogHero
+        eyebrow="Shop"
+        title={activeCategory ? activeCategory.name : "Full Catalog"}
+        description={
+          activeCategory
+            ? `Browse our ${activeCategory.name.toLowerCase()} collection — premium quality with transparent pricing.`
+            : "Browse carpets, rugs, curtains, furniture, flooring and home décor — curated for elegant living."
+        }
+        countLabel={countLabel}
+      />
 
       <PageContainer className="relative py-10 sm:py-12">
         {!supabaseReady && <SupabaseSetupNotice className="mb-8" />}
 
-        <CatalogFilterPills
-          items={filterItems}
-          activeSlug={resolvedCategorySlug ?? params.category}
-        />
+        <div className="catalog-toolbar">
+          <CatalogFilterPills
+            items={filterItems}
+            activeSlug={resolvedCategorySlug ?? params.category}
+          />
+        </div>
 
         {items.length === 0 ? (
           <EmptyState
-            className="mt-10 surface-card"
+            className="mt-2 surface-card"
             title={params.q ? "No matching products" : "No products found"}
             description={
               params.q
@@ -101,7 +98,7 @@ export default async function ShopPage({
             action={{ label: "View all products", href: "/shop" }}
           />
         ) : (
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
+          <ProductGrid>
             {items.map((product, i) => (
               <ProductCard
                 key={`${product.source}-${product.id}`}
@@ -110,7 +107,7 @@ export default async function ShopPage({
                 priorityImage={i < 4}
               />
             ))}
-          </div>
+          </ProductGrid>
         )}
 
         {totalPages > 1 && (

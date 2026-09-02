@@ -33,10 +33,10 @@ export function ProductOptionSelector({
               type="button"
               onClick={() => onChange(option.id)}
               className={cn(
-                "min-w-[88px] border px-4 py-3 text-left text-sm transition",
+                "min-w-[88px] rounded-xl border px-4 py-3 text-left text-sm transition",
                 active
-                  ? "border-navy bg-navy text-white"
-                  : "border-navy/20 bg-white text-navy hover:border-navy/50"
+                  ? "border-navy bg-navy text-white shadow-sm"
+                  : "border-navy/15 bg-white text-navy hover:border-navy/40"
               )}
             >
               <span className="block font-medium leading-tight">{option.label}</span>

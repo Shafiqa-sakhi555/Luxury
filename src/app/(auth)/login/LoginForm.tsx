@@ -15,7 +15,14 @@ export function LoginForm() {
   const callbackUrl = searchParams.get("callbackUrl") ?? "/account";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    searchParams.get("error") === "reset_expired"
+      ? "That reset link has expired. Request a new one below."
+      : ""
+  );
+  const [notice] = useState(
+    searchParams.get("reset") === "success" ? "Password updated. Sign in with your new password." : ""
+  );
   const [loading, setLoading] = useState(false);
 
   const supabase = tryCreateSupabaseBrowserClient();
@@ -103,7 +110,12 @@ export function LoginForm() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-navy">Password</label>
+          <div className="mb-1 flex items-center justify-between gap-3">
+            <label className="block text-sm font-medium text-navy">Password</label>
+            <Link href="/forgot-password" className="text-xs font-medium text-navy hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <Input
             type="password"
             value={password}
@@ -112,6 +124,7 @@ export function LoginForm() {
             autoComplete="current-password"
           />
         </div>
+        {notice && <p className="text-sm text-emerald">{notice}</p>}
         {error && <p className="text-sm text-red">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}

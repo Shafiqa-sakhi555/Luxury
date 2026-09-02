@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { ProductCard } from "@/components/commerce/ProductCard";
+import { ProductGrid } from "@/components/commerce/ProductGrid";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { CatalogProduct } from "@/types/catalog";
@@ -95,7 +96,7 @@ export function PropertiesShowcase({
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
+          <ProductGrid>
             {filtered.map((product, index) => (
               <ProductCard
                 key={`${product.source}-${product.id}`}
@@ -104,7 +105,7 @@ export function PropertiesShowcase({
                 priorityImage={index < 4}
               />
             ))}
-          </div>
+          </ProductGrid>
         )}
       </div>
     </section>

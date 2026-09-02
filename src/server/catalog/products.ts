@@ -276,26 +276,73 @@ export async function resolveShopCategorySlug(inputSlug?: string | null) {
 export async function listCategories(includeDraft = false) {
   if (!isSupabaseConfigured()) return [];
   const supabase = createSupabaseAdminClient();
-  
-  const { data } = await supabase
+
+  let query = supabase
     .from("categories")
     .select("*, products(count)")
-    .is("parent_id", null)
-    .order("sort_order", { ascending: true });
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
 
-  return (data ?? []).map((cat: any) => ({
-    id: cat.id,
-    name: cat.name,
-    slug: cat.slug,
-    description: cat.description,
-    heroImage: cat.image_url,
-    heroImagePublicId: cat.cloudinary_public_id ?? null,
-    parentId: cat.parent_id,
-    sortOrder: cat.sort_order,
-    status: cat.is_active ? "ACTIVE" : "ARCHIVED",
-    _count: { products: cat.products?.[0]?.count ?? 0 },
-    children: [],
-  }));
+  if (!includeDraft) {
+    query = query.eq("is_active", true);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  type CategoryNode = {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    heroImage: string | null;
+    heroImagePublicId: string | null;
+    parentId: string | null;
+    sortOrder: number;
+    status: "ACTIVE" | "ARCHIVED";
+    _count: { products: number };
+    children: CategoryNode[];
+  };
+
+  const nodes = new Map<string, CategoryNode>();
+
+  for (const cat of data ?? []) {
+    nodes.set(cat.id, {
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      description: cat.description,
+      heroImage: cat.image_url,
+      heroImagePublicId: cat.cloudinary_public_id ?? null,
+      parentId: cat.parent_id,
+      sortOrder: cat.sort_order,
+      status: cat.is_active ? "ACTIVE" : "ARCHIVED",
+      _count: { products: cat.products?.[0]?.count ?? 0 },
+      children: [],
+    });
+  }
+
+  const roots: CategoryNode[] = [];
+
+  for (const node of nodes.values()) {
+    if (node.parentId && nodes.has(node.parentId)) {
+      nodes.get(node.parentId)!.children.push(node);
+      continue;
+    }
+    if (!node.parentId) {
+      roots.push(node);
+    }
+  }
+
+  for (const root of roots) {
+    root.children.sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)
+    );
+  }
+
+  return roots;
 }
 
 export async function getCategoryBySlug(slug: string) {

@@ -53,7 +53,7 @@
     {
       "id": "faq-what-we-sell",
       "question": "What does Jalal sell?",
-      "answer": "Our live online catalog includes curtains, carpets (rugs and wall-to-wall), and prayer mats. For current products and prices, browse the website or ask me to search the catalog.",
+      "answer": "We sell carpets, rugs, curtains, prayer mats, furniture (sofas, beds, tables, dining sets, chairs, cupboards), flooring, cushions, and home décor. Ask me to search the live catalog for current products and prices.",
       "category": "Products",
       "source": "Supabase catalog categories",
       "verified": true

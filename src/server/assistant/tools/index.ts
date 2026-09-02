@@ -5,6 +5,7 @@ import { runGetMyCart } from "./get-my-cart";
 import { runGetMyOrders, runGetOrderStatus } from "./get-my-orders";
 import { runGetPolicy } from "./get-policy";
 import { runGetProduct } from "./get-product";
+import { runGetSiteInfo } from "./get-site-info";
 import { runRequestHandoff } from "./request-handoff";
 import { runSearchFaq } from "./search-faq";
 import { runSearchProducts } from "./search-products";
@@ -33,6 +34,7 @@ export async function runAssistantTools(ctx: ToolContext): Promise<ToolResult[]>
   }
 
   const catalogRunners = [
+    runGetSiteInfo,
     runGetProduct,
     runCheckStock,
     runGetBranches,

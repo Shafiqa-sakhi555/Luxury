@@ -176,28 +176,25 @@ export async function adminListAllProducts(params: {
 }
 
 export async function adminListCategoryOptions(): Promise<AdminCategoryOption[]> {
-  const options: AdminCategoryOption[] = [];
+  if (!isSupabaseConfigured()) return [];
 
-  if (isSupabaseConfigured()) {
-    const supabase = createSupabaseAdminClient();
-    const { data } = await supabase
-      .from("categories")
-      .select("id, name, slug, parent_id")
-      .eq("is_active", true)
-      .order("sort_order")
-      .order("name");
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, name, slug, parent_id, is_active")
+    .order("sort_order")
+    .order("name");
 
-    for (const cat of data ?? []) {
-      options.push({
-        id: cat.id,
-        name: cat.name,
-        slug: cat.slug,
-        parentId: cat.parent_id ?? null,
-      });
-    }
+  if (error) {
+    throw new Error(error.message);
   }
 
-  return options;
+  return (data ?? []).map((cat) => ({
+    id: cat.id,
+    name: cat.is_active ? cat.name : `${cat.name} (inactive)`,
+    slug: cat.slug,
+    parentId: cat.parent_id ?? null,
+  }));
 }
 
 export async function adminGetProduct(

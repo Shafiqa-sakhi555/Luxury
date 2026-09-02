@@ -321,6 +321,16 @@ export function ProductForm({ categories, product }: ProductFormProps) {
         </div>
       )}
 
+      {categories.length === 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          No categories found. Create at least one category under{" "}
+          <a href="/admin/catalog/categories" className="font-medium underline">
+            Admin → Categories
+          </a>{" "}
+          before adding products.
+        </div>
+      )}
+
       {isLegacyImportProduct && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           This product has imported color/design variants (e.g. carpet collections). You can update
