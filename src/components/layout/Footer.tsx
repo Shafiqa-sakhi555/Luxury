@@ -11,7 +11,7 @@ import { company } from "@/lib/content";
 
 const footerColumns = {
   Shop: [
-    { label: "All Collections", href: "/shop" },
+    { label: "All Collections", href: "/categories" },
     { label: "Carpets & Rugs", href: "/categories/carpets" },
     { label: "Curtains", href: "/categories/curtains" },
     { label: "Prayer Mats", href: "/categories/prayer-mats" },
