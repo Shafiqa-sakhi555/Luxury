@@ -1,7 +1,6 @@
 import { getAssistantMaxHistory, isAssistantEnabled } from "./config";
 import type { AssistantUserContext } from "./context";
 import { runConsultation, type ConsultationResult } from "./consultation";
-import type { ConsultationRecommendation } from "./consultation/recommend";
 import { chatWithOllama, isOllamaReachable, streamChatWithOllama } from "./ollama";
 import { buildSystemPrompt } from "./prompts";
 import { formatRagContext, searchKnowledge } from "./rag/search";
@@ -31,7 +30,7 @@ export type AssistantChatResult = {
     mode: ConsultationResult["mode"];
     profileSummary?: string;
     nextQuestion?: string;
-    recommendations?: ConsultationRecommendation[];
+    recommendations?: AssistantProductRecommendation[];
     suggestedReplies?: string[];
   };
   suggestedReplies?: string[];
