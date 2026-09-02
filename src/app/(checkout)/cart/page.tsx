@@ -27,7 +27,8 @@ export default async function CartPage() {
   return (
     <PageContainer width="narrow" className="py-8 sm:py-10">
       <div>
-      <h1 className="font-display text-3xl text-navy">Your cart</h1>
+      <p className="eyebrow-pill w-fit">Cart</p>
+      <h1 className="mt-3 font-display text-3xl tracking-tight text-navy sm:text-4xl">Your cart</h1>
       {!user && cart?.cart_items?.length ? (
         <p className="mt-2 text-sm text-muted">
           You can checkout as a guest.{" "}
@@ -66,8 +67,8 @@ export default async function CartPage() {
                 });
 
                 return (
-                  <li key={item.id} className="flex gap-4 rounded-xl border border-navy/10 bg-white p-4">
-                    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg">
+                  <li key={item.id} className="flex gap-4 rounded-2xl border border-navy/8 bg-white p-4 shadow-sm">
+                    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-luxury-cream ring-1 ring-navy/8">
                       <Image
                         src={image}
                         alt={productRow?.name ?? "Product"}
@@ -97,8 +98,8 @@ export default async function CartPage() {
               })}
             </ul>
             <aside className="h-fit">
-              <Card padding="md">
-                <h2 className="font-medium text-navy">Order summary</h2>
+              <Card padding="md" className="sticky top-6">
+                <h2 className="font-display text-xl text-navy">Order summary</h2>
               <dl className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted">Subtotal</dt>

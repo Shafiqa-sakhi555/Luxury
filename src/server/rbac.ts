@@ -141,8 +141,35 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
 
 export async function hasPermission(userId: string, permission: string): Promise<boolean> {
   const perms = await getUserPermissions(userId);
+  return permissionMatches(perms, permission);
+}
+
+function permissionMatches(perms: Set<string>, permission: string): boolean {
   if (perms.has("*")) return true;
-  return perms.has(permission);
+  if (perms.has(permission)) return true;
+  if (permission === "catalog.write" && perms.has("category.write")) return true;
+  if (permission === "category.write" && perms.has("catalog.write")) return true;
+  if (permission === "catalog.delete" && perms.has("category.delete")) return true;
+  if (permission === "category.delete" && perms.has("catalog.delete")) return true;
+  return false;
+}
+
+export async function requireAnyPermission(...permissions: string[]) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    throw new AuthorizationError("Unauthorized");
+  }
+
+  const userPermissions = await getUserPermissions(user.id);
+  const allowed = permissions.some((permission) => permissionMatches(userPermissions, permission));
+  if (!allowed) {
+    throw new AuthorizationError("Forbidden");
+  }
+  return user;
 }
 
 export async function requirePermission(permission: string) {

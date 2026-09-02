@@ -94,16 +94,16 @@ export function ProductCard({
       whileInView={index < 8 ? { opacity: 1, y: 0 } : undefined}
       viewport={{ once: true, margin: "-5%" }}
       transition={{ duration: 0.35, delay: Math.min(index, 7) * 0.03 }}
-      className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-navy/8 transition-all hover:-translate-y-1 hover:shadow-xl hover:ring-red/20"
+      className="group flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-navy/8 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-navy/10 hover:ring-red/20"
     >
       <Link href={`/products/${product.slug}`} className="block">
-        <div className="relative aspect-square overflow-hidden bg-mist">
+        <div className="relative aspect-[4/5] overflow-hidden bg-luxury-cream">
           {primaryImage ? (
             <Image
-              src={getOptimizedImageUrl(primaryImage, { width: 600, height: 600, crop: "fill" })}
+              src={getOptimizedImageUrl(primaryImage, { width: 720, height: 900, crop: "fill" })}
               alt={product.name}
               fill
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
+              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               priority={priorityImage}
               loading={priorityImage ? undefined : "lazy"}
@@ -114,19 +114,21 @@ export function ProductCard({
             </div>
           )}
 
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/35 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
           <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1.5 sm:left-3 sm:top-3">
             {hasDiscount && (
-              <span className="rounded-md bg-red px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+              <span className="rounded-full bg-red px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm">
                 -{priceDisplay.discountPercentage}%
               </span>
             )}
             {product.isFeatured && (
-              <span className="rounded-md bg-navy/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+              <span className="rounded-full bg-navy/90 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
                 Featured
               </span>
             )}
             {!inStock && (
-              <span className="rounded-md bg-navy/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+              <span className="rounded-full bg-navy/80 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow-sm">
                 Sold out
               </span>
             )}
@@ -140,25 +142,25 @@ export function ProductCard({
               setWishlisted((v) => !v);
               toast.success(wishlisted ? "Removed from wishlist" : "Saved to wishlist");
             }}
-            className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm transition-all hover:scale-110 sm:right-3 sm:top-3 sm:h-9 sm:w-9"
+            className="absolute right-2.5 top-2.5 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-md ring-1 ring-navy/8 transition-all hover:scale-110 sm:right-3 sm:top-3"
             aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
           >
             <Heart
               className={cn(
-                "h-3.5 w-3.5 sm:h-4 sm:w-4",
-                wishlisted ? "fill-red text-red" : "text-navy/35"
+                "h-4 w-4",
+                wishlisted ? "fill-red text-red" : "text-navy/40"
               )}
             />
           </button>
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col p-3 sm:p-4">
-        <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-blue sm:text-[11px]">
+      <div className="flex flex-1 flex-col p-3.5 sm:p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-red/80 sm:text-[11px]">
           {product.category.name}
         </p>
         <Link href={`/products/${product.slug}`}>
-          <h2 className="mt-1 line-clamp-2 font-display text-sm leading-snug text-navy transition hover:text-red sm:text-base">
+          <h2 className="mt-1 line-clamp-2 font-display text-[0.95rem] leading-snug text-navy transition hover:text-red sm:text-lg">
             {product.name}
           </h2>
         </Link>
@@ -178,13 +180,17 @@ export function ProductCard({
                 From
               </span>
             )}
-            <span className="text-sm font-semibold text-navy sm:text-base">{priceDisplay.primary}</span>
+            <span className="font-display text-lg font-medium text-navy sm:text-xl">
+              {priceDisplay.primary}
+            </span>
             {priceDisplay.compareAt && (
-              <span className="text-[11px] text-muted line-through sm:text-xs">{priceDisplay.compareAt}</span>
+              <span className="text-[11px] text-muted line-through sm:text-xs">
+                {priceDisplay.compareAt}
+              </span>
             )}
           </div>
           {inStock ? (
-            <StockBadge status={product.stockStatus} className="scale-90 origin-right" />
+            <StockBadge status={product.stockStatus} className="origin-right scale-90" />
           ) : (
             <span className="text-[10px] font-medium uppercase tracking-wide text-navy/50 sm:text-[11px]">
               Unavailable

@@ -8,8 +8,11 @@ import {
   ProductSimpleDetail,
 } from "@/components/commerce/ProductVariantSelector";
 import { ProductCard } from "@/components/commerce/ProductCard";
+import { ProductGrid } from "@/components/commerce/ProductGrid";
+import { Breadcrumbs } from "@/components/commerce/Breadcrumbs";
 import { PageContainer } from "@/components/ui/page-container";
 import { Section } from "@/components/ui/section";
+import { SectionHeading } from "@/components/shared/SectionHeading";
 
 export const dynamic = "force-dynamic";
 
@@ -45,8 +48,18 @@ export default async function ProductPage({
   const freeDeliveryThresholdLabel = formatMoney(settings.freeDeliveryThresholdMinor);
 
   return (
-    <div className="bg-white">
+    <div className="bg-luxury-cream">
       <PageContainer className="pb-16 pt-site-header">
+        <Breadcrumbs
+          className="mb-8"
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Shop", href: "/shop" },
+            { label: product.category.name, href: `/categories/${product.category.slug}` },
+            { label: product.name },
+          ]}
+        />
+
         <ProductSimpleDetail
           product={product}
           reviews={reviews}
@@ -56,13 +69,17 @@ export default async function ProductPage({
 
         {related.length > 0 ? (
           <Section spacing="none" className="mt-16 border-t border-navy/10 pt-14 lg:mt-20 lg:pt-16">
-            <h2 className="font-display text-2xl text-navy sm:text-3xl">You may also like</h2>
-            <p className="mt-2 text-sm text-muted">More from {product.category.name}</p>
-            <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
+            <SectionHeading
+              eyebrow="More to love"
+              title="You may also like"
+              description={`More from ${product.category.name}`}
+              className="mb-8 sm:mb-10"
+            />
+            <ProductGrid>
               {related.map((item, index) => (
                 <ProductCard key={`${item.source}-${item.id}`} product={item} index={index} />
               ))}
-            </div>
+            </ProductGrid>
           </Section>
         ) : null}
       </PageContainer>

@@ -538,6 +538,34 @@
     @apply rounded-2xl border border-navy/8 bg-mist;
   }
 
+  .product-grid {
+    @apply grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4;
+  }
+
+  .catalog-toolbar {
+    position: sticky;
+    top: calc(var(--site-header-height) + 0.35rem);
+    z-index: 10;
+    @apply -mx-4 mb-8 bg-brand-50/92 px-4 py-3 backdrop-blur-md sm:mx-0 sm:rounded-2xl sm:border sm:border-navy/8 sm:bg-white/85 sm:shadow-sm sm:shadow-navy/5;
+  }
+
+  @media (min-width: 640px) {
+    .catalog-toolbar {
+      top: calc(var(--site-header-height-sm) + 0.35rem);
+    }
+  }
+
+  .dashboard-card {
+    @apply rounded-2xl border border-navy/8 bg-white shadow-sm shadow-navy/5;
+  }
+
+  .auth-shell {
+    background:
+      radial-gradient(ellipse at top left, rgba(215, 25, 32, 0.08), transparent 45%),
+      radial-gradient(ellipse at bottom right, rgba(59, 111, 224, 0.12), transparent 50%),
+      #e8ecf5;
+  }
+
   /* —— Jalal Assistance —— */
   .assistant-shell {
     @apply border border-white/10 bg-surface-dark text-text-on-dark shadow-2xl shadow-navy/40;
@@ -562,6 +590,32 @@
 
   .assistant-input {
     @apply rounded-xl border border-white/12 bg-white/8 text-text-on-dark placeholder:text-white/35 outline-none focus-visible:ring-2 focus-visible:ring-cyan/30;
+  }
+
+  .assistant-transcript {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.55) rgba(255, 255, 255, 0.08);
+  }
+
+  .assistant-transcript::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .assistant-transcript::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .assistant-transcript::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+  }
+
+  .assistant-transcript::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.45);
   }
 }
 

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
-import { Bot, LogIn, Phone, Send } from "lucide-react";
+import { motion } from "framer-motion";
+import { Bot, ChevronDown, ChevronUp, LogIn, Phone, RotateCcw, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AssistantRecommendationCard } from "@/components/assistant/AssistantRecommendationCard";
 import type { AssistantProductRecommendation } from "@/types/assistant";
@@ -17,6 +17,8 @@ type AssistantApiResponse = {
   message: string;
   requiresLogin?: boolean;
   handoffCreated?: boolean;
+  suggestedReplies?: string[];
+  products?: AssistantProductRecommendation[];
   consultation?: {
     mode: "gather_info" | "recommend" | "not_consultation";
     profileSummary?: string;
@@ -32,13 +34,13 @@ type RichMessage = ChatMessage & {
 };
 
 const DEFAULT_GREETING =
-  "Assalam o Alaikum! I'm Jalal Assistance — your design consultant for curtains, carpets, and prayer mats. I can help with product recommendations, orders (when logged in), cart, branches, and delivery.";
+  "Assalam o Alaikum! I'm Jalal Assistance — your home consultant at Jalal's. I can help you pick carpets, curtains, furniture, dining sets, prayer mats, and more, or find a showroom and track an order. What can I help you with today?";
 
 const SUGGESTIONS = [
   "Help me design my living room",
-  "What's in my cart?",
-  "Where is my order?",
-  "Speak to someone",
+  "Show dining tables",
+  "Where are your stores?",
+  "Track my order",
 ];
 
 type AssistantChatPanelProps = {
@@ -59,6 +61,71 @@ function getSessionId() {
     localStorage.setItem(key, id);
   }
   return id;
+}
+
+function pickProducts(data: Partial<AssistantApiResponse>): AssistantProductRecommendation[] {
+  return data.products?.length
+    ? data.products
+    : data.consultation?.recommendations ?? [];
+}
+
+function pickSuggestedReplies(data: Partial<AssistantApiResponse>): string[] {
+  return data.suggestedReplies?.length
+    ? data.suggestedReplies
+    : data.consultation?.suggestedReplies ?? [];
+}
+
+function renderInline(text: string) {
+  const nodes: ReactNode[] = [];
+  const pattern = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(<span key={key++}>{text.slice(lastIndex, match.index)}</span>);
+    }
+    if (match[1]) {
+      nodes.push(
+        <strong key={key++} className="font-semibold text-white">
+          {match[1]}
+        </strong>
+      );
+    } else if (match[2] && match[3]) {
+      const href = match[3];
+      nodes.push(
+        <Link
+          key={key++}
+          href={href}
+          className="font-medium text-cyan underline underline-offset-2"
+        >
+          {match[2]}
+        </Link>
+      );
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(<span key={key++}>{text.slice(lastIndex)}</span>);
+  }
+
+  return nodes;
+}
+
+function MessageContent({ content }: { content: string }) {
+  const lines = content.split("\n");
+  return (
+    <div>
+      {lines.map((line, index) => (
+        <span key={index}>
+          {index > 0 ? <br /> : null}
+          {renderInline(line)}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 async function consumeAssistantStream(
@@ -131,17 +198,48 @@ export function AssistantChatPanel({
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
   const pendingHandledRef = useRef<string | null>(null);
   const messagesRef = useRef<RichMessage[]>(messages);
+
+  const updateScrollState = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const atTop = el.scrollTop <= 8;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 24;
+    stickToBottomRef.current = atBottom;
+    setCanScrollUp(!atTop && el.scrollHeight > el.clientHeight + 8);
+    setCanScrollDown(!atBottom && el.scrollHeight > el.clientHeight + 8);
+  }, []);
+
+  const scrollByPage = useCallback((direction: "up" | "down") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const amount = Math.max(120, el.clientHeight * 0.7);
+    el.scrollBy({ top: direction === "up" ? -amount : amount, behavior: "smooth" });
+  }, []);
+
+  const scrollToBottom = useCallback((smooth = true) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+  }, []);
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, isTyping]);
+    if (!stickToBottomRef.current) {
+      updateScrollState();
+      return;
+    }
+    scrollToBottom(!isTyping);
+    updateScrollState();
+  }, [messages, isTyping, scrollToBottom, updateScrollState]);
 
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -157,6 +255,7 @@ export function AssistantChatPanel({
     setError(null);
     setRequiresLogin(false);
     setHandoffCreated(false);
+    stickToBottomRef.current = true;
 
     try {
       if (onSend) {
@@ -179,16 +278,16 @@ export function AssistantChatPanel({
           setConsultationMode(meta.consultation?.mode ?? null);
           setRequiresLogin(Boolean(meta.requiresLogin));
           if (meta.handoffCreated) setHandoffCreated(true);
-          if (meta.consultation?.suggestedReplies?.length) {
-            setSuggestedReplies(meta.consultation.suggestedReplies);
-          }
-          if (meta.consultation?.recommendations?.length) {
+          const replies = pickSuggestedReplies(meta);
+          if (replies.length) setSuggestedReplies(replies);
+          const cards = pickProducts(meta);
+          if (cards.length) {
             setMessages((prev) => {
               const copy = [...prev];
               if (copy[assistantIndex]) {
                 copy[assistantIndex] = {
                   ...copy[assistantIndex],
-                  recommendations: meta.consultation?.recommendations,
+                  recommendations: cards,
                 };
               }
               return copy;
@@ -213,16 +312,15 @@ export function AssistantChatPanel({
       setConsultationMode(data.consultation?.mode ?? null);
       setRequiresLogin(Boolean(data.requiresLogin));
       if (data.handoffCreated) setHandoffCreated(true);
-      if (data.consultation?.suggestedReplies?.length) {
-        setSuggestedReplies(data.consultation.suggestedReplies);
-      }
+      const replies = pickSuggestedReplies(data);
+      if (replies.length) setSuggestedReplies(replies);
 
       setMessages((prev) => {
         const copy = [...prev];
         copy[assistantIndex] = {
           role: "assistant",
           content: data.message || streamed,
-          recommendations: data.consultation?.recommendations,
+          recommendations: pickProducts(data).length ? pickProducts(data) : copy[assistantIndex]?.recommendations,
           streaming: false,
         };
         return copy;
@@ -260,8 +358,8 @@ export function AssistantChatPanel({
   }, [pendingPrompt, isTyping, onPendingPromptConsumed, sendMessage]);
 
   return (
-    <div className={`assistant-shell flex flex-col overflow-hidden ${className}`}>
-      <div className="assistant-header relative shrink-0 px-4 py-3.5 sm:px-5">
+    <div className={`assistant-shell flex h-full min-h-0 flex-col overflow-hidden ${className}`}>
+      <div className={`assistant-header relative shrink-0 px-4 py-3.5 sm:px-5 ${compact ? "pr-12" : ""}`}>
         <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-red to-transparent" />
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red/20 ring-1 ring-red/30">
@@ -273,20 +371,36 @@ export function AssistantChatPanel({
             </p>
             <p className="text-[11px] text-white/55">
               {consultationMode === "gather_info"
-                ? "Design consultation · gathering preferences"
+                ? "Design chat · learning your space"
                 : consultationMode === "recommend"
-                  ? "Design consultation · recommendations"
-                  : "Design · products · orders · support"}
+                  ? "Design chat · matching products"
+                  : "Friendly help · products · stores · orders"}
             </p>
           </div>
           <span className="ml-auto rounded-full bg-emerald/15 px-2 py-0.5 text-[10px] font-medium text-emerald">
             Online
           </span>
+          <button
+            type="button"
+            onClick={() => {
+              setMessages([{ role: "assistant", content: DEFAULT_GREETING }]);
+              setSuggestedReplies(SUGGESTIONS);
+              setConsultationMode(null);
+              setRequiresLogin(false);
+              setHandoffCreated(false);
+              setError(null);
+            }}
+            className="rounded-full p-1.5 text-white/45 transition hover:bg-white/10 hover:text-white"
+            aria-label="Start a new chat"
+            title="New chat"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
 
       {handoffCreated && (
-        <div className="flex items-start gap-2 border-b border-white/10 bg-emerald/10 px-4 py-2.5 text-[11px] text-white/90 sm:px-5 sm:text-xs">
+        <div className="flex shrink-0 items-start gap-2 border-b border-white/10 bg-emerald/10 px-4 py-2.5 text-[11px] text-white/90 sm:px-5 sm:text-xs">
           <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald" />
           <span>
             A team member will follow up on your request. Call{" "}
@@ -303,7 +417,7 @@ export function AssistantChatPanel({
       )}
 
       {requiresLogin && (
-        <div className="flex items-center gap-2 border-b border-white/10 bg-red/10 px-4 py-2 text-[11px] text-white/85 sm:px-5 sm:text-xs">
+        <div className="flex shrink-0 items-center gap-2 border-b border-white/10 bg-red/10 px-4 py-2 text-[11px] text-white/85 sm:px-5 sm:text-xs">
           <LogIn className="h-3.5 w-3.5 shrink-0 text-red" />
           <span>
             Log in to view orders —{" "}
@@ -314,18 +428,38 @@ export function AssistantChatPanel({
         </div>
       )}
 
-      <div
-        ref={scrollRef}
-        role="log"
-        aria-live="polite"
-        aria-relevant="additions"
-        aria-busy={isTyping}
-        aria-label="Chat messages"
-        className={`flex flex-1 flex-col gap-3 overflow-y-auto bg-surface-dark p-4 hide-scrollbar sm:gap-4 sm:p-5 ${
-          compact ? "min-h-[240px] max-h-[320px]" : "min-h-[280px] max-h-[380px] sm:max-h-[420px]"
-        }`}
-      >
-        <AnimatePresence>
+      <div className="relative min-h-[240px] flex-1">
+        <div className="absolute right-2 top-2 z-20 flex flex-col gap-1">
+            <button
+              type="button"
+              onClick={() => scrollByPage("up")}
+              disabled={!canScrollUp}
+              aria-label="Scroll up"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-navy/90 text-white shadow-lg backdrop-blur-sm transition hover:bg-navy disabled:cursor-default disabled:opacity-35"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollByPage("down")}
+              disabled={!canScrollDown}
+              aria-label="Scroll down"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-navy/90 text-white shadow-lg backdrop-blur-sm transition hover:bg-navy disabled:cursor-default disabled:opacity-35"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </button>
+        </div>
+        <div
+          ref={scrollRef}
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
+          aria-busy={isTyping}
+          aria-label="Chat messages"
+          onScroll={updateScrollState}
+          className="assistant-transcript absolute inset-0 overflow-y-auto overflow-x-hidden overscroll-y-contain bg-surface-dark p-4 pr-12 sm:p-5"
+        >
+          <div className="flex flex-col gap-3 sm:gap-4">
           {messages.map((msg, i) => (
             <motion.div
               key={i}
@@ -338,7 +472,7 @@ export function AssistantChatPanel({
                   msg.role === "user" ? "assistant-bubble-user" : "assistant-bubble-bot"
                 }`}
               >
-                {msg.content}
+                {msg.role === "assistant" ? <MessageContent content={msg.content} /> : msg.content}
                 {msg.streaming && (
                   <span className="ml-0.5 inline-block h-3 w-1 animate-pulse bg-cyan/70" />
                 )}
@@ -356,7 +490,6 @@ export function AssistantChatPanel({
               )}
             </motion.div>
           ))}
-        </AnimatePresence>
 
         {isTyping && messages[messages.length - 1]?.streaming !== true && (
           <motion.div
@@ -378,10 +511,12 @@ export function AssistantChatPanel({
         <span className="sr-only" aria-live="polite">
           {isTyping ? "Jalal Assistance is typing" : ""}
         </span>
+          </div>
+        </div>
       </div>
 
       {suggestedReplies.length > 0 && (
-        <div className="flex flex-wrap gap-2 border-t border-white/8 bg-surface-dark/95 px-4 py-2.5 sm:px-5">
+        <div className="flex shrink-0 flex-wrap gap-2 border-t border-white/8 bg-surface-dark/95 px-4 py-2.5 sm:px-5">
           {suggestedReplies.slice(0, 4).map((s) => (
             <button
               key={s}
@@ -410,7 +545,7 @@ export function AssistantChatPanel({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
-            placeholder="Design advice, products, orders, cart…"
+            placeholder="Ask about products, rooms, stores, or orders…"
             disabled={isTyping}
             className="assistant-input flex-1 px-3 py-2.5 text-xs disabled:opacity-60 sm:px-4 sm:py-3 sm:text-sm"
           />

@@ -18,7 +18,7 @@ export function HeroStatsSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.08, duration: 0.5 }}
-            className="rounded-2xl bg-white px-4 py-5 text-center shadow-sm ring-1 ring-navy/6 sm:px-5 sm:py-6"
+            className="rounded-3xl bg-white px-4 py-5 text-center shadow-sm ring-1 ring-navy/6 sm:px-5 sm:py-6"
           >
             <p className="font-display text-2xl font-light text-navy sm:text-3xl md:text-4xl">
               <AnimatedCounter

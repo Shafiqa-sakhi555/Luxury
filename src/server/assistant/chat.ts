@@ -7,7 +7,8 @@ import { buildSystemPrompt } from "./prompts";
 import { formatRagContext, searchKnowledge } from "./rag/search";
 import { persistAssistantExchange } from "./sessions";
 import { formatToolResultsForPrompt, runAssistantTools } from "./tools";
-import { buildFallbackResponse, validateAssistantResponse } from "./validate";
+import { buildFallbackResponse, buildSuggestedReplies, extractProductCards, validateAssistantResponse } from "./validate";
+import type { AssistantProductRecommendation } from "@/types/assistant";
 
 export type ChatMessage = {
   role: "user" | "assistant";
@@ -33,6 +34,8 @@ export type AssistantChatResult = {
     recommendations?: ConsultationRecommendation[];
     suggestedReplies?: string[];
   };
+  suggestedReplies?: string[];
+  products?: AssistantProductRecommendation[];
 };
 
 type PreparedRun = {
@@ -46,6 +49,8 @@ type PreparedRun = {
   consultationState: ConsultationResult;
   consultationMeta: AssistantChatResult["consultation"];
   consultationInstruction: string;
+  suggestedReplies: string[];
+  products: AssistantProductRecommendation[];
   ollamaMessages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
   requiresLogin: boolean;
   handoffCreated: boolean;
@@ -101,10 +106,19 @@ async function prepareRun(
 
   const consultationInstruction =
     consultationState.mode === "gather_info"
-      ? `\nCONSULTATION MODE: Ask the customer: "${consultationState.nextQuestion}". Do not invent product recommendations yet.`
+      ? `\nCONSULTATION MODE: Ask the customer: "${consultationState.nextQuestion}". Keep it conversational. Do not invent product recommendations yet.`
       : consultationState.mode === "recommend"
-        ? `\nCONSULTATION MODE: Explain the recommended products from tool results for ${consultationState.profileSummary}.`
+        ? `\nCONSULTATION MODE: Explain the recommended products from tool results for ${consultationState.profileSummary}. Sound like a helpful showroom advisor.`
         : "";
+
+  const products = extractProductCards(toolResults);
+  const suggestedReplies = buildSuggestedReplies(toolResults, consultationState);
+  if (consultationMeta) {
+    consultationMeta.suggestedReplies = suggestedReplies;
+    if (products.length && !consultationMeta.recommendations?.length) {
+      consultationMeta.recommendations = products;
+    }
+  }
 
   const systemPrompt = await buildSystemPrompt(options.userContext);
 
@@ -119,6 +133,8 @@ async function prepareRun(
     consultationState,
     consultationMeta,
     consultationInstruction,
+    suggestedReplies,
+    products,
     requiresLogin,
     handoffCreated,
     ollamaMessages: [
@@ -183,6 +199,8 @@ export async function runAssistantChat(
     ollamaMessages,
     requiresLogin,
     handoffCreated,
+    suggestedReplies,
+    products,
   } = prepared;
 
   const ollamaUp = await isOllamaReachable();
@@ -195,6 +213,8 @@ export async function runAssistantChat(
       toolsUsed,
       ollamaUsed: false,
       consultation: consultationMeta,
+      suggestedReplies,
+      products,
       requiresLogin,
       handoffCreated,
     };
@@ -209,6 +229,8 @@ export async function runAssistantChat(
       toolsUsed,
       ollamaUsed: true,
       consultation: consultationMeta,
+      suggestedReplies,
+      products,
       requiresLogin,
       handoffCreated,
     };
@@ -220,6 +242,8 @@ export async function runAssistantChat(
       toolsUsed,
       ollamaUsed: false,
       consultation: consultationMeta,
+      suggestedReplies,
+      products,
       requiresLogin,
       handoffCreated,
     };
@@ -256,6 +280,8 @@ export async function* streamAssistantChat(
     ollamaMessages,
     requiresLogin,
     handoffCreated,
+    suggestedReplies,
+    products,
   } = prepared;
 
   yield {
@@ -263,6 +289,8 @@ export async function* streamAssistantChat(
     data: {
       toolsUsed,
       consultation: consultationMeta,
+      suggestedReplies,
+      products,
       requiresLogin,
       handoffCreated,
     },
@@ -277,6 +305,8 @@ export async function* streamAssistantChat(
       toolsUsed,
       ollamaUsed: false,
       consultation: consultationMeta,
+      suggestedReplies,
+      products,
       requiresLogin,
       handoffCreated,
     };
@@ -296,6 +326,8 @@ export async function* streamAssistantChat(
       toolsUsed,
       ollamaUsed: true,
       consultation: consultationMeta,
+      suggestedReplies,
+      products,
       requiresLogin,
       handoffCreated,
     };
@@ -307,6 +339,8 @@ export async function* streamAssistantChat(
       toolsUsed,
       ollamaUsed: false,
       consultation: consultationMeta,
+      suggestedReplies,
+      products,
       requiresLogin,
       handoffCreated,
     };

@@ -31,8 +31,8 @@ export async function chatWithOllama(messages: OllamaMessage[]): Promise<string>
         messages,
         stream: false,
         options: {
-          temperature: 0.4,
-          num_predict: 800,
+          temperature: 0.55,
+          num_predict: 700,
         },
       }),
       signal: controller.signal,
@@ -66,8 +66,8 @@ export async function* streamChatWithOllama(
       messages,
       stream: true,
       options: {
-        temperature: 0.4,
-        num_predict: 800,
+        temperature: 0.55,
+        num_predict: 700,
       },
     }),
     signal: AbortSignal.timeout(90_000),

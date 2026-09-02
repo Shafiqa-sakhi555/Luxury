@@ -95,7 +95,7 @@ export function ProductVariantSelector({
         }))}
         productName={product.name}
       />
-      <div className="sticky-below-header lg:self-start">
+      <div className="sticky-below-header rounded-3xl border border-navy/8 bg-white p-5 shadow-sm shadow-navy/5 sm:p-7 lg:self-start">
         <ProductPurchasePanel
           productName={product.name}
           categoryName={product.category.name}
@@ -190,7 +190,7 @@ function ProductSimpleDetailView({
         }))}
         productName={product.name}
       />
-      <div className="sticky-below-header lg:self-start">
+      <div className="sticky-below-header rounded-3xl border border-navy/8 bg-white p-5 shadow-sm shadow-navy/5 sm:p-7 lg:self-start">
         <ProductPurchasePanel
           productName={product.name}
           categoryName={product.category.name}

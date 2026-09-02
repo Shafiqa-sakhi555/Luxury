@@ -11,7 +11,34 @@ export type ConsultationProfile = {
 };
 
 const CONSULTATION_TRIGGERS =
-  /\b(design|decorate|furnish|consult|recommend|help me choose|what goes with|match|coordinate|style|look for ideas|suggest|ideas for)\b/i;
+  /\b(design (my|our|the|this)?\s*(room|home|space|house)?|decorate|furnish(ing)? my|help me (choose|pick|design)|what goes with|coordinate|look for ideas|ideas for (my|the)|interior (design|advice))\b/i;
+
+const FACTUAL_QUESTION =
+  /\b(deliver|delivery|shipping|return|refund|warranty|install|payment|cod|cash on delivery|track|order|cart|showroom|store|branch|hours|phone|contact|price of|do you sell|what do you sell|who is|where are|free delivery)\b/i;
+
+function userMessagesText(messages: ChatMessage[]) {
+  return messages
+    .filter((m) => m.role === "user")
+    .map((m) => m.content)
+    .join("\n");
+}
+
+function lastUserMessage(messages: ChatMessage[]) {
+  return [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+}
+
+export function isFactualLookup(message: string) {
+  return FACTUAL_QUESTION.test(message);
+}
+
+export function detectConsultationIntent(messages: ChatMessage[]): boolean {
+  const lastUser = lastUserMessage(messages);
+  if (!lastUser) return false;
+  if (isFactualLookup(lastUser)) return false;
+
+  const userText = userMessagesText(messages);
+  return CONSULTATION_TRIGGERS.test(lastUser) || CONSULTATION_TRIGGERS.test(userText);
+}
 
 const ROOM_PATTERNS: Array<{ id: string; patterns: RegExp[] }> = [
   { id: "living_room", patterns: [/living room/, /lounge/, /sitting room/, /drawing room/] },
@@ -48,6 +75,11 @@ const CATEGORY_PATTERNS: Array<{ slug: string; patterns: RegExp[] }> = [
   { slug: "curtains", patterns: [/curtain/, /drape/] },
   { slug: "carpets", patterns: [/carpet/, /\brug\b/, /flooring/] },
   { slug: "prayer-mats", patterns: [/prayer mat/, /prayer-mat/, /janamaz/] },
+  { slug: "furniture", patterns: [/furniture/, /dining set/] },
+  { slug: "table", patterns: [/\btable\b/, /dining table/, /coffee table/] },
+  { slug: "sofa", patterns: [/sofa/, /sectional/] },
+  { slug: "beds", patterns: [/\bbed\b/, /bedroom set/] },
+  { slug: "chair", patterns: [/chair/] },
 ];
 
 function matchFirst(text: string, entries: Array<{ id: string; patterns: RegExp[] }>) {
@@ -75,27 +107,18 @@ function extractBudgetMinor(text: string): number | undefined {
   return undefined;
 }
 
-function conversationText(messages: ChatMessage[]) {
-  return messages.map((m) => m.content).join("\n");
-}
-
-export function detectConsultationIntent(messages: ChatMessage[]): boolean {
-  const text = conversationText(messages);
-  return CONSULTATION_TRIGGERS.test(text) || Boolean(extractProfile(messages).room || extractProfile(messages).style);
-}
-
 export function extractProfile(messages: ChatMessage[]): ConsultationProfile {
-  const text = conversationText(messages);
-  const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? text;
+  const text = userMessagesText(messages);
+  const lastUser = lastUserMessage(messages) || text;
 
   return {
-    room: matchFirst(text, ROOM_PATTERNS) ?? matchFirst(lastUser, ROOM_PATTERNS),
-    style: matchFirst(text, STYLE_PATTERNS) ?? matchFirst(lastUser, STYLE_PATTERNS),
-    color: matchFirst(text, COLOR_PATTERNS) ?? matchFirst(lastUser, COLOR_PATTERNS),
-    material: matchFirst(text, MATERIAL_PATTERNS) ?? matchFirst(lastUser, MATERIAL_PATTERNS),
-    budgetMaxMinor: extractBudgetMinor(text) ?? extractBudgetMinor(lastUser),
-    categorySlug: CATEGORY_PATTERNS.find((c) => c.patterns.some((p) => p.test(text)))?.slug,
-    isConsultation: CONSULTATION_TRIGGERS.test(text),
+    room: matchFirst(lastUser, ROOM_PATTERNS) ?? matchFirst(text, ROOM_PATTERNS),
+    style: matchFirst(lastUser, STYLE_PATTERNS) ?? matchFirst(text, STYLE_PATTERNS),
+    color: matchFirst(lastUser, COLOR_PATTERNS) ?? matchFirst(text, COLOR_PATTERNS),
+    material: matchFirst(lastUser, MATERIAL_PATTERNS) ?? matchFirst(text, MATERIAL_PATTERNS),
+    budgetMaxMinor: extractBudgetMinor(lastUser) ?? extractBudgetMinor(text),
+    categorySlug: CATEGORY_PATTERNS.find((c) => c.patterns.some((p) => p.test(lastUser) || p.test(text)))?.slug,
+    isConsultation: detectConsultationIntent(messages),
   };
 }
 

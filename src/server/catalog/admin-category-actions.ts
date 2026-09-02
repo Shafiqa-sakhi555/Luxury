@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import type { AdminCategoryFormValues } from "@/types/admin-category";
-import { AuthorizationError, requirePermission } from "@/server/rbac";
+import { AuthorizationError, requireAnyPermission } from "@/server/rbac";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/slug";
 import { deleteCloudinaryImage } from "@/lib/cloudinary";
@@ -59,7 +59,7 @@ export async function saveCategoryAction(input: {
   values: AdminCategoryFormValues;
 }) {
   try {
-    const user = await requirePermission("catalog.write");
+    const user = await requireAnyPermission("catalog.write", "category.write");
     const values = parseCategoryValues(input.values);
     const supabase = createSupabaseAdminClient();
     const schemaReady = await isCategorySizesSchemaReady();
@@ -186,7 +186,7 @@ export async function saveCategoryAction(input: {
 
 export async function removeCategoryAction(input: { id: string }) {
   try {
-    const user = await requirePermission("catalog.delete");
+    const user = await requireAnyPermission("catalog.delete", "category.delete");
     const supabase = createSupabaseAdminClient();
 
     const { data: existingCategory, error: loadError } = await supabase

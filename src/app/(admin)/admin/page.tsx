@@ -1,4 +1,13 @@
 import Link from "next/link";
+import {
+  Banknote,
+  ShoppingCart,
+  Users,
+  MessageCircle,
+  Package,
+  AlertTriangle,
+  FileEdit,
+} from "lucide-react";
 import { getDashboardSummary } from "@/server/audit";
 import { requireAdminPageAccess } from "@/server/admin/page-access";
 import { hasAnyPermission } from "@/server/rbac";
@@ -71,6 +80,8 @@ export default async function AdminDashboardPage({
             label="Revenue"
             value={formatMoney(summary.revenueMinor)}
             hint="Delivered orders only"
+            icon={<Banknote className="h-5 w-5" />}
+            tone="emerald"
           />
         ) : null}
         {canSeeOrders ? (
@@ -78,16 +89,25 @@ export default async function AdminDashboardPage({
             label="Orders"
             value={String(summary.orders.total)}
             hint={`${summary.orders.pending} pending`}
+            icon={<ShoppingCart className="h-5 w-5" />}
+            tone="navy"
           />
         ) : null}
         {canSeeCustomers ? (
-          <StatCard label="Customers" value={String(summary.customers)} />
+          <StatCard
+            label="Customers"
+            value={String(summary.customers)}
+            icon={<Users className="h-5 w-5" />}
+            tone="blue"
+          />
         ) : null}
         {canSeeCustomers ? (
           <StatCard
             label="Assistant handoffs"
             value={String(summary.pendingHandoffs)}
             hint="pending follow-up"
+            icon={<MessageCircle className="h-5 w-5" />}
+            tone="red"
           />
         ) : null}
         {canSeeProducts ? (
@@ -95,60 +115,80 @@ export default async function AdminDashboardPage({
             label="Products"
             value={String(summary.products.published)}
             hint={`${summary.products.draft} drafts`}
+            icon={<Package className="h-5 w-5" />}
+            tone="navy"
           />
         ) : null}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <AdminCard className="p-5">
-          <h2 className="text-sm font-semibold text-navy">Needs attention</h2>
-          <ul className="mt-4 space-y-3 text-sm">
+        <AdminCard className="p-5 sm:p-6">
+          <h2 className="font-display text-xl text-navy">Needs attention</h2>
+          <ul className="mt-4 space-y-2 text-sm">
             {canSeeInventory ? (
-              <li className="flex items-center justify-between">
-                <span className="text-muted">Low stock SKUs</span>
-                <Link href="/admin/inventory" className="font-medium text-navy hover:underline">
-                  {summary.lowStockCount}
+              <li>
+                <Link
+                  href="/admin/inventory"
+                  className="flex items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-navy/[0.04]"
+                >
+                  <span className="flex items-center gap-2 text-muted">
+                    <AlertTriangle className="h-4 w-4 text-warning" />
+                    Low stock SKUs
+                  </span>
+                  <span className="font-semibold tabular-nums text-navy">{summary.lowStockCount}</span>
                 </Link>
               </li>
             ) : null}
             {canSeeOrders ? (
-              <li className="flex items-center justify-between">
-                <span className="text-muted">Pending orders</span>
-                <Link href="/admin/orders?status=PENDING" className="font-medium text-navy hover:underline">
-                  {summary.orders.pending}
+              <li>
+                <Link
+                  href="/admin/orders?status=PENDING"
+                  className="flex items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-navy/[0.04]"
+                >
+                  <span className="flex items-center gap-2 text-muted">
+                    <ShoppingCart className="h-4 w-4 text-navy/50" />
+                    Pending orders
+                  </span>
+                  <span className="font-semibold tabular-nums text-navy">{summary.orders.pending}</span>
                 </Link>
               </li>
             ) : null}
             {canSeeProducts ? (
-              <li className="flex items-center justify-between">
-                <span className="text-muted">Draft products</span>
+              <li>
                 <Link
                   href="/admin/catalog/products?status=DRAFT"
-                  className="font-medium text-navy hover:underline"
+                  className="flex items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-navy/[0.04]"
                 >
-                  {summary.products.draft}
+                  <span className="flex items-center gap-2 text-muted">
+                    <FileEdit className="h-4 w-4 text-navy/50" />
+                    Draft products
+                  </span>
+                  <span className="font-semibold tabular-nums text-navy">{summary.products.draft}</span>
                 </Link>
               </li>
             ) : null}
             {canSeeCustomers ? (
-              <li className="flex items-center justify-between">
-                <span className="text-muted">Pending assistant handoffs</span>
+              <li>
                 <Link
                   href="/admin/assistant?status=PENDING"
-                  className="font-medium text-navy hover:underline"
+                  className="flex items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-navy/[0.04]"
                 >
-                  {summary.pendingHandoffs}
+                  <span className="flex items-center gap-2 text-muted">
+                    <MessageCircle className="h-4 w-4 text-navy/50" />
+                    Pending assistant handoffs
+                  </span>
+                  <span className="font-semibold tabular-nums text-navy">{summary.pendingHandoffs}</span>
                 </Link>
               </li>
             ) : null}
             {!canSeeInventory && !canSeeOrders && !canSeeProducts && !canSeeCustomers ? (
-              <li className="text-muted">No actionable items for your role.</li>
+              <li className="px-3 py-2 text-muted">No actionable items for your role.</li>
             ) : null}
           </ul>
         </AdminCard>
 
-        <AdminCard className="p-5">
-          <h2 className="text-sm font-semibold text-navy">Recent orders</h2>
+        <AdminCard className="p-5 sm:p-6">
+          <h2 className="font-display text-xl text-navy">Recent orders</h2>
           {!canSeeOrders ? (
             <p className="mt-4 text-sm text-muted">Order summaries are not available for your role.</p>
           ) : summary.recentOrders.length === 0 ? (
@@ -163,7 +203,7 @@ export default async function AdminDashboardPage({
                 customers?: { profiles?: { name?: string | null; email?: string | null } | null } | null;
                 shipping_name?: string | null;
               }) => (
-                <li key={order.id} className="flex items-center justify-between gap-3 text-sm">
+                <li key={order.id} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 text-sm hover:bg-navy/[0.03]">
                   <div className="min-w-0">
                     <Link href={`/admin/orders/${order.id}`} className="font-medium text-navy hover:underline">
                       {order.order_number}
@@ -181,9 +221,9 @@ export default async function AdminDashboardPage({
         </AdminCard>
 
         {canSeeCustomers ? (
-          <AdminCard className="p-5 lg:col-span-2">
+          <AdminCard className="p-5 sm:p-6 lg:col-span-2">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-navy">Recent assistant handoffs</h2>
+              <h2 className="font-display text-xl text-navy">Recent assistant handoffs</h2>
               <Link href="/admin/assistant" className="text-xs font-medium text-navy hover:underline">
                 View all
               </Link>
@@ -200,7 +240,7 @@ export default async function AdminDashboardPage({
                   contact_email: string | null;
                   created_at: string;
                 }) => (
-                  <li key={handoff.id} className="flex items-center justify-between gap-3 text-sm">
+                  <li key={handoff.id} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 text-sm hover:bg-navy/[0.03]">
                     <div className="min-w-0">
                       <Link
                         href={`/admin/assistant/${handoff.id}`}

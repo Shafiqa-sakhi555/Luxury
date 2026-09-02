@@ -79,7 +79,7 @@ export function ProductAccordions({
             variant="outline"
             size="lg"
             prompt={`I have a question about ${productName}.`}
-            className="w-full rounded-none border-navy bg-white uppercase tracking-[0.08em] hover:bg-navy hover:text-white"
+            className="w-full rounded-full border-navy bg-white uppercase tracking-[0.08em] hover:bg-navy hover:text-white"
           >
             Ask Jalal Assistance
           </OpenAssistantButton>
@@ -89,7 +89,7 @@ export function ProductAccordions({
   ];
 
   return (
-    <div className="border-t border-navy/15">
+    <div className="mt-6 border-t border-navy/10">
       {items.map((item) => (
         <AccordionRow key={item.id} title={item.title}>
           {item.content}

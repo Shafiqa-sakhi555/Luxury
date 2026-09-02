@@ -42,7 +42,7 @@ export function WhyChooseUsSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.07, duration: 0.5 }}
-                className="group rounded-2xl bg-luxury-cream p-6 shadow-sm ring-1 ring-navy/6 transition-all hover:-translate-y-1 hover:shadow-lg hover:ring-red/15 sm:p-7"
+                className="group rounded-3xl bg-luxury-cream p-6 shadow-sm ring-1 ring-navy/6 transition-all hover:-translate-y-1 hover:shadow-lg hover:ring-red/15 sm:p-7"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red/10 text-red ring-1 ring-red/15 transition-colors group-hover:bg-red group-hover:text-white">
                   <Icon className="h-5 w-5" />

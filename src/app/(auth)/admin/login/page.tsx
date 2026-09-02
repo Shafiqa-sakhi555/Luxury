@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { AdminLoginForm } from "./AdminLoginForm";
 import { AuthFormSkeleton } from "@/components/ui/page-skeletons";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 export const metadata: Metadata = {
   title: "Admin sign in",
@@ -11,21 +11,13 @@ export const metadata: Metadata = {
 
 export default function AdminLoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F7F9FC] px-4">
-      <div className="w-full max-w-md rounded-2xl border border-navy/10 bg-white p-8 shadow-lg">
-        <div className="mb-8 text-center">
-          <Link href="/" className="font-display text-3xl text-navy">
-            <span className="text-red">J</span>alal&apos;s
-          </Link>
-          <p className="mt-2 text-sm text-muted">Admin dashboard sign in</p>
-          <p className="mt-1 text-xs text-muted">
-            For Super Admin, Admin, and Finance accounts
-          </p>
-        </div>
-        <Suspense fallback={<AuthFormSkeleton />}>
-          <AdminLoginForm />
-        </Suspense>
-      </div>
-    </div>
+    <AuthShell
+      title="Admin dashboard sign in"
+      description="For Super Admin, Admin, and Finance accounts"
+    >
+      <Suspense fallback={<AuthFormSkeleton />}>
+        <AdminLoginForm />
+      </Suspense>
+    </AuthShell>
   );
 }

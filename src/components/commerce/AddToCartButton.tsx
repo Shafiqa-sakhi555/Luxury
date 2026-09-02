@@ -56,7 +56,7 @@ export function ProductActions({ variantId, productName, className }: ProductAct
         type="button"
         onClick={handleAddToCart}
         disabled={loading !== null}
-        className="w-full border border-navy bg-white px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.12em] text-navy transition hover:bg-navy hover:text-white disabled:opacity-60"
+        className="w-full rounded-full border border-navy bg-white px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.12em] text-navy shadow-sm transition hover:bg-navy hover:text-white disabled:opacity-60"
       >
         {loading === "cart" ? "Adding..." : added ? "Added to cart" : "Add to Cart"}
       </button>
@@ -64,7 +64,7 @@ export function ProductActions({ variantId, productName, className }: ProductAct
         type="button"
         onClick={handleBuyNow}
         disabled={loading !== null}
-        className="w-full bg-navy px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-navy/90 disabled:opacity-60"
+        className="w-full rounded-full bg-red px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.12em] text-white shadow-lg shadow-red/20 transition hover:bg-red/90 disabled:opacity-60"
       >
         {loading === "buy" ? "Processing..." : "Buy It Now"}
       </button>

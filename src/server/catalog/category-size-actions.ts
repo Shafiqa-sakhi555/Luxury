@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { requirePermission, AuthorizationError } from "@/server/rbac";
+import { requireAnyPermission, AuthorizationError } from "@/server/rbac";
 import {
   categoryHasSizes,
   getCategorySizesConfig,
@@ -21,7 +21,7 @@ const sizeInputSchema = z.object({
 
 export async function getCategorySizesAction(categoryId: string) {
   try {
-    await requirePermission("catalog.write");
+    await requireAnyPermission("catalog.write", "category.write", "product.write");
     const config = await getCategorySizesConfig(categoryId);
     return {
       ok: true as const,
@@ -45,7 +45,7 @@ export async function saveCategorySizesAction(input: {
   sizes: AdminCategorySizeInput[];
 }) {
   try {
-    await requirePermission("catalog.write");
+    await requireAnyPermission("catalog.write", "category.write");
     const parsed = z.array(sizeInputSchema).parse(input.sizes);
     const result = await syncCategorySizes(input.categoryId, parsed);
     if (!result.ok) return result;
@@ -63,7 +63,7 @@ export async function saveCategorySizesAction(input: {
 
 export async function categoryHasSizesAction(categoryId: string) {
   try {
-    await requirePermission("product.write");
+    await requireAnyPermission("catalog.write", "category.write", "product.write");
     const hasSizes = await categoryHasSizes(categoryId);
     return { ok: true as const, hasSizes };
   } catch (error) {

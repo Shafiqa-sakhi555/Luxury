@@ -1,6 +1,7 @@
 import { listCategories } from "@/server/catalog/products";
 import { CategoryManager } from "@/components/admin/catalog/CategoryManager";
 import { requireAdminPageAccess } from "@/server/admin/page-access";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { AdminCategoryRow } from "@/types/admin-category";
 
 function mapCategory(
@@ -33,12 +34,20 @@ function mapCategory(
 }
 
 export default async function AdminCategoriesPage() {
-  await requireAdminPageAccess("catalog.write");
-  const categories = await listCategories(true).catch(() => []);
+  await requireAdminPageAccess("catalog.write", "category.write");
 
-  const rows: AdminCategoryRow[] = categories
-    .filter((category) => !category.parentId)
-    .map(mapCategory);
+  if (!isSupabaseConfigured()) {
+    return (
+      <div className="rounded-lg border border-red/20 bg-red/5 px-4 py-3 text-sm text-red">
+        Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and
+        SUPABASE_SERVICE_ROLE_KEY to your environment variables.
+      </div>
+    );
+  }
+
+  const categories = await listCategories(true);
+
+  const rows: AdminCategoryRow[] = categories.map(mapCategory);
 
   return <CategoryManager categories={rows} />;
 }

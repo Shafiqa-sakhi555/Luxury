@@ -28,14 +28,17 @@ export default async function AccountLayout({
       >
         <PageContainer className="pb-16 pt-28 sm:pt-32">
           <div className="mb-8 flex flex-col gap-1 sm:mb-10">
-            <h1 className="font-display text-2xl text-navy sm:text-3xl">My account</h1>
+            <p className="eyebrow-pill w-fit">Account</p>
+            <h1 className="font-display text-3xl tracking-tight text-navy sm:text-4xl">My account</h1>
             {user?.email ? (
               <p className="text-sm text-muted">{user.email}</p>
             ) : null}
           </div>
-          <div className="grid gap-8 lg:grid-cols-[220px_1fr] lg:gap-12">
+          <div className="grid gap-8 lg:grid-cols-[240px_1fr] lg:gap-10">
             <aside className="lg:sticky lg:top-28 lg:self-start">
-              <AccountNav />
+              <div className="rounded-2xl border border-navy/8 bg-white/80 p-2 shadow-sm">
+                <AccountNav />
+              </div>
             </aside>
             <div className="min-w-0">{children}</div>
           </div>
