@@ -10,6 +10,7 @@ import { PageContainer } from "@/components/ui/page-container";
 import { EmptyState } from "@/components/ui/empty-state";
 import { normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
 import { getOptimizedImageUrl, isRenderableImageUrl, resolveCloudinaryImageUrl } from "@/lib/cloudinary/url";
+import { STOREFRONT_PRODUCT_PAGE_SIZE } from "@/lib/catalog/storefront-pagination";
 
 export const revalidate = 60;
 
@@ -52,13 +53,13 @@ export default async function CategoryPage({
     listProducts({
       categorySlug: normalizedSlug,
       page,
-      pageSize: 24,
+      pageSize: STOREFRONT_PRODUCT_PAGE_SIZE,
     }).catch(() => ({
       items: [],
       total: 0,
       totalPages: 0,
       page: 1,
-      pageSize: 24,
+      pageSize: STOREFRONT_PRODUCT_PAGE_SIZE,
     })),
   ]);
 
@@ -122,12 +123,14 @@ export default async function CategoryPage({
           </ProductGrid>
         )}
 
-        <CatalogPagination
-          className="mt-12"
-          page={page}
-          totalPages={totalPages}
-          buildHref={(p) => `/categories/${normalizedSlug}?page=${p}`}
-        />
+        {items.length > 0 ? (
+          <CatalogPagination
+            className="mt-12"
+            page={Math.min(page, Math.max(totalPages, 1))}
+            totalPages={totalPages}
+            pathname={`/categories/${normalizedSlug}`}
+          />
+        ) : null}
       </PageContainer>
     </div>
   );

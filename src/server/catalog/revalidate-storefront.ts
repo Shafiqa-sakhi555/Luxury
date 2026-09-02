@@ -5,6 +5,7 @@ import { normalizeCategorySlug } from "@/lib/supabase/catalog-categories";
 export function revalidateStorefrontCatalog(categorySlugs: string[] = []) {
   revalidatePath("/");
   revalidatePath("/shop");
+  revalidatePath("/categories");
   revalidatePath("/", "layout");
 
   const slugs = new Set(
