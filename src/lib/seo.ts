@@ -39,6 +39,15 @@ export const siteMetadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  icons: {
+    icon: [
+      { url: "/brand/jalals-logo.png", type: "image/png" },
+    ],
+    shortcut: "/brand/jalals-logo.png",
+    apple: [
+      { url: "/brand/jalals-logo.png", type: "image/png" },
+    ],
+  },
 };
 
 export const homeJsonLd = {
