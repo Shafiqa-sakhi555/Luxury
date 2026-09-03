@@ -6,6 +6,15 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Jalal's Home Solution",
   description: "Premium carpets, rugs, furniture, flooring and home décor across Pakistan.",
+  icons: {
+    icon: [
+      { url: "/brand/jalals-logo.png", type: "image/png" },
+    ],
+    shortcut: "/brand/jalals-logo.png",
+    apple: [
+      { url: "/brand/jalals-logo.png", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
