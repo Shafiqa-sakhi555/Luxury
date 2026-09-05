@@ -277,6 +277,16 @@ export function ProductForm({ categories, product }: ProductFormProps) {
 
     startTransition(async () => {
       const slug = values.slug?.trim() || slugify(values.name);
+      const defaultVariant = sizeVariants.find((v) => v.isDefault) || sizeVariants[0];
+      const derivedOriginalPrice =
+        showSizeVariants && defaultVariant && defaultVariant.originalPriceMajor > 0
+          ? defaultVariant.originalPriceMajor
+          : values.originalPriceMajor;
+      const derivedSalePrice =
+        showSizeVariants && defaultVariant && defaultVariant.originalPriceMajor > 0
+          ? (defaultVariant.salePriceMajor || defaultVariant.originalPriceMajor)
+          : values.salePriceMajor;
+
       const result = await saveProductAction({
         id: product?.id,
         values: {
@@ -287,8 +297,8 @@ export function ProductForm({ categories, product }: ProductFormProps) {
           shortDescription: values.shortDescription ?? "",
           description: values.description ?? "",
           sku: values.sku ?? "",
-          originalPriceMajor: values.originalPriceMajor,
-          salePriceMajor: values.salePriceMajor,
+          originalPriceMajor: derivedOriginalPrice,
+          salePriceMajor: derivedSalePrice,
           stockQuantity: values.stockQuantity,
           status: values.status,
           isFeatured: values.isFeatured,
