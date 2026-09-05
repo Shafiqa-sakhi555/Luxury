@@ -96,18 +96,32 @@ async function updateDefaultVariantColor(productId: string, colors: string) {
 }
 
 function buildProductPrices(input: AdminProductFormValues) {
-  const originalMajor = input.originalPriceMajor;
-  const saleMajor =
-    input.salePriceMajor > 0 && input.salePriceMajor < originalMajor
-      ? input.salePriceMajor
-      : originalMajor;
+  let originalMajor = Number(input.originalPriceMajor) || 0;
+  let saleMajor = Number(input.salePriceMajor) || 0;
+
+  if (originalMajor <= 0 && input.variants && input.variants.length > 0) {
+    const validVariants = input.variants.filter((v) => Number(v.originalPriceMajor) > 0);
+    if (validVariants.length > 0) {
+      originalMajor = Math.min(...validVariants.map((v) => Number(v.originalPriceMajor)));
+      saleMajor = Math.min(
+        ...validVariants.map((v) => {
+          const s = Number(v.salePriceMajor);
+          const o = Number(v.originalPriceMajor);
+          return s > 0 && s < o ? s : o;
+        })
+      );
+    }
+  }
+
+  const effectiveSale =
+    saleMajor > 0 && saleMajor < originalMajor ? saleMajor : originalMajor;
 
   return {
     original_price: originalMajor,
-    sale_price: saleMajor,
-    discount_percentage: discountPercent(originalMajor, saleMajor),
+    sale_price: effectiveSale,
+    discount_percentage: discountPercent(originalMajor, effectiveSale),
     original_price_minor: Math.round(originalMajor * 100),
-    sale_price_minor: Math.round(saleMajor * 100),
+    sale_price_minor: Math.round(effectiveSale * 100),
   };
 }
 
@@ -211,7 +225,7 @@ export async function createSupabaseCatalogProduct(
       slug,
       short_description: normalizedInput.shortDescription.trim() || null,
       description: normalizedInput.description.trim() || null,
-      ...(usesSizeVariants ? {} : prices),
+      ...prices,
       sku: usesSizeVariants ? null : sku,
       selling_unit: normalizedInput.sellingUnit.trim() || null,
       fabric: normalizedInput.fabric?.trim() || null,
