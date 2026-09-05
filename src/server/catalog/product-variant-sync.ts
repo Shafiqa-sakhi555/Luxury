@@ -206,8 +206,8 @@ export async function syncProductSizeVariants(
     .from("products")
     .update({
       has_variants: hasVariants,
-      original_price: minOriginalMinor / 100,
-      sale_price: minSaleMinor / 100,
+      original_price: minOriginalMinor === Number.MAX_SAFE_INTEGER ? 0 : minOriginalMinor / 100,
+      sale_price: minSaleMinor === Number.MAX_SAFE_INTEGER ? 0 : minSaleMinor / 100,
       original_price_minor: minOriginalMinor === Number.MAX_SAFE_INTEGER ? 0 : minOriginalMinor,
       sale_price_minor: minSaleMinor === Number.MAX_SAFE_INTEGER ? 0 : minSaleMinor,
       fabric: input.fabric?.trim() || null,
