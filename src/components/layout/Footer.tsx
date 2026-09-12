@@ -34,8 +34,16 @@ const footerColumns = {
 };
 
 const socials = [
-  { icon: Instagram, href: "#", label: "Instagram" },
-  { icon: Facebook, href: "#", label: "Facebook" },
+  {
+    icon: Instagram,
+    href: "https://www.instagram.com/jalalhome.solutions?utm_source=qr&stkn=c3F5cmo1OXZ5N3Rw",
+    label: "Instagram",
+  },
+  {
+    icon: Facebook,
+    href: "https://www.facebook.com/share/1GKQ26NayL/?mibextid=wwXIfr",
+    label: "Facebook",
+  },
 ];
 
 export function Footer() {
@@ -125,14 +133,16 @@ export function Footer() {
           </p>
           <div className="flex items-center gap-3">
             {socials.map(({ icon: Icon, href, label }) => (
-              <Link
+              <a
                 key={label}
                 href={href}
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label={label}
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-white/50 transition-all hover:border-cyan/40 hover:text-cyan sm:h-10 sm:w-10"
               >
                 <Icon className="h-4 w-4" />
-              </Link>
+              </a>
             ))}
           </div>
         </div>
