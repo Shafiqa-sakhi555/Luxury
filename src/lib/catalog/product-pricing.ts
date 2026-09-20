@@ -1,4 +1,5 @@
 import { formatMoney, toMinor } from "@/lib/money";
+import { categorySlugsMatch } from "@/lib/supabase/catalog-categories";
 
 type PriceInput = {
   salePriceMinor: number;
@@ -24,10 +25,16 @@ export function parseNumericRateMajor(value?: string | null): number | null {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+export function isCarpetCategory(categorySlug?: string | null): boolean {
+  if (!categorySlug) return false;
+  return categorySlugsMatch(categorySlug, "carpets");
+}
+
 export function isSquareFootPricing(input: PriceInput) {
   const unit = input.sellingUnit?.trim() ?? "";
   if (unit && SQ_FT_UNIT_PATTERN.test(unit)) return true;
   if (isNumericRateValue(unit)) return true;
+  if (input.categorySlug && categorySlugsMatch(input.categorySlug, "carpets")) return true;
 
   return false;
 }
@@ -46,7 +53,7 @@ export function squareFootUnitLabel(sellingUnit?: string | null) {
   if (SQ_FT_UNIT_PATTERN.test(unit)) {
     return unit.replace(/^sold by the\s+/i, "").trim() || "per sq ft";
   }
-  return unit;
+  return "per sq ft";
 }
 
 /** Resolve display prices; supports legacy data where rate was stored in selling_unit. */

@@ -93,7 +93,12 @@ export async function placeOrder(input: PlaceOrderInput) {
       variantSalePriceMinor: variant?.sale_price_minor,
       productOriginalPriceMinor: product?.original_price_minor,
       productSalePriceMinor: product?.sale_price_minor,
+      hasCustomization: Boolean(item.customization),
     });
+
+    const displaySize = item.customization?.dimensions
+      ? `${item.customization.dimensions}${item.customization.areaSqFt ? ` (${item.customization.areaSqFt} sq ft)` : ""}`
+      : item.customization?.size || display.size;
 
     return {
       order_id: order.id,
@@ -106,7 +111,8 @@ export async function placeOrder(input: PlaceOrderInput) {
       line_total_minor: unitPrice * item.quantity,
       customization: {
         color: display.color,
-        size: display.size,
+        size: displaySize,
+        ...(item.customization || {}),
       },
     };
   });

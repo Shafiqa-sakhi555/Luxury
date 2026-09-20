@@ -34,13 +34,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { variantId, quantity = 1 } = await request.json();
+    const { variantId, quantity = 1, customization } = await request.json();
     if (!variantId) {
       return NextResponse.json({ error: "variantId required" }, { status: 400 });
     }
 
     const customerId = await resolveCartCustomerId();
-    await addToCart(variantId, quantity, customerId);
+    await addToCart(variantId, quantity, customerId, customization);
     const cart = await getOrCreateCart(customerId);
     return NextResponse.json({ ok: true, totals: await getCartTotals(cart) });
   } catch (error) {

@@ -25,6 +25,11 @@ export default async function CheckoutPage() {
     id: string;
     quantity: number;
     price_snapshot_minor?: number | null;
+    customization?: {
+      dimensions?: string | null;
+      areaSqFt?: number | null;
+      size?: string | null;
+    } | null;
     product_variants?: {
       sku?: string | null;
       color?: string | null;
@@ -57,7 +62,12 @@ export default async function CheckoutPage() {
       variantSalePriceMinor: item.product_variants?.sale_price_minor,
       productOriginalPriceMinor: productRow?.original_price_minor,
       productSalePriceMinor: productRow?.sale_price_minor,
+      hasCustomization: Boolean(item.customization),
     });
+
+    const displaySize = item.customization?.dimensions
+      ? `${item.customization.dimensions}${item.customization.areaSqFt ? ` (${item.customization.areaSqFt} sq ft)` : ""}`
+      : item.product_variants?.size?.trim() || undefined;
 
     return {
       id: item.id,
@@ -68,7 +78,7 @@ export default async function CheckoutPage() {
       unitPriceMinor,
       sku: item.product_variants?.sku ?? undefined,
       color: item.product_variants?.color?.trim() || undefined,
-      size: item.product_variants?.size?.trim() || undefined,
+      size: displaySize,
     };
   });
 

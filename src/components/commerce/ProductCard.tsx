@@ -7,7 +7,12 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Heart, ShoppingCart } from "lucide-react";
 import type { CatalogProduct } from "@/types/catalog";
-import { formatProductPriceDisplay, productSellingUnitSubtitle } from "@/lib/catalog/product-pricing";
+import {
+  formatProductPriceDisplay,
+  isSquareFootPricing,
+  productSellingUnitSubtitle,
+} from "@/lib/catalog/product-pricing";
+import { categorySlugsMatch } from "@/lib/supabase/catalog-categories";
 import { addItemToCart } from "@/lib/cart-client";
 import { getOptimizedImageUrl } from "@/lib/cloudinary/url";
 import { cn } from "@/lib/utils";
@@ -60,7 +65,11 @@ export function ProductCard({
   const hasDiscount = priceDisplay.discountPercentage > 0;
   const subtitle = productSubtitle(product);
   const inStock = isInStock(product.stockStatus);
-  const canAddFromCard = Boolean(product.variantId && !product.hasVariants && inStock);
+  const isCarpet =
+    isSquareFootPricing(priceInput) ||
+    categorySlugsMatch(product.category.slug, "carpets") ||
+    product.category.name.toLowerCase().includes("carpet");
+  const canAddFromCard = Boolean(product.variantId && !product.hasVariants && !isCarpet && inStock);
 
   async function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
@@ -213,7 +222,7 @@ export function ProductCard({
         ) : (
           <Button asChild variant="secondary" size="sm" className="mt-3 w-full">
             <Link href={`/products/${product.slug}`}>
-              {product.hasVariants ? "Choose options" : "View product"}
+              {isCarpet ? "Select dimensions" : product.hasVariants ? "Choose options" : "View product"}
             </Link>
           </Button>
         )}
