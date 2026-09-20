@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Instagram, Facebook, Phone, MapPin, ArrowUpRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Instagram, Facebook, Phone, MapPin, Mail } from "lucide-react";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { PageContainer } from "@/components/ui/page-container";
 import { company } from "@/lib/content";
@@ -85,24 +83,15 @@ export function Footer() {
                   {company.phone}
                 </a>
               </div>
-
-              <div className="mt-6 sm:mt-8">
-                <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-cyan sm:mb-3 sm:text-xs">
-                  Newsletter
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Your email"
-                    aria-label="Email for newsletter"
-                    className="flex-1 border-white/20 bg-white/10 text-sm text-white placeholder:text-white/40"
-                  />
-                  <Button variant="default" size="icon" aria-label="Subscribe">
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Button>
-                </div>
+              <div className="mt-2 flex items-center gap-2 text-sm text-white/60">
+                <Mail className="h-4 w-4 shrink-0 text-cyan" />
+                <a href={`mailto:${company.email}`} className="hover:text-white">
+                  {company.email}
+                </a>
               </div>
             </motion.div>
           </div>
+
 
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:col-span-8 lg:gap-8">
             {Object.entries(footerColumns).map(([category, links]) => (
