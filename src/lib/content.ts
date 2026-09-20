@@ -14,5 +14,6 @@ export const company = {
   tagline: "Premium Home Furnishings & Surfaces",
   location: "Gilgit-Baltistan, Pakistan",
   phone: "+92 313 5205272",
-  email: "info@jalalshome.pk",
+  email: "jhs@jalalsgroup.com",
 };
+

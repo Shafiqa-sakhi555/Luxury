@@ -38,3 +38,9 @@ export function getExtraStaffEmails(): string[] {
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
 }
+
+/** Primary business inbox for contact form messages and inquiries */
+export function getContactInboxEmail(): string {
+  return process.env.CONTACT_EMAIL?.trim() || process.env.EMAIL_STAFF_EXTRA?.trim() || "jhs@jalalsgroup.com";
+}
+
