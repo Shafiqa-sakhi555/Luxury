@@ -64,6 +64,7 @@ export default async function CartPage() {
                   variantSalePriceMinor: item.product_variants?.sale_price_minor,
                   productOriginalPriceMinor: productRow?.original_price_minor,
                   productSalePriceMinor: productRow?.sale_price_minor,
+                  hasCustomization: Boolean(item.customization),
                 });
 
                 return (
@@ -87,7 +88,17 @@ export default async function CartPage() {
                       {item.product_variants?.color ? (
                         <p className="text-xs text-muted">Color: {item.product_variants.color}</p>
                       ) : null}
-                      {item.product_variants?.size ? (
+                      {item.customization?.dimensions ? (
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-navy/80">
+                          <span className="font-semibold text-navy">Dimensions: {item.customization.dimensions}</span>
+                          {item.customization.areaSqFt ? (
+                            <span className="text-muted">({item.customization.areaSqFt} sq ft)</span>
+                          ) : null}
+                          {item.customization.ratePerSqFtMinor ? (
+                            <span className="text-muted">· {formatMoney(item.customization.ratePerSqFtMinor)}/sq ft</span>
+                          ) : null}
+                        </div>
+                      ) : item.product_variants?.size ? (
                         <p className="text-xs text-muted">Size: {item.product_variants.size}</p>
                       ) : null}
                       <p className="mt-2 tabular-nums text-navy">{formatMoney(price)}</p>
