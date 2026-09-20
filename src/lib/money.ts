@@ -31,6 +31,7 @@ export type CartPriceSources = {
   variantSalePriceMinor?: number | null;
   productOriginalPriceMinor?: number | null;
   productSalePriceMinor?: number | null;
+  hasCustomization?: boolean;
 };
 
 /** True when `value` looks like major units or stale data vs a trusted reference price. */
@@ -43,11 +44,17 @@ function isMisscaledMinor(value: number, reference: number): boolean {
  * or snapshot values are clearly out of sync (e.g. 500 vs 500000).
  */
 export function resolveCartItemPriceMinor(sources: CartPriceSources): number {
+  const snapshot = sources.priceSnapshotMinor ?? 0;
+
+  // Custom dimensions / customizations must always preserve their calculated unit price
+  if (sources.hasCustomization && snapshot > 0) {
+    return snapshot;
+  }
+
   const productOriginal = sources.productOriginalPriceMinor ?? 0;
   const productSale = sources.productSalePriceMinor ?? 0;
   const variantOriginal = sources.variantPriceMinor ?? 0;
   const variantSale = sources.variantSalePriceMinor ?? 0;
-  const snapshot = sources.priceSnapshotMinor ?? 0;
 
   const canonical = effectivePriceMinor(
     productOriginal || variantOriginal,

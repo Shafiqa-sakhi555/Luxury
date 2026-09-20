@@ -37,6 +37,11 @@ export async function runGetMyCart(ctx: ToolContext): Promise<ToolResult | null>
     id: string;
     quantity: number;
     price_snapshot_minor?: number | null;
+    customization?: {
+      dimensions?: string | null;
+      areaSqFt?: number | null;
+      size?: string | null;
+    } | null;
     product_variants?: {
       sku?: string;
       price_minor?: number | null;
@@ -57,10 +62,16 @@ export async function runGetMyCart(ctx: ToolContext): Promise<ToolResult | null>
       variantSalePriceMinor: item.product_variants?.sale_price_minor,
       productOriginalPriceMinor: productRow?.original_price_minor,
       productSalePriceMinor: productRow?.sale_price_minor,
+      hasCustomization: Boolean(item.customization),
     });
 
+    const baseName = productRow?.name ?? "Product";
+    const nameWithDims = item.customization?.dimensions
+      ? `${baseName} (${item.customization.dimensions})`
+      : baseName;
+
     return {
-      name: productRow?.name ?? "Product",
+      name: nameWithDims,
       slug: productRow?.slug,
       sku: item.product_variants?.sku,
       quantity: item.quantity,

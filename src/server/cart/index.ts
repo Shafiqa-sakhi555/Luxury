@@ -1,5 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveCartItemPriceMinor } from "@/lib/money";
+import { isSquareFootPricing } from "@/lib/catalog/product-pricing";
+import { categorySlugsMatch } from "@/lib/supabase/catalog-categories";
 import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import {
@@ -105,7 +107,7 @@ export async function mergeGuestCartIntoCustomerCart(customerId: string) {
   const supabase = createSupabaseAdminClient();
   const { data: guestCart } = await supabase
     .from("carts")
-    .select("id, cart_items(variant_id, quantity, price_snapshot_minor)")
+    .select("id, cart_items(variant_id, quantity, price_snapshot_minor, customization)")
     .eq("token", token)
     .maybeSingle();
 
@@ -119,7 +121,8 @@ export async function mergeGuestCartIntoCustomerCart(customerId: string) {
       customerCart.id,
       item.variant_id,
       item.quantity,
-      item.price_snapshot_minor ?? undefined
+      item.price_snapshot_minor ?? undefined,
+      item.customization ?? undefined
     );
   }
 
@@ -162,40 +165,84 @@ async function upsertCartItem(
   cartId: string,
   variantId: string,
   quantity: number,
-  priceSnapshotMinor?: number
+  priceSnapshotMinor?: number,
+  customization?: Record<string, unknown> | null
 ) {
   const supabase = createSupabaseAdminClient();
 
   let price = priceSnapshotMinor;
+  let finalCustomization = customization ?? null;
+
+  const { data: variant } = await supabase
+    .from("product_variants")
+    .select(
+      "sale_price_minor, price_minor, products(status, original_price_minor, sale_price_minor, selling_unit, categories(slug, name))"
+    )
+    .eq("id", variantId)
+    .single();
+
+  if (!variant) {
+    throw new Error("Product unavailable");
+  }
+
+  const product = Array.isArray(variant.products) ? variant.products[0] : variant.products;
+  if (product?.status !== "ACTIVE") {
+    throw new Error("Product unavailable");
+  }
+
+  const productPrices = {
+    originalPriceMinor: product?.original_price_minor ?? 0,
+    salePriceMinor: product?.sale_price_minor ?? 0,
+  };
+
+  const baseRateMinor = resolveCartItemPriceMinor({
+    variantPriceMinor: variant.price_minor,
+    variantSalePriceMinor: variant.sale_price_minor,
+    productOriginalPriceMinor: productPrices.originalPriceMinor,
+    productSalePriceMinor: productPrices.salePriceMinor,
+  });
+
+  const category = Array.isArray(product?.categories) ? product.categories[0] : product?.categories;
+  const categorySlug = category?.slug;
+  const isCarpet =
+    isSquareFootPricing({
+      salePriceMinor: productPrices.salePriceMinor || variant.sale_price_minor || 0,
+      originalPriceMinor: productPrices.originalPriceMinor || variant.price_minor || 0,
+      sellingUnit: product?.selling_unit,
+      categorySlug,
+    }) ||
+    categorySlugsMatch(categorySlug, "carpets") ||
+    (category?.name && /carpet/i.test(category.name));
+
   if (price === undefined) {
-    const { data: variant } = await supabase
-      .from("product_variants")
-      .select(
-        "sale_price_minor, price_minor, products(status, original_price_minor, sale_price_minor)"
-      )
-      .eq("id", variantId)
-      .single();
-
-    if (!variant) {
-      throw new Error("Product unavailable");
+    if (isCarpet && customization && (customization.areaSqFt || (customization.length && customization.width))) {
+      const length = Number(customization.length);
+      const width = Number(customization.width);
+      const area = customization.areaSqFt
+        ? Number(customization.areaSqFt)
+        : Math.round(length * width * 100) / 100;
+      if (area > 0) {
+        price = Math.round(baseRateMinor * area);
+        finalCustomization = {
+          ...customization,
+          length: length > 0 ? length : undefined,
+          width: width > 0 ? width : undefined,
+          areaSqFt: area,
+          ratePerSqFtMinor: baseRateMinor,
+          dimensions: customization.dimensions || `${length} ft × ${width} ft`,
+          size: customization.size || `${length} ft × ${width} ft (${area} sq ft)`,
+        };
+      } else {
+        price = baseRateMinor;
+      }
+    } else {
+      price = baseRateMinor;
     }
-
-    const product = Array.isArray(variant.products) ? variant.products[0] : variant.products;
-    if (product?.status !== "ACTIVE") {
-      throw new Error("Product unavailable");
-    }
-
-    price = resolveCartItemPriceMinor({
-      variantPriceMinor: variant.price_minor,
-      variantSalePriceMinor: variant.sale_price_minor,
-      productOriginalPriceMinor: product?.original_price_minor,
-      productSalePriceMinor: product?.sale_price_minor,
-    });
   }
 
   const { data: existing } = await supabase
     .from("cart_items")
-    .select("id, quantity")
+    .select("id, quantity, customization")
     .eq("cart_id", cartId)
     .eq("variant_id", variantId)
     .maybeSingle();
@@ -206,6 +253,7 @@ async function upsertCartItem(
       .update({
         quantity: existing.quantity + quantity,
         price_snapshot_minor: price,
+        customization: finalCustomization ?? existing.customization,
       })
       .eq("id", existing.id);
   }
@@ -215,14 +263,20 @@ async function upsertCartItem(
     variant_id: variantId,
     quantity,
     price_snapshot_minor: price,
+    customization: finalCustomization,
   });
 }
 
-export async function addToCart(variantId: string, quantity = 1, customerId?: string) {
+export async function addToCart(
+  variantId: string,
+  quantity = 1,
+  customerId?: string,
+  customization?: Record<string, unknown> | null
+) {
   const cart = await getOrCreateCart(customerId);
   if (!cart) throw new Error("Could not open cart.");
 
-  return upsertCartItem(cart.id, variantId, quantity);
+  return upsertCartItem(cart.id, variantId, quantity, undefined, customization);
 }
 
 async function getCartItemWithCart(itemId: string) {
@@ -316,6 +370,7 @@ export function cartTotals(
       variantSalePriceMinor: variant?.sale_price_minor,
       productOriginalPriceMinor: productPrices.originalPriceMinor,
       productSalePriceMinor: productPrices.salePriceMinor,
+      hasCustomization: Boolean((item as { customization?: unknown }).customization),
     });
     subtotalMinor += price * item.quantity;
     itemCount += item.quantity;
