@@ -2,24 +2,40 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Send, CheckCircle2 } from "lucide-react";
+import { Send, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { branches } from "@/lib/branches";
 import { company } from "@/lib/content";
+import { submitContactMessageAction } from "@/server/contact/actions";
 
 export function ContactForm() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setErrorMessage(null);
     setLoading(true);
-    // Placeholder — wire to API / email service in a later phase
-    setTimeout(() => {
-      setLoading(false);
+
+    const formData = new FormData(e.currentTarget);
+    const result = await submitContactMessageAction({
+      name: String(formData.get("name") || ""),
+      phone: String(formData.get("phone") || ""),
+      email: String(formData.get("email") || ""),
+      branch: String(formData.get("branch") || ""),
+      subject: String(formData.get("subject") || ""),
+      message: String(formData.get("message") || ""),
+    });
+
+    setLoading(false);
+
+    if (result.ok) {
       setSubmitted(true);
-    }, 800);
+    } else {
+      setErrorMessage(result.error || "Failed to send message. Please try again or call us directly.");
+    }
   };
 
   if (submitted) {
@@ -32,19 +48,22 @@ export function ContactForm() {
         <CheckCircle2 className="h-12 w-12 text-emerald" />
         <h3 className="mt-4 font-display text-2xl text-navy">Message Sent</h3>
         <p className="mt-2 max-w-sm text-sm text-muted">
-          Thank you for reaching out. Our team will get back to you within one
-          working day.
+          Thank you for reaching out. Our team will review your inquiry and get back to you within one working day.
         </p>
         <Button
           variant="outline"
           className="mt-6"
-          onClick={() => setSubmitted(false)}
+          onClick={() => {
+            setSubmitted(false);
+            setErrorMessage(null);
+          }}
         >
           Send Another Message
         </Button>
       </motion.div>
     );
   }
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -109,6 +128,13 @@ export function ContactForm() {
         />
       </div>
 
+      {errorMessage && (
+        <div className="flex items-center gap-2 rounded-xl border border-red/20 bg-red/5 p-3.5 text-xs text-red">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
       <Button type="submit" variant="default" size="lg" className="w-full sm:w-auto" disabled={loading}>
         {loading ? "Sending..." : "Send Message"}
         <Send className="h-4 w-4" />
@@ -124,6 +150,7 @@ export function ContactForm() {
           {company.email}
         </a>
       </p>
+
     </form>
   );
 }
