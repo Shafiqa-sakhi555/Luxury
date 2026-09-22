@@ -61,6 +61,7 @@ export async function placeOrder(input: PlaceOrderInput) {
     shipping_postal: input.shipping.postal || null,
     shipping_phone: input.shipping.phone,
     notes: input.notes,
+    shipping_breakdown: totals.shipping ?? null,
   };
 
   if (input.guestEmail) {
