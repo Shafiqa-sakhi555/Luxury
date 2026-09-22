@@ -57,7 +57,7 @@ export function ProductAccordions({
       content: (
         <div className="space-y-3 text-sm leading-relaxed text-navy/80">
           <p>We deliver across Pakistan. Free delivery applies on orders above {freeDeliveryThresholdLabel}.</p>
-          <p>Standard delivery fee is {deliveryFeeLabel} for orders below the free delivery threshold.</p>
+          <p>Shipping costs are calculated at checkout based on the weight and type of items in your cart.</p>
           <div className="flex flex-wrap gap-4 pt-2">
             <Link href="/delivery" className="underline underline-offset-2 hover:text-navy">
               Delivery details

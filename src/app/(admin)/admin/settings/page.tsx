@@ -1,16 +1,12 @@
 import Link from "next/link";
 import { AdminPageHeader, AdminCard } from "@/components/admin/layout/AdminPageHeader";
 import { requireAdminPageAccess } from "@/server/admin/page-access";
-import { getStoreSettings } from "@/server/settings/store-settings";
-import { toMajor } from "@/lib/money";
-import { DeliverySettingsForm } from "@/components/admin/settings/DeliverySettingsForm";
 import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
 import { canWriteCatalog } from "@/server/rbac";
 
 export default async function AdminSettingsPage() {
   const ctx = await requireAdminPageAccess();
   const canEditStore = canWriteCatalog(ctx.permissions);
-  const settings = canEditStore ? await getStoreSettings() : null;
 
   return (
     <div>
@@ -25,18 +21,21 @@ export default async function AdminSettingsPage() {
           <ChangePasswordForm variant="admin" />
         </AdminCard>
 
-        {canEditStore && settings ? (
+        {canEditStore ? (
           <AdminCard className="space-y-4 p-6 text-sm">
-            <h2 className="font-semibold text-navy">Delivery charges</h2>
+            <h2 className="font-semibold text-navy">Shipping rates</h2>
             <p className="text-muted leading-relaxed">
-              These amounts are used on cart, checkout, and product shipping information.
+              Courier, cargo, and furniture delivery rates are managed on the dedicated Shipping page.
             </p>
-            <DeliverySettingsForm
-              deliveryFeeMajor={toMajor(settings.deliveryFeeMinor)}
-              freeDeliveryThresholdMajor={toMajor(settings.freeDeliveryThresholdMinor)}
-            />
+            <Link
+              href="/admin/shipping"
+              className="inline-block rounded-lg bg-navy px-4 py-2 text-sm font-medium text-white hover:bg-navy/90"
+            >
+              Manage shipping rates →
+            </Link>
           </AdminCard>
         ) : null}
+
 
         <AdminCard className="space-y-4 p-6 text-sm lg:col-span-2">
           <h2 className="font-semibold text-navy">Managing products</h2>
