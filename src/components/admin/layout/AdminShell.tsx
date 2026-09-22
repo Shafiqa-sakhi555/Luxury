@@ -25,6 +25,7 @@ import {
   MapPin,
   LayoutGrid,
   Star,
+  Truck,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/admin/inventory": Warehouse,
   "/admin/customers": Users,
   "/admin/assistant": MessageCircle,
+  "/admin/shipping": Truck,
   "/admin/settings": Settings,
 };
 

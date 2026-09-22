@@ -38,3 +38,53 @@ export async function updateOrderStatusAction(input: {
     };
   }
 }
+
+export async function deleteOrderAction(orderId: string) {
+  try {
+    const user = await requirePermission("order.write");
+
+    const { createSupabaseAdminClient } = await import("@/lib/supabase/admin");
+    const supabase = createSupabaseAdminClient();
+
+    // Fetch order number for audit log before deletion
+    const { data: order } = await supabase
+      .from("orders")
+      .select("order_number")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (!order) {
+      return { ok: false as const, error: "Order not found." };
+    }
+
+    // Delete cascading child records first
+    await supabase.from("order_status_history").delete().eq("order_id", orderId);
+    await supabase.from("order_items").delete().eq("order_id", orderId);
+    const { error } = await supabase.from("orders").delete().eq("id", orderId);
+
+    if (error) {
+      return { ok: false as const, error: error.message };
+    }
+
+    await writeAuditLog({
+      actorId: user.id,
+      action: "order.delete",
+      entityType: "Order",
+      entityId: orderId,
+      before: { order_number: order.order_number },
+    });
+
+    revalidatePath("/admin/orders");
+    revalidatePath("/admin");
+
+    return { ok: true as const };
+  } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return { ok: false as const, error: error.message };
+    }
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Failed to delete order.",
+    };
+  }
+}

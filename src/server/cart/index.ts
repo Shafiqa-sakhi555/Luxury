@@ -334,15 +334,26 @@ function readProductPrices(product: unknown) {
   };
 }
 
-export function cartTotals(
+export async function cartTotals(
   cart: {
     cart_items?: Array<{
       quantity: number;
       price_snapshot_minor?: number | null;
+      customization?: Record<string, unknown> | null;
       product_variants?: {
+        weight?: string | number | null;
         price_minor?: number | null;
         sale_price_minor?: number | null;
         products?: {
+          id?: string;
+          name?: string | null;
+          shipping_type?: string | null;
+          shipping_weight_kg?: number | string | null;
+          furniture_kind?: string | null;
+          categories?: {
+            slug?: string | null;
+            name?: string | null;
+          } | Array<{ slug?: string | null; name?: string | null }> | null;
           original_price_minor?: number | null;
           sale_price_minor?: number | null;
         } | null;
@@ -355,7 +366,8 @@ export function cartTotals(
   }
 ) {
   if (!cart?.cart_items?.length) {
-    return { subtotalMinor: 0, deliveryMinor: 0, totalMinor: 0, itemCount: 0 };
+    const { emptyShippingQuote } = await import("@/lib/shipping/calculate");
+    return { subtotalMinor: 0, deliveryMinor: 0, totalMinor: 0, itemCount: 0, shipping: emptyShippingQuote() };
   }
 
   let subtotalMinor = 0;
@@ -376,12 +388,20 @@ export function cartTotals(
     itemCount += item.quantity;
   }
 
-  const deliveryMinor = deliveryFeeForSubtotal(subtotalMinor, settings);
+  const { cartToShippingItems } = await import("@/server/shipping/from-cart");
+  const { calculateShippingQuote } = await import("@/lib/shipping/calculate");
+  const { getShippingRates } = await import("@/server/shipping/settings");
+
+  const rates = await getShippingRates();
+  const shippingItems = cartToShippingItems(cart as Parameters<typeof cartToShippingItems>[0]);
+  const quote = calculateShippingQuote(shippingItems, rates, subtotalMinor);
+
   return {
     subtotalMinor,
-    deliveryMinor,
-    totalMinor: subtotalMinor + deliveryMinor,
+    deliveryMinor: quote.shippingMinor,
+    totalMinor: subtotalMinor + quote.shippingMinor,
     itemCount,
+    shipping: quote
   };
 }
 
