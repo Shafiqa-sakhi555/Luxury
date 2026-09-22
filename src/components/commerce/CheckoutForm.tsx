@@ -67,7 +67,18 @@ export function CheckoutForm({
   lineItems,
   userEmail,
 }: {
-  totals: { totalMinor: number; subtotalMinor: number; deliveryMinor: number };
+  totals: {
+    totalMinor: number;
+    subtotalMinor: number;
+    deliveryMinor: number;
+    shipping?: {
+      groups: Array<{ label: string; chargeMinor: number }>;
+      shippingBeforeDiscountMinor: number;
+      freeDeliveryApplied: boolean;
+      freeDeliveryDiscountMinor: number;
+      shippingMinor: number;
+    };
+  };
   lineItems: CheckoutLineItem[];
   userEmail: string;
 }) {
@@ -609,12 +620,33 @@ export function CheckoutForm({
               <dt className="text-neutral-600">Subtotal</dt>
               <dd>{formatMoney(totals.subtotalMinor)}</dd>
             </div>
-            <div className="flex justify-between">
-              <dt className="text-neutral-600">Shipping</dt>
-              <dd>{totals.deliveryMinor === 0 ? "Free" : formatMoney(totals.deliveryMinor)}</dd>
-            </div>
+            {totals.shipping ? (
+              <>
+                {totals.shipping.groups.map((group, idx) => (
+                  <div key={idx} className="flex justify-between">
+                    <dt className="text-neutral-600">{group.label}</dt>
+                    <dd>{formatMoney(group.chargeMinor)}</dd>
+                  </div>
+                ))}
+                {totals.shipping.freeDeliveryApplied && totals.shipping.freeDeliveryDiscountMinor > 0 && (
+                  <div className="flex justify-between text-green-700">
+                    <dt>Free Delivery Discount</dt>
+                    <dd>-{formatMoney(totals.shipping.freeDeliveryDiscountMinor)}</dd>
+                  </div>
+                )}
+                <div className="flex justify-between font-medium">
+                  <dt className="text-neutral-900">Total Shipping</dt>
+                  <dd>{totals.shipping.shippingMinor === 0 ? "Free" : formatMoney(totals.shipping.shippingMinor)}</dd>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between">
+                <dt className="text-neutral-600">Shipping</dt>
+                <dd>{totals.deliveryMinor === 0 ? "Free" : formatMoney(totals.deliveryMinor)}</dd>
+              </div>
+            )}
             <div className="flex justify-between border-t border-neutral-300 pt-3 text-base font-semibold">
-              <dt>Total</dt>
+              <dt>Grand Total</dt>
               <dd>
                 <span className="mr-2 text-xs font-normal uppercase tracking-wide text-neutral-500">PKR</span>
                 {formatMoney(totals.totalMinor).replace(/^Rs\.?\s?/, "")}
