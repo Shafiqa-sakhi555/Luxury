@@ -17,6 +17,7 @@ import {
   orderStatusFilterItems,
 } from "@/components/admin/ui";
 import { formatMoney } from "@/lib/money";
+import { DeleteOrderButton } from "@/components/admin/orders/DeleteOrderButton";
 
 function buildOrdersHref(page: number, status?: string) {
   const query = new URLSearchParams();
@@ -64,7 +65,7 @@ export default async function AdminOrdersPage({
               <AdminTableHead>Customer</AdminTableHead>
               <AdminTableHead>Total</AdminTableHead>
               <AdminTableHead>Status</AdminTableHead>
-              <AdminTableHead align="right"> </AdminTableHead>
+              <AdminTableHead align="right">Actions</AdminTableHead>
             </tr>
           </AdminTableHeader>
           <AdminTableBody>
@@ -97,9 +98,12 @@ export default async function AdminOrdersPage({
                     <OrderStatusBadge status={order.status} />
                   </AdminTableCell>
                   <AdminTableCell align="right">
-                    <Link href={`/admin/orders/${order.id}`} className="font-medium text-navy hover:underline">
-                      View
-                    </Link>
+                    <span className="inline-flex items-center gap-3">
+                      <Link href={`/admin/orders/${order.id}`} className="font-medium text-navy hover:underline">
+                        View
+                      </Link>
+                      <DeleteOrderButton orderId={order.id} orderNumber={order.order_number} />
+                    </span>
                   </AdminTableCell>
                 </AdminTableRow>
               ))
