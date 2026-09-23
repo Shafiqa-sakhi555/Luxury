@@ -19,7 +19,7 @@ export function CatalogFilterPills({
     <div
       role="group"
       aria-label="Category filters"
-      className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar sm:flex-wrap sm:gap-3"
+      className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar sm:gap-3"
     >
       {items.map((item) => {
         const isActive =
