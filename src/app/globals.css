@@ -543,17 +543,10 @@
   }
 
   .catalog-toolbar {
-    position: sticky;
-    top: calc(var(--site-header-height) + 0.35rem);
-    z-index: 10;
-    @apply -mx-4 mb-8 bg-brand-50/92 px-4 py-3 backdrop-blur-md sm:mx-0 sm:rounded-2xl sm:border sm:border-navy/8 sm:bg-white/85 sm:shadow-sm sm:shadow-navy/5;
+    z-index: 40;
+    @apply -mx-4 mb-8 bg-brand-50/92 px-4 py-3 sm:mx-0 sm:rounded-2xl sm:border sm:border-navy/8 sm:bg-white/85 sm:shadow-sm sm:shadow-navy/5;
   }
 
-  @media (min-width: 640px) {
-    .catalog-toolbar {
-      top: calc(var(--site-header-height-sm) + 0.35rem);
-    }
-  }
 
   .dashboard-card {
     @apply rounded-2xl border border-navy/8 bg-white shadow-sm shadow-navy/5;
