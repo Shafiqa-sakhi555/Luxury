@@ -142,7 +142,7 @@ export function ProductPurchasePanel({
     }
   }, []);
 
-  const encodedUrl = encodeURIComponent(shareLink || "https://jalalshomesolutions.vercel.app");
+  const encodedUrl = encodeURIComponent(shareLink || "https://jalalsgroup.com");
   const encodedTitle = encodeURIComponent(productName);
 
   return (
