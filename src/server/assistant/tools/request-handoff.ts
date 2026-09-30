@@ -41,7 +41,7 @@ export async function runRequestHandoff(ctx: ToolContext): Promise<ToolResult | 
         status: "PENDING",
         issueSummary,
         contact: {
-          phone: "+92 313 5205272",
+          phone: "+92 355 4948700",
           email: "info@jalalshome.pk",
           ordersEmail: "orders@jalalsgroup.com",
         },
@@ -56,7 +56,7 @@ export async function runRequestHandoff(ctx: ToolContext): Promise<ToolResult | 
       data: {
         status: "FAILED",
         contact: {
-          phone: "+92 313 5205272",
+          phone: "+92 355 4948700",
           email: "info@jalalshome.pk",
         },
         instruction: "Direct customer to call or email directly.",
@@ -64,3 +64,4 @@ export async function runRequestHandoff(ctx: ToolContext): Promise<ToolResult | 
     };
   }
 }
+

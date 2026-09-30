@@ -13,7 +13,7 @@ export const company = {
   name: "Jalals Home Solution",
   tagline: "Premium Home Furnishings & Surfaces",
   location: "Gilgit-Baltistan, Pakistan",
-  phone: "+92 313 5205272",
+  phone: "+92 355 4948700",
   email: "jhs@jalalsgroup.com",
 };
 

@@ -335,7 +335,7 @@ export function AssistantChatPanel({
           {
             role: "assistant",
             content:
-              "Sorry, I couldn't respond right now. Please try again or contact us at +92 313 5205272.",
+              "Sorry, I couldn't respond right now. Please try again or contact us at +92 355 4948700.",
           },
         ];
       });
@@ -404,8 +404,8 @@ export function AssistantChatPanel({
           <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald" />
           <span>
             A team member will follow up on your request. Call{" "}
-            <a href="tel:+923135205272" className="font-medium text-cyan underline underline-offset-2">
-              +92 313 5205272
+            <a href="tel:+923554948700" className="font-medium text-cyan underline underline-offset-2">
+              +92 355 4948700
             </a>{" "}
             or email{" "}
             <a href="mailto:info@jalalshome.pk" className="font-medium text-cyan underline underline-offset-2">
@@ -567,3 +567,4 @@ export function AssistantChatPanel({
 
 // Re-export for consumers that imported from this module
 export type { AssistantProductRecommendation as ConsultationRecommendation };
+

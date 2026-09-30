@@ -172,7 +172,7 @@ export function buildFallbackResponse(
         );
       } else {
         parts.push(
-          `${data.company?.description ?? "We're a premium home furnishings retailer in Gilgit-Baltistan."}\n\nYou can browse ${categoryNames || "our full catalog"}. Call us on ${data.company?.contact?.phone ?? "+92 313 5205272"} anytime. What would you like to look at first?`
+          `${data.company?.description ?? "We're a premium home furnishings retailer in Gilgit-Baltistan."}\n\nYou can browse ${categoryNames || "our full catalog"}. Call us on ${data.company?.contact?.phone ?? "+92 355 4948700"} anytime. What would you like to look at first?`
         );
       }
     }
@@ -323,7 +323,7 @@ export function buildFallbackResponse(
         contact?: { phone: string; email: string };
       };
       parts.push(
-        `I've noted your request${data.handoffId ? ` (ref ${data.handoffId.slice(0, 8)})` : ""}. A team member will follow up. You can also call ${data.contact?.phone ?? "+92 313 5205272"} or email ${data.contact?.email ?? "info@jalalshome.pk"}.`
+        `I've noted your request${data.handoffId ? ` (ref ${data.handoffId.slice(0, 8)})` : ""}. A team member will follow up. You can also call ${data.contact?.phone ?? "+92 355 4948700"} or email ${data.contact?.email ?? "info@jalalshome.pk"}.`
       );
     }
 
@@ -350,3 +350,4 @@ export function buildFallbackResponse(
 
   return parts.join("\n\n");
 }
+

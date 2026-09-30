@@ -16,7 +16,7 @@
       "contacts": [
         { "label": "Branch Office", "phone": "+923554948703" },
         { "label": "HR", "phone": "+923554948708" },
-        { "label": "Management", "phone": "+923135205272" }
+        { "label": "Management", "phone": "+923554948700" }
       ],
       "opening_hours": "Open daily — call for exact hours",
       "services": ["Full home furnishing range", "Consultation", "Custom orders"],
@@ -71,7 +71,7 @@
       "city": "Gilgit",
       "region": "Gilgit District",
       "address": "Kashrot, Gilgit, Gilgit-Baltistan, Pakistan",
-      "phone": "+923135205272",
+      "phone": "+923554948700",
       "latitude": 35.928,
       "longitude": 74.305,
       "opened": "2005",
@@ -80,3 +80,4 @@
   ],
   "stock_note": "Branch product availability is LIVE data only — never answer from this file. Query inventory tools."
 }
+

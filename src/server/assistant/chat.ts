@@ -188,7 +188,7 @@ export async function runAssistantChat(
 ): Promise<AssistantChatResult> {
   if (!isAssistantEnabled()) {
     return {
-      message: "Jalal Assistance is temporarily disabled. Please contact us at +92 313 5205272.",
+      message: "Jalal Assistance is temporarily disabled. Please contact us at +92 355 4948700.",
       toolsUsed: [],
       ollamaUsed: false,
     };
@@ -353,3 +353,4 @@ export async function* streamAssistantChat(
     };
   }
 }
+

@@ -54,7 +54,7 @@ export const branches: Branch[] = [
     contacts: [
       { label: "Branch Office", phone: "+923554948703", phoneDisplay: "0355 4948703" },
       { label: "HR", phone: "+923554948708", phoneDisplay: "0355 4948708" },
-      { label: "Management", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+      { label: "Management", phone: "+923554948700", phoneDisplay: "0355 4948700" },
     ],
     hours: "Open daily — call for exact hours",
     lat: 35.9194,
@@ -76,7 +76,7 @@ export const branches: Branch[] = [
     contacts: [
       { label: "Branch Office", phone: "+923554323944", phoneDisplay: "0355 4323944" },
       { label: "HR", phone: "+923554948708", phoneDisplay: "0355 4948708" },
-      { label: "Management", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+      { label: "Management", phone: "+923554948700", phoneDisplay: "0355 4948700" },
     ],
     hours: "Open daily — call for exact hours",
     lat: 36.3075,
@@ -98,7 +98,7 @@ export const branches: Branch[] = [
     contacts: [
       { label: "Branch Office", phone: "+923554948709", phoneDisplay: "0355 4948709" },
       { label: "HR", phone: "+923554948708", phoneDisplay: "0355 4948708" },
-      { label: "Management", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+      { label: "Management", phone: "+923554948700", phoneDisplay: "0355 4948700" },
     ],
     hours: "Open daily — call for exact hours",
     lat: 35.2971,
@@ -119,7 +119,7 @@ export const branches: Branch[] = [
     contacts: [
       { label: "Branch Office", phone: "+923555404571", phoneDisplay: "0355 5404571" },
       { label: "HR", phone: "+923554948708", phoneDisplay: "0355 4948708" },
-      { label: "Management", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+      { label: "Management", phone: "+923554948700", phoneDisplay: "0355 4948700" },
     ],
     hours: "Open daily — call for exact hours",
     lat: 36.184,
@@ -135,12 +135,12 @@ export const branches: Branch[] = [
     city: "Gilgit",
     region: "Gilgit District",
     address: "Kashrot, Gilgit, Gilgit-Baltistan, Pakistan",
-    phone: "+923135205272",
-    phoneDisplay: "0313 5205272",
+    phone: "+923554948700",
+    phoneDisplay: "0355 4948700",
     contacts: [
-      { label: "Branch Office", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+      { label: "Branch Office", phone: "+923554948700", phoneDisplay: "0355 4948700" },
       { label: "HR", phone: "+923554948708", phoneDisplay: "0355 4948708" },
-      { label: "Management", phone: "+923135205272", phoneDisplay: "0313 5205272" },
+      { label: "Management", phone: "+923554948700", phoneDisplay: "0355 4948700" },
     ],
     lat: 35.928,
     lng: 74.305,
@@ -197,3 +197,4 @@ export function branchesByRegion(): Record<string, Branch[]> {
     return acc;
   }, {});
 }
+

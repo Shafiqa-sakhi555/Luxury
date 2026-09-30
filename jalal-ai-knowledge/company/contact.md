@@ -4,7 +4,7 @@
 
 | Channel | Value |
 |---------|-------|
-| Phone | +92 313 5205272 |
+| Phone | +92 355 4948700 |
 | Email | info@jalalshome.pk |
 | Orders email | orders@jalalsgroup.com |
 | Website | https://jalalsgroup.com |
@@ -24,3 +24,4 @@ When the assistant cannot resolve an issue or the customer requests a person:
 1. Collect: name, phone, order number (if any), brief issue summary
 2. Direct to: info@jalalshome.pk or branch phone from `branches/branches.json`
 3. For order-specific issues: customer must be logged in; use order lookup tools
+

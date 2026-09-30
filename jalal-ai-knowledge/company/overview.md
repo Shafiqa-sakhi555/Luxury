@@ -51,9 +51,10 @@ Do not invent differentiators not listed here.
 
 ## How can I contact Jalal?
 
-- Phone: +92 313 5205272
+- Phone: +92 355 4948700
 - Email: info@jalalshome.pk
 - Orders: orders@jalalsgroup.com
 - Website: jalalsgroup.com
 
 See branch-specific phones in `branches/branches.json`.
+

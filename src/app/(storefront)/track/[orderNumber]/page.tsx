@@ -32,7 +32,7 @@ export default async function TrackOrderPage({
   const order = await getPublicOrderTracking(decoded);
 
   return (
-    <section className="section-brand-light section-spacing-md pt-28">
+    <section className="section-brand-light section-spacing-md pt-36">
       <PageContainer width="narrow">
         {order ? (
           <OrderTrackingView order={order} />

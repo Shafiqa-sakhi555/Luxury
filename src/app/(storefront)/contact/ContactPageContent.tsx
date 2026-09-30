@@ -41,8 +41,8 @@ export function ContactPageContent() {
               {
                 icon: Phone,
                 label: "Management",
-                value: "0313 5205272",
-                href: "tel:+923135205272",
+                value: "0355 4948700",
+                href: "tel:+923554948700",
               },
               {
                 icon: Mail,
