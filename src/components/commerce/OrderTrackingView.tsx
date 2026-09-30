@@ -70,7 +70,7 @@ export function OrderTrackingView({ order }: { order: PublicOrderTracking }) {
                 <li key={`${entry.status}-${entry.at}`} className="rounded-lg border border-navy/10 px-3 py-2 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <CustomerOrderStatusBadge status={entry.status} />
-                    <span className="text-xs text-muted">{new Date(entry.at).toLocaleString()}</span>
+                    <span className="text-xs text-muted">{new Date(entry.at).toLocaleString("en-PK", { timeZone: "Asia/Karachi" })}</span>
                   </div>
                   <p className="mt-2 text-muted">{entry.reason || entryMeta.nextSteps}</p>
                 </li>
